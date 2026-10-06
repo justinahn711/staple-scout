@@ -11,8 +11,8 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from .comparison import compare
-from .database import Database, STORES, as_record
-from .models import ObservationCreate, StapleCreate, StaplePatch
+from .database import Database, STORES, STORE_SELECT, as_record
+from .models import ObservationCreate, StapleCreate, StaplePatch, StorePatch
 
 
 def create_app(db_path: str | Path | None = None) -> FastAPI:
@@ -48,7 +48,56 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
     @app.get("/api/stores")
     def stores():
         with database.connect() as connection:
-            return [dict(row) for row in connection.execute("SELECT * FROM stores ORDER BY rowid")]
+            return [as_record(row) for row in connection.execute(STORE_SELECT + " ORDER BY s.rowid")]
+
+    def store_record(connection, store_id):
+        row = connection.execute(STORE_SELECT + " WHERE s.id = ?", (store_id,)).fetchone()
+        if row is None:
+            raise HTTPException(404, "Store not found")
+        return as_record(row)
+
+    @app.get("/api/stores/{store_id}")
+    def get_store(store_id: str):
+        with database.connect() as connection:
+            return store_record(connection, store_id)
+
+    @app.get("/api/stores/{store_id}/contexts")
+    def store_contexts(store_id: str):
+        with database.connect() as connection:
+            connection.execute("BEGIN")
+            store = store_record(connection, store_id)
+            return [as_record(row) for row in connection.execute("""
+                SELECT *, location_status != 'unconfigured' AS location_configured,
+                    id = ? AS is_current_context FROM location_contexts
+                WHERE store_id = ? ORDER BY id
+            """, (store["preferred_context_id"], store_id))]
+
+    @app.patch("/api/stores/{store_id}", description="Select an immutable location context, or create/reuse one from context fields. Configuration does not verify any price source.")
+    def update_store(store_id: str, body: StorePatch):
+        with database.connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            store = store_record(connection, store_id)
+            context_id = store["preferred_context_id"]
+            if body.context is not None:
+                context = body.context
+                identity = (store_id, context.location, context.location_id, context.channel, context.location_status)
+                row = connection.execute("""SELECT id FROM location_contexts WHERE store_id = ?
+                    AND location = ? AND location_id IS ? AND channel = ? AND location_status = ?""", identity).fetchone()
+                if row is None:
+                    context_id = connection.execute("""INSERT INTO location_contexts
+                        (store_id, location, location_id, channel, location_status)
+                        VALUES (?, ?, ?, ?, ?)""", identity).lastrowid
+                else:
+                    context_id = row["id"]
+            elif body.context_id is not None:
+                context_id = body.context_id
+            context = connection.execute("SELECT * FROM location_contexts WHERE id = ? AND store_id = ?", (context_id, store_id)).fetchone()
+            if context is None:
+                raise HTTPException(422, "Context must exist and belong to this store")
+            connection.execute("""UPDATE stores SET preferred_context_id = ?, location = ?, channel = ?, note = ?
+                WHERE id = ?""", (context_id, context["location"], context["channel"],
+                                  body.note if body.note is not None else store["note"], store_id))
+            return store_record(connection, store_id)
 
     @app.get("/api/staples")
     def staples():
@@ -64,6 +113,7 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
     @app.patch("/api/staples/{staple_id}", description="Changing name, basis, or rules clears approval on existing observations; price history is retained. Needed-only and no-op changes preserve approval.")
     def update_staple(staple_id: int, body: StaplePatch):
         with database.connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
             existing = connection.execute("SELECT * FROM staples WHERE id = ?", (staple_id,)).fetchone()
             if existing is None:
                 raise HTTPException(404, "Staple not found")
@@ -89,6 +139,10 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
         values["quantity"] = format(body.quantity.normalize(), "f")
         values["observed_at"] = body.observed_at.isoformat(timespec="microseconds")
         with database.connect() as connection:
+            # Resolve the implicit context and insert under one writer transaction.
+            connection.execute("BEGIN IMMEDIATE")
+            store = store_record(connection, body.store_id)
+            values["context_id"] = body.context_id if body.context_id is not None else store["preferred_context_id"]
             if connection.execute("SELECT id FROM staples WHERE id = ?", (body.staple_id,)).fetchone() is None:
                 raise HTTPException(404, "Staple not found")
             placeholders = ", ".join("?" for _ in values)
@@ -98,8 +152,24 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
                 raise HTTPException(422, "Invalid observation reference") from None
             return as_record(connection.execute("SELECT * FROM observations WHERE id = ?", (cursor.lastrowid,)).fetchone())
 
+    @app.get("/api/observations", description="Original observation history, including previous location contexts and superseded prices.")
+    def observation_history(staple_id: int | None = Query(default=None, gt=0),
+                            store_id: str | None = None, context_id: int | None = Query(default=None, gt=0)):
+        if store_id is not None and store_id not in {row[0] for row in STORES}:
+            raise HTTPException(422, "Unknown store ID")
+        with database.connect() as connection:
+            return [as_record(row) for row in connection.execute("""
+                SELECT o.*, c.location AS store_location, c.location_id,
+                    c.location_status, c.location_status != 'unconfigured' AS location_configured
+                FROM observations o JOIN location_contexts c ON c.id = o.context_id
+                WHERE (? IS NULL OR o.staple_id = ?) AND (? IS NULL OR o.store_id = ?)
+                    AND (? IS NULL OR o.context_id = ?) ORDER BY o.id
+            """, (staple_id, staple_id, store_id, store_id, context_id, context_id))]
+
     @app.get("/api/comparisons")
-    def comparisons(needed_only: bool = False, stores: str | None = Query(default=None, description="Comma-separated store IDs. Omit to include every store.")):
+    def comparisons(needed_only: bool = False,
+                    stores: str | None = Query(default=None, description="Comma-separated store IDs. Omit to include every store."),
+                    include_previous_contexts: bool = Query(default=False, description="Show previous contexts as excluded offers; only preferred contexts can win.")):
         selected = {item.strip() for item in stores.split(",")} if stores is not None else {row[0] for row in STORES}
         if not selected or not selected.issubset({row[0] for row in STORES}):
             raise HTTPException(422, "Unknown or empty store ID")
@@ -108,14 +178,19 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
             connection.execute("BEGIN")
             staple_rows = connection.execute("SELECT * FROM staples WHERE (? = 0 OR needed = 1) ORDER BY id", (needed_only,)).fetchall()
             rows = connection.execute("""
-                SELECT ranked.*, stores.name AS store_name, stores.location AS store_location FROM (
+                SELECT ranked.*, stores.name AS store_name, contexts.location AS store_location,
+                    contexts.location_id, contexts.location_status,
+                    contexts.location_status != 'unconfigured' AS location_configured,
+                    ranked.context_id = stores.preferred_context_id AS is_current_context FROM (
                     SELECT observations.*, ROW_NUMBER() OVER (
-                        PARTITION BY staple_id, store_id, product_name, channel, quantity, unit, pack_count
+                        PARTITION BY staple_id, store_id, context_id, product_name, channel, quantity, unit, pack_count
                         ORDER BY observed_at DESC, id DESC
                     ) AS rank FROM observations
                 ) ranked JOIN stores ON stores.id = ranked.store_id
-                WHERE ranked.rank = 1 ORDER BY ranked.id
-            """).fetchall()
+                JOIN location_contexts contexts ON contexts.id = ranked.context_id
+                WHERE ranked.rank = 1 AND (? OR ranked.context_id = stores.preferred_context_id)
+                ORDER BY ranked.id
+            """, (include_previous_contexts,)).fetchall()
         grouped = {}
         for row in rows:
             if row["store_id"] in selected:
