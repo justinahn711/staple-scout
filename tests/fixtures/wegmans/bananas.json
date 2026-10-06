@@ -1,0 +1,37 @@
+{
+  "fixture_kind": "sanitized_public_html_projection_not_api_response",
+  "source_url": "https://www.wegmans.com/shop/product/92685-Bananas-Sold-by-the-Each",
+  "requested_at": "2026-10-06T11:33:27.910232+00:00",
+  "retrieved_at": "2026-10-06T11:33:28.205730+00:00",
+  "http_status": 200,
+  "final_url": "https://www.wegmans.com/shop/product/92685-Bananas-Sold-by-the-Each",
+  "content_type": "text/html; charset=utf-8",
+  "raw_response_sha256": "e7d5d5a7dfaec9dcbc4ab70be9bdd5095a39b7d1380d8d0dbae86638d7acc8ce",
+  "json_ld_product_projection": {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": "Bananas, Sold by the Each",
+    "sku": "92685",
+    "gtin13": "00000000040112",
+    "category": "Produce & Floral",
+    "url": "/shop/product/92685-Bananas-Sold-by-the-Each"
+  },
+  "visible_text_excerpt": [
+    "Bananas, Sold by the Each",
+    "Avg. 0.38 lb"
+  ],
+  "json_ld_original_keys": [
+    "@context",
+    "@type",
+    "aggregateRating",
+    "category",
+    "description",
+    "gtin13",
+    "image",
+    "name",
+    "sku",
+    "url"
+  ],
+  "json_ld_has_offers": false,
+  "page_mode_label": "In Store"
+}

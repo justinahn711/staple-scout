@@ -1,0 +1,16 @@
+{
+  "fixture_kind": "sanitized_public_html_projection_not_api_response",
+  "source_url": "https://www.wegmans.com/stores/chantilly-va",
+  "requested_at": "2026-10-06T11:33:27.202108+00:00",
+  "retrieved_at": "2026-10-06T11:33:27.632719+00:00",
+  "http_status": 200,
+  "final_url": "https://www.wegmans.com/stores/chantilly-va",
+  "content_type": "text/html; charset=utf-8",
+  "raw_response_sha256": "cb7c9d93ce1fdec55d03f8c294d6ec7b5df67ddb9587568c68af9405fff5d12b",
+  "visible_text_excerpt": [
+    "Chantilly",
+    "14361 Newbrook Drive",
+    "Chantilly, VA 20151"
+  ],
+  "embedded_page_data_excerpt": "\"storeName\":\"Chantilly\",\"storeNumber\":133"
+}

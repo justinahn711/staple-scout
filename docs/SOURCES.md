@@ -1,12 +1,13 @@
 # Retailer source evidence
 
-Reviewed October 5, 2026 (America/New_York). Public pages were inspected; no live
+Initially reviewed October 5, 2026 (America/New_York); Wegmans evidence was
+expanded October 6 in the [source investigation](research/wegmans.md). No live
 price adapter has yet been validated or enabled in this repository. Earlier API
 successes supplied in the project brief are useful leads, not fresh test results.
 
 | Retailer | Location | Current evidence | Integration state |
 |---|---|---|---|
-| Wegmans | Chantilly; #133 reported in brief | Developer portal exists but opens at sign-in; exact endpoint and access still needed | Not connected |
+| Wegmans | Chantilly; website store #133 verified | Five public pages expose catalog identity/quantity, but no verified price or availability; API request still needed | Not connected |
 | Walmart | Chantilly Supercenter #5969, tentative user location | Official local store page lists grocery pickup and delivery | Not connected |
 | Target | Chantilly; ID not validated | Brief reports RedSky success; exact request and channel still needed | Not connected |
 | H Mart | Centreville | Brief reports VTEX JSON/barcodes; local shelf correspondence not established | Not connected |
@@ -23,6 +24,12 @@ successes supplied in the project brief are useful leads, not fresh test results
 
 Next: obtain the previously working request or documented supported API details,
 then validate store identity and in-store mode with a small product sample.
+
+The [October 6 investigation](research/wegmans.md) preserves five sanitized
+catalog projections and the store/portal evidence. It confirms website store
+number 133, not that an unknown API accepts that identifier. All five raw
+`gtin13` fields contain 14 digits and require validation before matching. No
+price observation was imported; the live adapter remains blocked.
 
 ## Walmart
 
