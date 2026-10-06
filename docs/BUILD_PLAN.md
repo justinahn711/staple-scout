@@ -1,5 +1,9 @@
 # Build plan
 
+For actionable GitHub tasks and the recommended execution order, see the
+[work queue](WORK_QUEUE.md). This document describes product milestones; the
+queue sequences foundation, source research, adapters, and interface work.
+
 ## Product goal
 
 For groceries needed this week, find the cheapest acceptable product among the

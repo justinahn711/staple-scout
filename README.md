@@ -77,6 +77,7 @@ uv run pytest
 ```
 
 - [Build plan](docs/BUILD_PLAN.md): milestones, acceptance criteria, open decisions.
+- [Work queue](docs/WORK_QUEUE.md): actionable issues, prerequisites, and build order.
 - [Source validation](docs/SOURCES.md): evidence and integration requirements.
 - [API contract](API_CONTRACT.md): request and response shapes.
 - [Architecture](docs/ARCHITECTURE.md): data boundaries and planned evolution.
