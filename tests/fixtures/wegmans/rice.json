@@ -1,0 +1,42 @@
+{
+  "fixture_kind": "sanitized_public_html_projection_not_api_response",
+  "source_url": "https://www.wegmans.com/shop/product/47264-Long-Grain-White-Rice",
+  "requested_at": "2026-10-06T11:33:27.699172+00:00",
+  "retrieved_at": "2026-10-06T11:33:27.910008+00:00",
+  "http_status": 200,
+  "final_url": "https://www.wegmans.com/shop/product/47264-Long-Grain-White-Rice",
+  "content_type": "text/html; charset=utf-8",
+  "raw_response_sha256": "36c7fd1f71e6a5ffb09bb90a45615a1fbed533b66230ebae0f78633a34f95127",
+  "json_ld_product_projection": {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": "Wegmans Long Grain White Rice",
+    "brand": {
+      "@type": "Brand",
+      "name": "Wegmans"
+    },
+    "sku": "47264",
+    "gtin13": "00077890297957",
+    "category": "Grocery",
+    "url": "/shop/product/47264-Long-Grain-White-Rice"
+  },
+  "visible_text_excerpt": [
+    "Wegmans Long Grain White Rice",
+    "5 lb."
+  ],
+  "json_ld_original_keys": [
+    "@context",
+    "@type",
+    "aggregateRating",
+    "brand",
+    "category",
+    "description",
+    "gtin13",
+    "image",
+    "name",
+    "sku",
+    "url"
+  ],
+  "json_ld_has_offers": false,
+  "page_mode_label": "In Store"
+}

@@ -1,0 +1,42 @@
+{
+  "fixture_kind": "sanitized_public_html_projection_not_api_response",
+  "source_url": "https://www.wegmans.com/shop/product/94427-Milk-Vitamin-D-Whole",
+  "requested_at": "2026-10-06T11:33:27.202342+00:00",
+  "retrieved_at": "2026-10-06T11:33:27.462578+00:00",
+  "http_status": 200,
+  "final_url": "https://www.wegmans.com/shop/product/94427-Milk-Vitamin-D-Whole",
+  "content_type": "text/html; charset=utf-8",
+  "raw_response_sha256": "73343f8a59424158216563f491ab203a1642f90a7bcec20517611377d5cad49c",
+  "json_ld_product_projection": {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": "Wegmans Vitamin D Whole Milk",
+    "brand": {
+      "@type": "Brand",
+      "name": "Wegmans"
+    },
+    "sku": "94427",
+    "gtin13": "00077890944271",
+    "category": "Dairy",
+    "url": "/shop/product/94427-Milk-Vitamin-D-Whole"
+  },
+  "visible_text_excerpt": [
+    "Wegmans Vitamin D Whole Milk",
+    "1 gallon"
+  ],
+  "json_ld_original_keys": [
+    "@context",
+    "@type",
+    "aggregateRating",
+    "brand",
+    "category",
+    "description",
+    "gtin13",
+    "image",
+    "name",
+    "sku",
+    "url"
+  ],
+  "json_ld_has_offers": false,
+  "page_mode_label": "In Store"
+}
