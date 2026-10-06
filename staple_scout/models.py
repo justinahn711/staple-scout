@@ -39,7 +39,38 @@ class StaplePatch(StrictModel):
         return self
 
 
+class LocationContextCreate(StrictModel):
+    location: Name
+    location_id: Annotated[str, Field(min_length=1, max_length=100, pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]*$")] | None = None
+    channel: Channel = "in_store"
+    location_status: Literal["user_reported", "tentative", "unconfigured"] = "user_reported"
+
+    @model_validator(mode="after")
+    def unconfigured_location(self):
+        if self.location_status == "unconfigured":
+            if self.location != "Unselected" or self.location_id is not None:
+                raise ValueError("An unconfigured context must use location 'Unselected' and no location_id")
+        elif self.location.lower() == "unselected":
+            raise ValueError("Unselected locations must be marked unconfigured")
+        return self
+
+
+class StorePatch(StrictModel):
+    context: LocationContextCreate | None = None
+    context_id: int | None = Field(default=None, gt=0, strict=True)
+    note: Annotated[str, Field(max_length=2000)] | None = None
+
+    @model_validator(mode="after")
+    def validate_selection(self):
+        if any(getattr(self, field) is None for field in self.model_fields_set):
+            raise ValueError("Fields cannot be null; omit unchanged fields")
+        if self.context is not None and self.context_id is not None:
+            raise ValueError("Provide either context or context_id, not both")
+        return self
+
+
 class ObservationCreate(StrictModel):
+    context_id: int | None = Field(default=None, gt=0, strict=True, description="Immutable location context. Omit to use the store's current preferred context; explicit null is invalid.")
     staple_id: int = Field(gt=0, strict=True)
     store_id: Literal["wegmans", "walmart", "target", "hmart", "lidl"]
     product_name: Name
@@ -53,6 +84,13 @@ class ObservationCreate(StrictModel):
     available: bool = Field(default=True, strict=True)
     approved: bool = Field(default=False, strict=True, description="Manual confirmation that this exact product or substitution satisfies the staple's rules. No automatic product verification occurs.")
     conditions: Annotated[str, Field(max_length=2000)] = ""
+
+    @field_validator("context_id")
+    @classmethod
+    def non_null_context(cls, value):
+        if value is None:
+            raise ValueError("Omit context_id to use the preferred context")
+        return value
 
     @field_validator("price", "quantity", mode="before", json_schema_input_type=str)
     @classmethod

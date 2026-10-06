@@ -45,7 +45,9 @@ def compare(staple: dict, observations: list[dict], now: datetime | None = None)
             reasons.append("not_approved")
         if not row["available"]:
             reasons.append("unavailable")
-        if row.get("store_location", "").strip().lower() == "unselected":
+        if not row.get("is_current_context", True):
+            reasons.append("location_not_current")
+        if not row.get("location_configured", True) or row.get("store_location", "").strip().lower() == "unselected":
             reasons.append("location_not_configured")
         if row["channel"] != "in_store":
             reasons.append("not_in_store")

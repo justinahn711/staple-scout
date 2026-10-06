@@ -1,14 +1,45 @@
-# Initial API contract
+# API contract
 
 API routes use JSON and return validation errors as HTTP 422, missing records as
 404, cross-origin writes as 403, and non-JSON write payloads as 415.
 Monetary amounts and input quantities are decimal strings. Persistent storage defaults to `data/staple-scout.sqlite3`, with
 `STAPLE_SCOUT_DB` override. Empty initial staples/prices, seeded store configuration.
 
-- `GET /api/stores`: array `{id, name, location, channel, source_status, note}`.
-  IDs wegmans, walmart, target, hmart, lidl. Walmart tentative Chantilly #5969;
-  Wegmans Chantilly #133 is user-reported; Target Chantilly; H Mart Centreville;
-  Lidl location unselected. All automated sources `not_connected`.
+- `GET /api/stores`: array `{id, name, location, channel, source_status, note,
+  preferred_context_id, location_id, location_status, location_configured}`.
+  `GET /api/stores/{store_id}` returns one such record; unknown stores return 404.
+  IDs wegmans, walmart, target, hmart, lidl. Walmart tentative Chantilly #5969
+  (`location_id: "5969"`); Wegmans Chantilly #133 is user-reported
+  (`location_id: "133"`); Target Chantilly; H Mart Centreville. Lidl remains
+  Unselected with no location ID. No IDs are guessed for the latter three.
+  `location_status` is `user_reported`, `tentative`, or `unconfigured`;
+  `location_configured` means the status is not unconfigured, including tentative
+  selections. Neither field verifies a location or price source. All automated
+  sources remain `not_connected`, and this API cannot edit source status.
+- `PATCH /api/stores/{store_id}` accepts `{context?, context_id?, note?}`.
+  Supply either `context_id` to select an existing context belonging to that store,
+  or `context: {location, location_id?, channel?, location_status?}` to create or
+  reuse an exact immutable context. Omit both to change only the note. Empty
+  patches are no-ops; explicit null top-level fields are invalid. Returns the
+  updated store record. A missing or wrong-store context ID returns 422.
+  Context defaults: `location_id: null`, `channel: "in_store"`,
+  `location_status: "user_reported"`. These are full context descriptions, not
+  partial changes to the previous context. Labels are trimmed, nonblank strings
+  up to 200 characters. Optional retailer location IDs are trimmed strings up to
+  100 characters, starting with an ASCII letter/digit and containing only ASCII
+  letters/digits, hyphens and underscores. IDs retain case and leading zeroes;
+  syntax validation is not retailer verification. `channel` is a shopping
+  preference, one of in_store/pickup/online. It does not rewrite or constrain the
+  channel of manual evidence. Unconfigured contexts require the exact label
+  `Unselected` and a null/omitted location ID; configured contexts cannot use that
+  label (case-insensitive). Notes are trimmed strings up to 2000 characters and
+  are retained on context switches unless explicitly changed.
+- `GET /api/stores/{store_id}/contexts`: immutable history of
+  `{id, store_id, location, location_id, channel, location_status,
+  location_configured, is_current_context}` in ID order. No context edit/delete
+  endpoint exists. Identity includes store, label, retailer location ID, channel
+  preference and location status. Changing any of those fields creates/selects
+  a different context; returning to an exact context reuses its ID and history.
 - `GET /api/staples`: array `{id, name, basis, rules, needed}`.
 - `POST /api/staples`: body `{name, basis, rules, needed?}`; returns created record.
   basis one of `oz`, `fl_oz`, `each`; rules string; needed boolean default true.
@@ -18,23 +49,46 @@ Monetary amounts and input quantities are decimal strings. Persistent storage de
 - `DELETE /api/staples/{id}`: 204; remove dependent observations deliberately.
 - `POST /api/observations`: `{staple_id, store_id, product_name, price,
   quantity, unit, pack_count, channel, observed_at, source_url?, available,
-  approved, conditions?}`. Supported input units oz/lb/g/kg/fl_oz/ml/l/each.
+  approved, conditions?, context_id?}`. Supported input units oz/lb/g/kg/fl_oz/ml/l/each.
   `quantity` is per pack; `pack_count` integer default 1. price is entire purchase
   package. timestamp ISO with zone. channels in_store/pickup/online.
   approved defaults false, available defaults true. Conditions nonempty means
   not eligible for winner (MVP does not evaluate promotional requirements).
-- `GET /api/comparisons?needed_only=false&stores=wegmans,walmart`: array of
+  `context_id` is a positive integer belonging to `store_id`, persisted and
+  returned on every observation. An explicit noncurrent context is allowed for
+  recording historical evidence but cannot supply a current winner. Explicit
+  null or an unknown/wrong-store context returns 422. For backward compatibility,
+  omission resolves the preferred context atomically at insertion time. Clients
+  should send the ID they displayed to avoid an intervening preference change
+  attaching evidence to a different location. Unconfigured observations remain
+  recordable but permanently unconfigured; later configuring the store cannot
+  upgrade their provenance. `approved` confirms the product meets staple rules,
+  never that its location or price source was verified.
+- `GET /api/observations?staple_id=1&store_id=wegmans&context_id=1`: complete
+  observation history, including superseded and noncurrent records, in ID order.
+  All filters are optional and combined with AND. Returns observation fields plus
+  original `store_location`, `location_id`, `location_status`, and
+  `location_configured`. Unknown store filters or nonpositive integer filters
+  return 422; unmatched valid filters return an empty list.
+- `GET /api/comparisons?needed_only=false&stores=wegmans,walmart&include_previous_contexts=false`: array of
   `{staple: {...}, offers: [...], winner_id: number|null}`.
-  Each offer includes observation input fields, `id`, `store_name`, `store_location`,
-  `unit_price` decimal string|null, `basis`, `eligible` boolean,
+  Each offer includes observation input fields, `id`, `store_name`, original
+  `store_location`, `location_id`, `location_status`, `location_configured`,
+  `is_current_context`, `unit_price` decimal string|null, `basis`, `eligible` boolean,
   `exclusion_reasons` string array. Winner lowest unit price among eligible,
   available, approved, fresh (<48h), unconditional in_store observations.
   Online/pickup observations remain visible with an exclusion reason. Never
   claim they are verified shelf prices. Freshness reevaluated on every request.
-  An Unselected store location is excluded with `location_not_configured` until
-  store configuration is implemented. Only the latest observation per
-  (staple, store, product_name, canonical quantity, unit, pack_count, channel)
-  is shown. This temporary variant identity will be replaced with stable product IDs.
+  Only preferred-context observations are shown by default. With
+  `include_previous_contexts=true`, older contexts also appear but are excluded
+  with `location_not_current`. Unconfigured contexts are excluded with
+  `location_not_configured`, even after the retailer gains a configured context.
+  Only the latest observation per (staple, store, context_id, product_name,
+  canonical quantity, unit, pack_count, channel) is shown. A different context
+  cannot supersede that context's latest observation. This temporary variant
+  identity will be replaced with stable product IDs. Switching back can restore
+  a still-fresh approved observation as a winner; freshness and approval are
+  always rechecked. Rule changes clear approvals across all contexts.
 - `GET /api/health`: `{status: "ok"}`.
 
 The service exposes `create_app(db_path=None)` and module `app` from
@@ -43,3 +97,19 @@ The shopper interface is a future milestone.
 
 No auth in this local-only initial version. JSON writes require same-origin when
 Origin is provided. CORS disabled. Docs at `/docs`.
+
+## Database compatibility
+
+SQLite `PRAGMA user_version` is now 1. The original unversioned schema (version 0)
+upgrades atomically at application initialization. Existing stores each gain one
+immutable context reflecting their recorded location at migration time; all old
+observations bind to that context, preserving their IDs, prices, timestamps,
+channels, approval flags and remaining fields. Unselected stores stay
+unconfigured. No observations or staples are seeded into a new database.
+
+Schema changes, data copying and the version advance share one explicit writer
+transaction. Failures roll back all three; restarting safely retries. Concurrent
+initializers serialize, successful upgrades are not rerun, and newer unsupported
+schema versions are refused. The original schema did not capture earlier
+location changes, so the migration cannot recover any such lost provenance.
+Existing JSON fields remain available; context and provenance fields are additive.
