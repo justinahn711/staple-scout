@@ -1,0 +1,140 @@
+{
+  "fixture_kind": "sanitized_indexed_web_tool_evidence_not_live_retailer_response",
+  "inspected_on": "2026-10-06",
+  "inspection_window_utc": [
+    "2026-10-06T11:37:07Z",
+    "2026-10-06T11:38:01Z"
+  ],
+  "http_status": null,
+  "notes": [
+    "Facts transcribed from official product pages exposed by the web retrieval tool; exact selected source lines retained.",
+    "The tool reported crawl ages; this inspection does not establish a fresh retailer fetch.",
+    "All prices are historical/indexed display facts, ineligible for current Chantilly comparisons.",
+    "Unknown barcode, seller, and effective time values remain null; null does not assert field absence upstream.",
+    "Unit/quantity interpretations are analyst mappings, not upstream JSON fields."
+  ],
+  "products": [
+    {
+      "sample": "milk",
+      "source_url": "https://www.walmart.com/ip/10450114",
+      "item_id_from_url": "10450114",
+      "product_name": "Great Value Whole Vitamin D Milk, Gallon",
+      "quantity_interpretation": "1 US gallon (128 fl oz)",
+      "displayed_price_usd": "3.32",
+      "displayed_price_kind": "package",
+      "displayed_price_per_lb_usd": null,
+      "displayed_pickup_location": "Sacramento Gerber Rd Supercenter",
+      "displayed_shipping_state": "out_of_stock",
+      "displayed_pickup_state": "pickup time displayed; current availability unverified",
+      "displayed_seller": "Walmart.com",
+      "barcode": null,
+      "verified_chantilly_offer": false,
+      "source_crawl_label": "2 weeks ago",
+      "source_price_effective_at": null,
+      "source_lines": [
+        "L905: Current price is USD$3.32 2.6 ¢/fl oz",
+        "L907: Price when purchased online",
+        "L972: Pickup from[Button: Sacramento Gerber Rd Supercenter]",
+        "L979: Sold and shipped by Walmart.com"
+      ]
+    },
+    {
+      "sample": "eggs",
+      "source_url": "https://www.walmart.com/ip/124080159",
+      "item_id_from_url": "124080159",
+      "product_name": "Great Value Cage-Free Large White Eggs, 12 Count",
+      "quantity_interpretation": "12 eggs",
+      "displayed_price_usd": "1.67",
+      "displayed_price_kind": "package",
+      "displayed_price_per_lb_usd": null,
+      "displayed_pickup_location": null,
+      "displayed_shipping_state": "out_of_stock",
+      "displayed_pickup_state": "check_nearby",
+      "displayed_seller": null,
+      "barcode": null,
+      "verified_chantilly_offer": false,
+      "source_crawl_label": "3 weeks ago",
+      "source_price_effective_at": null,
+      "source_lines": [
+        "L704: Current price is USD$1.67 13.9 ¢/count",
+        "L706: Price when purchased online"
+      ]
+    },
+    {
+      "sample": "chicken",
+      "source_url": "https://www.walmart.com/ip/27935840",
+      "item_id_from_url": "27935840",
+      "product_name": "Freshness Guaranteed Boneless, Skinless Chicken Breasts, 2.75 - 7.0 lb Tray",
+      "quantity_interpretation": "2.75–7.0 lb range; variable final weight",
+      "displayed_price_usd": "11.92",
+      "displayed_price_kind": "average_package_estimate",
+      "displayed_price_per_lb_usd": "2.57",
+      "displayed_pickup_location": "Sacramento Gerber Rd Supercenter",
+      "displayed_shipping_state": "not_available",
+      "displayed_pickup_state": "pickup time displayed; current availability unverified",
+      "displayed_seller": "Walmart.com",
+      "barcode": null,
+      "verified_chantilly_offer": false,
+      "source_crawl_label": "last week",
+      "source_price_effective_at": null,
+      "source_lines": [
+        "L939: Current price is USD$11.92 avg price",
+        "L941: $2.57/lb | Final cost by weight",
+        "L943: Price when purchased online",
+        "L1008: Pickup from[Button: Sacramento Gerber Rd Supercenter]",
+        "L1015: Sold and shipped by Walmart.com"
+      ]
+    },
+    {
+      "sample": "rice",
+      "source_url": "https://www.walmart.com/ip/10315395",
+      "item_id_from_url": "10315395",
+      "product_name": "Great Value Long Grain Enriched Rice, 5 lbs",
+      "quantity_interpretation": "5 lb (80 oz)",
+      "displayed_price_usd": "3.37",
+      "displayed_price_kind": "package",
+      "displayed_price_per_lb_usd": null,
+      "displayed_pickup_location": "Sacramento Gerber Rd Supercenter",
+      "displayed_shipping_state": "out_of_stock",
+      "displayed_pickup_state": "pickup time displayed; current availability unverified",
+      "displayed_seller": "Walmart.com",
+      "barcode": null,
+      "verified_chantilly_offer": false,
+      "source_crawl_label": "last week",
+      "source_price_effective_at": null,
+      "source_lines": [
+        "L945: Current price is USD$3.37 4.2 ¢/oz",
+        "L946: Price when purchased online",
+        "L1012: Pickup from[Button: Sacramento Gerber Rd Supercenter]",
+        "L1019: Sold and shipped by Walmart.com"
+      ]
+    },
+    {
+      "sample": "bananas",
+      "source_url": "https://www.walmart.com/ip/44390948",
+      "item_id_from_url": "44390948",
+      "product_name": "Fresh Banana, Each",
+      "quantity_interpretation": "each ordered; final cost by weight",
+      "displayed_price_usd": "0.10",
+      "displayed_price_kind": "each_estimate",
+      "displayed_price_per_lb_usd": "0.25",
+      "displayed_pickup_location": "Morgan Hill Supercenter",
+      "displayed_shipping_state": "out_of_stock",
+      "displayed_pickup_state": "pickup time displayed; current availability unverified",
+      "displayed_seller": "Walmart.com",
+      "barcode": null,
+      "verified_chantilly_offer": false,
+      "source_crawl_label": "3 weeks ago",
+      "source_price_effective_at": null,
+      "source_lines": [
+        "L760: Current price is USD Now $0.10",
+        "L763: was $0.20$0.20",
+        "L765: each (est.)",
+        "L767: 25.0 ¢/lb | Final cost by weight",
+        "L771: Price when purchased online",
+        "L838: Pickup from[Button: Morgan Hill Supercenter]",
+        "L845: Sold and shipped by Walmart.com"
+      ]
+    }
+  ]
+}

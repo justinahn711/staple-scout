@@ -36,6 +36,12 @@ offers. Mark pickup prices as pickup until actual shelf observations support a
 separate shelf record. Online visibility is not evidence that automated retrieval
 will be dependable.
 
+The [October 6 investigation](research/walmart.md) records a direct store-page
+request ending in human-verification HTML. Five indexed official product pages
+refer to other stores or unknown locations, so none verifies current Chantilly
+pickup prices. These records are explicitly labeled indexed evidence, not live
+price fixtures. No observation was imported; the adapter remains blocked.
+
 ## Target
 
 - [Pricing details](https://www.target.com/help/article/000194850): online and
