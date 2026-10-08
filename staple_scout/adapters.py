@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 from typing import Protocol, Iterable
+from dataclasses import field
 
 @dataclass(frozen=True)
 class OfferEvidence:
@@ -22,6 +23,14 @@ class OfferEvidence:
     retrieved_at: datetime
     source_url: str | None = None
     conditions: str = ""
+
+    def __post_init__(self):
+        from datetime import timezone
+        if self.price < 0: raise ValueError('invalid price')
+        if self.quantity is not None and self.quantity <= 0: raise ValueError('invalid quantity')
+        if self.unit is not None and self.unit not in {'oz','lb','g','kg','fl_oz','ml','l','each'}: raise ValueError('invalid unit')
+        if self.observed_at.tzinfo is None or self.retrieved_at.tzinfo is None: raise ValueError('timestamps require timezone')
+        if self.observed_at > self.retrieved_at or self.retrieved_at > datetime.now(timezone.utc): raise ValueError('invalid evidence time')
 
 @dataclass(frozen=True)
 class AdapterContext:

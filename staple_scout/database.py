@@ -124,7 +124,8 @@ def migrate_ingestion(connection):
     )""")
     connection.execute("""CREATE TABLE refresh_results (
         id INTEGER PRIMARY KEY, run_id INTEGER NOT NULL REFERENCES refresh_runs(id) ON DELETE CASCADE,
-        retailer_product_id TEXT, status TEXT NOT NULL, error TEXT, observation_id INTEGER REFERENCES observations(id)
+        retailer_product_id TEXT, status TEXT NOT NULL, error TEXT, seller TEXT, retrieved_at TEXT,
+        observation_id INTEGER REFERENCES observations(id), UNIQUE(run_id, retailer_product_id)
     )""")
 
 
