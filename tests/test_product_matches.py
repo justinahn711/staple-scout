@@ -15,7 +15,7 @@ def variant(c, **kw):
     r=c.post('/api/variants',json=body); assert r.status_code==201, r.text; return r.json()
 
 def observation(c, sid, vid, price='4'):
-    return c.post('/api/observations',json={'staple_id':sid,'variant_id':vid,'store_id':'wegmans','product_name':'Renamed rice','price':price,'quantity':'16','unit':'oz','channel':'in_store','approved':True,'observed_at':datetime.now(timezone.utc).isoformat()}).json()
+    return c.post('/api/observations',json={'staple_id':sid,'variant_id':vid,'store_id':'wegmans','product_name':'Renamed rice','price':price,'quantity':'16','unit':'oz','channel':'in_store','observed_at':datetime.now(timezone.utc).isoformat()}).json()
 
 def test_match_approval_flows_to_refresh_and_rejection_excludes(client):
     sid=staple(client); vid=variant(client)['id']; observation(client,sid,vid)
