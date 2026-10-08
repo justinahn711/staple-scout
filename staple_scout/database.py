@@ -11,7 +11,7 @@ STORES = [
     ("hmart", "H Mart", "Centreville", "in_store", "not_connected", "Prices require manual observation."),
     ("lidl", "Lidl", "Unselected", "in_store", "not_connected", "Choose and record the local store before comparing prices."),
 ]
-SCHEMA_VERSION = 5  # 1 contexts; 2 matches; 3 quantities; 4 ingestion; 5 daily claims.
+SCHEMA_VERSION = 6  # 1 contexts; 2 matches; 3 quantities; 4 ingestion; 5 daily claims; 6 reports.
 
 LEGACY_SCHEMA = (
     """CREATE TABLE stores (
@@ -157,6 +157,15 @@ def migrate_daily_refresh(connection):
     )""")
 
 
+def migrate_reports(connection):
+    connection.execute("""CREATE TABLE reports (
+        id TEXT PRIMARY KEY, request_json TEXT NOT NULL, payload_json TEXT NOT NULL
+    )""")
+    for action in ("UPDATE", "DELETE"):
+        connection.execute(f"""CREATE TRIGGER report_no_{action.lower()} BEFORE {action} ON reports
+            BEGIN SELECT RAISE(ABORT, 'Reports are immutable snapshots'); END""")
+
+
 class Database:
     def __init__(self, path: str | Path):
         self.path = str(path)
@@ -191,6 +200,9 @@ class Database:
                 version = 4
             if version == 4:
                 migrate_daily_refresh(connection)
+                version = 5
+            if version == 5:
+                migrate_reports(connection)
             if connection.execute("PRAGMA foreign_key_check").fetchone() is not None:
                 raise RuntimeError("Database migration failed foreign key validation")
             connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")

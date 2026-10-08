@@ -11,7 +11,7 @@ def snapshot(path):
 
 
 def make_v4(path):
-    with patch.object(database, 'SCHEMA_VERSION', 4), patch.object(database, 'migrate_daily_refresh', lambda _: None):
+    with patch.object(database, 'migrate_reports', lambda _: None), patch.object(database, 'SCHEMA_VERSION', 4), patch.object(database, 'migrate_daily_refresh', lambda _: None):
         db = database.Database(path)
     with db.connect() as connection:
         connection.execute("INSERT INTO refresh_runs(source_id,retailer,context_id,channel,idempotency_key,fingerprint,started_at,status,error) VALUES('fixture','wegmans',1,'in_store','before','fingerprint','2026-10-07T00:00:00+00:00','failed','source_timeout')")
@@ -27,7 +27,7 @@ def test_daily_schema_preserves_existing_run_and_upgrades_once(tmp_path):
     with upgraded.connect() as connection:
         assert dict(connection.execute('SELECT * FROM refresh_runs').fetchone()) == original
         assert connection.execute('SELECT * FROM scheduler_runs').fetchall() == []
-        assert connection.execute('PRAGMA user_version').fetchone()[0] == 5
+        assert connection.execute('PRAGMA user_version').fetchone()[0] == database.SCHEMA_VERSION
         assert connection.execute('PRAGMA foreign_key_check').fetchall() == []
     before=snapshot(path)
     database.Database(path)
@@ -46,4 +46,4 @@ def test_failed_daily_upgrade_rolls_back_and_retries(tmp_path):
         database.Database(path)
     assert snapshot(path) == before
     database.Database(path)
-    assert snapshot(path)[1] == 5
+    assert snapshot(path)[1] == database.SCHEMA_VERSION

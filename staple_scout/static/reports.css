@@ -1,0 +1,12 @@
+.reports-view { overflow-wrap: anywhere; }
+.reports-view h2 { margin-top: 0; }
+.report-policy { padding: 16px; background: var(--soft); color: var(--muted); }
+.report-store, .report-staple { margin: 20px 0; padding: 20px; background: #fff; border: 1px solid var(--line); border-radius: 8px; }
+.report-store h3, .report-staple h4 { margin-top: 0; }
+.report-offer { padding: 12px 0; border-top: 1px solid var(--line); }
+.report-offer h4, .report-offer p { margin: 6px 0; }
+.report-warning { color: #875126; }
+.reports-view summary { min-height: 44px; padding: 12px 0; cursor: pointer; font-weight: 700; }
+.reports-view fieldset { border: 1px solid var(--line); border-radius: 6px; }
+.reports-view a { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent); }
+@media (max-width: 620px) { .report-store, .report-staple { padding: 14px; } }

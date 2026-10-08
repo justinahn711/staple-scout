@@ -18,6 +18,7 @@ from .adapters import RefreshRequest
 from .ingestion import run_adapter, get_run, enrich_observations, RefreshConflict
 from .registry import default_sources
 from .scheduler import source_status
+from .reports import ReportRequest, generate_report, get_report
 from .comparison import compare
 from .database import Database, STORES, STORE_SELECT, as_record
 from .models import ObservationCreate, StapleCreate, StaplePatch, StorePatch, VariantCreate, MatchReview, Retailer, MatchStatus
@@ -293,6 +294,19 @@ def create_app(db_path: str | Path | None = None, *, adapters=None) -> FastAPI:
                     AND (? IS NULL OR o.context_id = ?) ORDER BY o.id
             """, (staple_id, staple_id, store_id, store_id, context_id, context_id))])
 
+    @app.post("/api/reports", status_code=201)
+    def report_create(body: ReportRequest):
+        return generate_report(database, body, sources=[
+            {"source_id":s.source_id,"retailer":s.retailer,"channels":sorted(s.channels),
+             "validated":s.validated} for s in app.state.adapters.values()])
+
+    @app.get("/api/reports/{report_id}")
+    def report_read(report_id: str):
+        report = get_report(database, report_id)
+        if report is None:
+            raise HTTPException(404, "Report not found")
+        return report
+
     @app.get("/api/comparisons")
     def comparisons(needed_only: bool = False,
                     stores: str | None = Query(default=None, description="Comma-separated store IDs. Omit to include every store."),
@@ -336,6 +350,7 @@ def create_app(db_path: str | Path | None = None, *, adapters=None) -> FastAPI:
     if (assets / "static").is_dir():
         app.mount("/static", StaticFiles(directory=assets / "static"), name="static")
 
+    @app.get("/reports/{report_id}", include_in_schema=False)
     @app.get("/", include_in_schema=False)
     def index():
         index_path = assets / "templates" / "index.html"

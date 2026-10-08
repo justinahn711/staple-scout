@@ -7,7 +7,7 @@ from staple_scout import database
 
 
 def version_three(path):
-    with patch.object(database, 'migrate_source_ingestion', lambda _: None), patch.object(database, 'SCHEMA_VERSION', 3), patch.object(database, 'migrate_daily_refresh', lambda _: None):
+    with patch.object(database, 'migrate_reports', lambda _: None), patch.object(database, 'migrate_source_ingestion', lambda _: None), patch.object(database, 'SCHEMA_VERSION', 3), patch.object(database, 'migrate_daily_refresh', lambda _: None):
         db = database.Database(path)
     with db.connect() as connection:
         connection.execute("INSERT INTO staples(name,basis,rules,needed,desired_quantity,desired_unit) VALUES('Rice','oz','plain',1,'32','oz')")
