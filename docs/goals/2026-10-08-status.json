@@ -39,7 +39,7 @@
       "branch": "issue-1-wegmans-research",
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-1",
       "pr": "https://github.com/justinahn711/staple-scout/pull/18",
-      "validation": "Source evidence verified; 54-test baseline CI passes. Live price access remains blocked separately in #9.",
+      "validation": "Original 54-test baseline research PR remains ready. Earlier HTML-only price-access blocker is superseded by public website JSON evidence, 254 tests and five-product live gate in PR31 (#9).",
       "blocker": null
     },
     {
@@ -149,16 +149,19 @@
       "number": 9,
       "title": "Implement the validated Wegmans price adapter",
       "url": "https://github.com/justinahn711/staple-scout/issues/9",
-      "status": "blocked",
+      "status": "PR ready",
       "dependencies": [
         1,
         8
       ],
-      "branch": null,
-      "worktree": null,
-      "pr": null,
-      "validation": null,
-      "blocker": "Website research has not yielded verified local pricing access. User has no existing API requests; further website investigation may proceed, but implementation requires supported price access. See PR18."
+      "branch": "issue-9-wegmans-adapter",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-9",
+      "pr": "https://github.com/justinahn711/staple-scout/pull/31",
+      "validation": "254 offline Python tests pass (54 Wegmans tests); independent review complete; five-product live smoke at 2026-10-08T13:18:22Z imported five traceable in-store observations into a disposable DB with all matches pending. Push and PR CI pass.",
+      "blocker": null,
+      "integration_base": "issue-15-daily-refresh",
+      "ci": "passed",
+      "head": "4452191"
     },
     {
       "number": 10,
