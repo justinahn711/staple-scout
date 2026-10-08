@@ -41,7 +41,12 @@ def compare(staple: dict, observations: list[dict], now: datetime | None = None)
         reasons = []
         if normalized is None:
             reasons.append("incompatible_dimension")
-        if not row["approved"]:
+        # Persistent match state is authoritative. The legacy observation flag
+        # is retained as historical input, never an override for a pending match.
+        if "match_status" in row:
+            if row["match_status"] != "approved":
+                reasons.append("match_rejected" if row["match_status"] == "rejected" else "not_approved")
+        elif not row["approved"]:
             reasons.append("not_approved")
         if not row["available"]:
             reasons.append("unavailable")

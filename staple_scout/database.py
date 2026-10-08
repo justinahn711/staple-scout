@@ -11,7 +11,7 @@ STORES = [
     ("hmart", "H Mart", "Centreville", "in_store", "not_connected", "Prices require manual observation."),
     ("lidl", "Lidl", "Unselected", "in_store", "not_connected", "Choose and record the local store before comparing prices."),
 ]
-SCHEMA_VERSION = 1  # Version 0 is the original unversioned schema.
+SCHEMA_VERSION = 2  # Version 0 is original; 1 adds contexts; 2 adds variants/matches.
 
 LEGACY_SCHEMA = (
     """CREATE TABLE stores (
@@ -85,6 +85,37 @@ def migrate_location_contexts(connection):
                 WHERE c.id = NEW.preferred_context_id AND c.store_id = NEW.id)
             BEGIN SELECT RAISE(ABORT, 'Preferred context must belong to this store'); END""")
 
+def migrate_product_matches(connection):
+    connection.execute("""CREATE TABLE product_variants (
+        id INTEGER PRIMARY KEY, retailer TEXT NOT NULL REFERENCES stores(id), retailer_product_id TEXT,
+        manual_identity TEXT, barcode TEXT, package_quantity TEXT NOT NULL,
+        package_unit TEXT NOT NULL, pack_count INTEGER NOT NULL, form TEXT NOT NULL,
+        UNIQUE(retailer, retailer_product_id, package_quantity, package_unit, pack_count, form),
+        UNIQUE(retailer, manual_identity, package_quantity, package_unit, pack_count, form),
+        CHECK((retailer_product_id IS NOT NULL) != (manual_identity IS NOT NULL)),
+        CHECK(length(trim(package_quantity)) > 0), CHECK(length(trim(form)) > 0)
+    )""")
+    connection.execute("""CREATE TABLE staple_matches (
+        id INTEGER PRIMARY KEY, staple_id INTEGER NOT NULL REFERENCES staples(id) ON DELETE CASCADE,
+        variant_id INTEGER NOT NULL REFERENCES product_variants(id) ON DELETE CASCADE,
+        status TEXT NOT NULL CHECK(status IN ('pending','approved','rejected')),
+        approved_at TEXT, UNIQUE(staple_id, variant_id)
+    )""")
+    connection.execute("CREATE TABLE observation_variants (observation_id INTEGER PRIMARY KEY REFERENCES observations(id) ON DELETE CASCADE, variant_id INTEGER NOT NULL REFERENCES product_variants(id))")
+    # Legacy rows deliberately get distinct manual identities: their names are ambiguous
+    # and must never become an implicit approval or accidentally merge history.
+    for row in connection.execute("SELECT id, store_id, id AS obs_id, product_name, quantity, unit, pack_count FROM observations").fetchall():
+        cur = connection.execute("""INSERT INTO product_variants
+            (retailer, manual_identity, package_quantity, package_unit, pack_count, form)
+            VALUES (?, ?, ?, ?, ?, ?)""", (row['store_id'], f"legacy-observation-{row['obs_id']}", row['quantity'], row['unit'], row['pack_count'], row['product_name']))
+        connection.execute("INSERT INTO observation_variants(observation_id, variant_id) VALUES (?, ?)", (row['id'], cur.lastrowid))
+        connection.execute("INSERT INTO staple_matches(staple_id, variant_id, status) VALUES (?, ?, 'pending')", (connection.execute("SELECT staple_id FROM observations WHERE id = ?", (row['id'],)).fetchone()[0], cur.lastrowid))
+
+    connection.execute("""CREATE TRIGGER variant_identity_immutable BEFORE UPDATE ON product_variants
+        BEGIN SELECT RAISE(ABORT, 'Product variants are immutable; create a new version'); END""")
+    connection.execute("""CREATE TRIGGER observation_variant_immutable BEFORE UPDATE ON observation_variants
+        BEGIN SELECT RAISE(ABORT, 'Observation identity is immutable'); END""")
+
 
 class Database:
     def __init__(self, path: str | Path):
@@ -108,9 +139,15 @@ class Database:
                 elif not {"stores", "staples", "observations"}.issubset(tables):
                     raise RuntimeError("Incomplete original database schema")
                 migrate_location_contexts(connection)
+                migrate_product_matches(connection)
                 if connection.execute("PRAGMA foreign_key_check").fetchone() is not None:
                     raise RuntimeError("Database migration failed foreign key validation")
                 connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
+            elif version == 1:
+                migrate_product_matches(connection)
+                if connection.execute("PRAGMA foreign_key_check").fetchone() is not None:
+                    raise RuntimeError("Database migration failed foreign key validation")
+                connection.execute("PRAGMA user_version = 2")
 
     @contextmanager
     def connect(self):

@@ -113,3 +113,45 @@ initializers serialize, successful upgrades are not rerun, and newer unsupported
 schema versions are refused. The original schema did not capture earlier
 location changes, so the migration cannot recover any such lost provenance.
 Existing JSON fields remain available; context and provenance fields are additive.
+
+## Product variants and match review
+
+`POST /api/variants` accepts `retailer`, exactly one of `retailer_product_id` or
+`manual_identity`, optional `barcode` (text), `package_quantity`, `package_unit`,
+`pack_count`, and `form`. Retailer product IDs are stable across listing renames.
+Manual identities are explicit and are never merged by name or barcode. `GET
+/api/variants` optionally filters by retailer; exact identity and package/form imports are idempotent and return the existing variant. Quantities are decimal strings and canonicalized, so `16.0` and `16` are the same configuration. Different package quantity/unit/count or form creates a new variant version with no inherited review.
+
+`GET /api/staples/{id}/matches` returns variant details and persistent `pending`,
+`approved`, or `rejected` status. `PUT /api/staples/{staple_id}/matches/{variant_id}`
+accepts `{"status":"approved"|"rejected"|"pending"}`. No match is inferred.
+Changing staple name, basis, or rules sets reviews to pending while retaining
+price history. Package/form changes require a new immutable variant and review.
+
+Schema version 2 adds variants, matches, and observation associations. Legacy
+observations retain IDs and all provenance; each receives a distinct pending
+manual identity. Migration is one transaction and rolls back on failure.
+
+`POST /api/observations` optionally accepts `variant_id`. Its retailer and package
+must match the observation; an inconsistent reference returns 422 without saving.
+With an explicit variant, `approved` is retained only as historical input: it
+cannot override pending/rejected match state. Once approved via the match-review
+endpoint, the review applies to later observations even when their `approved`
+input is false. Reviews store an aware UTC approval time.
+
+Omitting `variant_id` creates a new manual identity for this entry. In that case
+only, explicit `approved:true` records the user's review of the new product.
+Names and barcodes never merge manual entries. Reuse the returned `variant_id`
+to record a later price for the same product; repeated source imports must use an
+explicit retailer/manual identity. Every observation response and history record
+includes `variant_id` and current `match_status`. The original `approved` field
+is not the current review status. Comparison eligibility uses match state.
+
+Latest offers are selected per staple, variant, location context and channel,
+using observation time and ID. A renamed listing for the same variant supersedes
+its earlier price; a different package remains a separate variant. Existing
+legacy rows get separate pending manual matches, regardless of their historical
+approval flags, and require explicit review before winning. No price/source/date
+or location data is rewritten by this migration. Rule changes invalidate current
+reviews without removing product or price history. Variant identity/configuration
+and observation-to-variant assignments are immutable.
