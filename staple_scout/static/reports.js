@@ -3,7 +3,7 @@
   const esc = value => String(value ?? "").replace(/[&<>"']/g, c =>
     ({"&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"})[c]);
   const money = value => value == null ? "Unknown" : `$${esc(value)}`;
-  const human = value => String(value ?? "").replaceAll("_", " ");
+  const human = value => ({in_store:"Shelf",pickup:"Pickup",online:"Online reference"})[value] || String(value ?? "").replaceAll("_", " ");
   const date = value => value ? esc(new Date(value).toLocaleString()) : "Never";
   async function api(url, signal, body) {
     const response = await fetch(url, {signal, method: body ? "POST" : "GET",
@@ -29,7 +29,7 @@
         ${offer.id === group.purchase_cost_winner_id ? '<p><strong>Lowest whole-package outlay</strong></p>' : ""}
         ${!offer.eligible ? `<p class="report-warning">Excluded: ${esc(offer.exclusion_reasons.map(human).join("; "))}</p>` : ""}</article>`;
     }
-    function show(report) {
+    function show(report, focusHeading = true) {
       const comparisons = report.comparisons;
       const choiceCount = report.shopping.reduce((sum, store) => sum + store.choices.length, 0);
       const body = `<div class="reports-view"><h2 tabindex="-1">Weekly report</h2>
@@ -47,6 +47,7 @@
         ${comparisons.map(group => `<section class="report-staple"><h4>${esc(group.staple.name)}</h4>
           ${group.staple.desired_quantity ? `<p>Requested ${esc(group.staple.desired_quantity)} ${esc(group.staple.desired_unit)}</p>` : ""}
           ${group.gap ? `<p class="report-warning">Coverage gap: ${esc(human(group.gap))}</p>` : ""}
+          ${[...new Set(group.offers.flatMap(offer => offer.exclusion_reasons))].length ? `<p class="report-warning">Recorded-offer warnings: ${esc([...new Set(group.offers.flatMap(offer => offer.exclusion_reasons))].map(human).join("; "))}</p>` : ""}
           ${group.staple.desired_quantity && group.purchase_cost_winner_id == null ? '<p class="report-warning">No eligible exact package outlay.</p>' : ""}
           ${group.offers.length ? `<details><summary>Inspect ${group.offers.length} recorded offers and exclusions</summary>${group.offers.map(offer => offerHTML(offer, group)).join("")}</details>` : '<p>No observations at this cutoff.</p>'}</section>`).join("")}
         <h3>Observed package-price drops</h3>
@@ -56,10 +57,10 @@
           return `<p><strong>${esc(store.name)}</strong>: ${sources.length ? sources.map(source => `${esc(source.source_id)} · last attempt ${date(source.last_attempt?.started_at)} (${esc(source.last_attempt?.status || "none")}) · last success ${date(source.last_success?.finished_at)} · last failure ${date(source.last_failure?.finished_at)} ${esc(source.last_failure?.error || "")}`).join("; ") : "No connected source for this channel. Manual observations may qualify."}</p>`;
         }).join("")}</details></div>`;
       panel.innerHTML = body;
-      panel.querySelector("#new-report").onclick = () => loadForm();
-      panel.querySelector("h2")?.focus();
+      panel.querySelector("#new-report").onclick = () => loadForm(true);
+      if (focusHeading) panel.querySelector("h2")?.focus();
     }
-    async function loadForm() {
+    async function loadForm(focusHeading = options.focusHeading !== false) {
       const token = ++generation;
       panel.innerHTML = '<p role="status">Loading report inputs…</p>';
       try {
@@ -90,7 +91,7 @@
             submit.disabled = false; error.textContent = err.message; error.hidden = false; error.focus();
           }
         };
-        if (options.focusHeading !== false) panel.querySelector("h2")?.focus();
+        if (focusHeading) panel.querySelector("h2")?.focus();
       } catch (error) { if (alive(token)) fail(error, loadForm); }
     }
     function fail(error, retry) {
@@ -102,7 +103,7 @@
       panel.innerHTML = '<p role="status">Loading saved report…</p>';
       try {
         const report = await api(`/api/reports/${encodeURIComponent(options.reportID)}`,controller.signal);
-        if (alive(token)) show(report);
+        if (alive(token)) show(report, options.focusHeading !== false);
       } catch (error) { if (alive(token)) fail(error, loadSaved); }
     }
     if (options.reportID) loadSaved(); else loadForm();

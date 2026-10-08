@@ -5,8 +5,8 @@
     errors = document.querySelector("#error-region");
   let disposeView = null;
   const state = {
-    tab: ["staples", "stores", "price", "matches", "compare", "shopping"].includes(location.hash.slice(1))
-      ? location.hash.slice(1) : "staples",
+    tab: ["staples", "stores", "price", "matches", "compare", "shopping", "report"].includes(location.hash.slice(1))
+      ? location.hash.slice(1) : /^\/reports\/[a-f0-9]{64}$/.test(location.pathname) ? "report" : "staples",
     staples: [],
     stores: [],
     token: 0,
@@ -105,6 +105,7 @@
       t.tabIndex = t.dataset.tab === state.tab ? 0 : -1;
       panel.setAttribute("aria-labelledby", `tab-${state.tab}`);
     });
+    document.querySelector(".tab.active")?.scrollIntoView({block: "nearest", inline: "nearest"});
     ({
       staples: staplesView,
       stores: storesView,
@@ -112,7 +113,16 @@
       matches: matchesView,
       compare: () => comparisonsView(false),
       shopping: () => comparisonsView(true),
+      report: reportView,
     })[state.tab]();
+  }
+  function reportView() {
+    ++state.token;
+    clear();
+    disposeView = window.StapleReports.mount(panel, {
+      reportID: /^\/reports\/[a-f0-9]{64}$/.test(location.pathname) ? location.pathname.split("/").pop() : null,
+      focusHeading: !state.keepTabFocus,
+    });
   }
   function comparisonsView(shopping) {
     ++state.token;

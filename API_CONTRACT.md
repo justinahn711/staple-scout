@@ -306,3 +306,11 @@ source evidence, other HTTP errors and invalid configurations are not retried.
 ## Comparison and shopping screens
 
 The local shell adds Compare prices and This week tabs. Both use explicit shelf/pickup, planned-store and needed filters. An empty store selection never silently expands to all stores. Offer eligibility and both winner IDs come from the API; the frontend does not rank prices. Shopping groups unit-price winners and keeps coverage gaps visible. Source attempts/success/failures are filtered to the selected channel and preferred location. Online H Mart remains separate. No retail refresh is triggered by opening these screens.
+
+## Saved weekly reports (schema v6)
+
+The chosen format is a local web report; opening or generating one sends no notifications and fetches no retail prices. `POST /api/reports` accepts an aware, nonfuture `as_of`, 1–5 unique `stores`, shelf `in_store` or `pickup` channel, and `needed_only` (default true). `GET /api/reports/{id}` returns the saved result; `/reports/{id}` opens the web view.
+
+The first normalized request freezes current staple requirements, approvals and preferred contexts with cutoff-scoped recorded evidence. Repeating the same UTC cutoff, sorted stores, channel and need filter returns that identical saved snapshot even after later edits/deletions. This does **not** reconstruct historical user settings. Manual rows use observation time; imports additionally require source retrieval and successful run completion at or before the cutoff. Future source state cannot retroactively suppress an older report. Freshness and validity are evaluated at the cutoff.
+
+Reports retain comparisons, explicit exclusions and gaps, selected contexts, source-health attempt/success/failure, eligible unit-price choices grouped by store, and separate exact package-outlay choices. Price drops compare the latest eligible observation against its immediately previous observation for the same variant, staple, context, channel and source. The earlier price must be available, fixed-size and unconditional with applicable terms. Different packages/channels/locations and guessed reference prices never produce a drop or aggregate savings. Snapshot schema/version and original observation IDs make each claim auditable. Report rows are immutable and independent of deleted staple foreign keys.
