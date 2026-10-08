@@ -211,3 +211,94 @@ review endpoints. Forms preserve values after validation/network errors and show
 pending/success/error states. Requirement edits explain reapproval; deletion
 requires an in-page confirmation describing its history consequence. No sample
 prices, fabricated substitutes, source login or background fetch is introduced.
+## Explicit source refreshes (schema v4)
+
+`create_app(db_path=None, adapters=None)` accepts a server-owned registry of
+`AdapterRegistration` values. The default registry is empty in this foundational
+change; no retailer is automatically fetched or marked connected. A registration
+requires an explicit verification gate, permitted channels, seller allowlist and
+HTTP timeout (at most 30 seconds). This is not a client-controlled approval field.
+
+`GET /api/sources` lists registered identities/channels and validation status.
+`POST /api/refresh` accepts `source_id`, exact immutable `context_id`, `channel`,
+`requests: [{staple_id, retailer_product_id}]` (1–50), and `idempotency_key`.
+Context ownership and staple existence are checked before fetching. The selected
+context remains exact even when a store's preferred context changes. Online
+reference sources must use an online context rather than claiming a local shelf.
+
+A source returns bounded, runtime-validated `OfferEvidence`: stable record and
+retailer product IDs, barcode text if supplied, decimal price and package quantity
+(or explicit null), unit, pack count, form, stock (true/false/unknown), seller,
+channel/location ID, aware observed/retrieved times, public source URL, conditions
+and optional validity window. Currency is USD. Binary floating-point money,
+invalid/future timestamps, credential-bearing URLs, mismatched seller/location/
+channel/product, conflicting records and oversized results fail the whole source
+batch. Unknown fields cannot silently become prices or zero-sized packages.
+Adapters must pass the bounded timeout to their HTTP client; there are no retries
+or background fetches in this change.
+
+Refresh responses and `GET /api/refresh-runs[?source_id=...&limit=50]` or
+`GET /api/refresh-runs/{id}` expose separate attempt/finish timestamps, safe error
+codes and per-record validated evidence. Status is `running`, `succeeded`,
+`partial` (unknown fields or requested records omitted), or `failed`. Unknown
+price/quantity/availability remains an `unresolved` result, not a made-up
+observation. Explicit false stock is `unavailable`. Source validity does not
+change stock: an expired offer may be accepted as evidence but is excluded from
+comparison with `offer_expired` (or `offer_not_started` before its valid window).
+
+Repeated identical keys return the original outcome without fetching or inserting
+again; reusing a key for another request returns 409. A new key records a new
+measurement even when its price is unchanged. Network/storage failures preserve
+all prior observations and source results; errors never store retailer exception
+text. Each source is independent, so its failure cannot roll back another source.
+
+Imports create/reuse an exact immutable retailer/package/form variant and pending
+matches only for the explicitly requested staples. Approval is never inferred
+from titles or barcodes; existing review remains authoritative for the same
+variant. A changed package creates a new pending version. Barcode identity
+conflicts fail safely. Imported observations/history expose original `source_id`,
+`source_record_id`, `retrieved_at`, seller and validity metadata. Latest successful
+source product state excludes older automatic offers after changed/unknown
+packages, unknown prices/stock, or explicit unavailability. Failed attempts do
+not refresh old observation timestamps or affect eligibility. Manual evidence
+retains its separate provenance.
+
+Schema v4 adds run/result/import-link tables atomically. Existing manual prices,
+reviews, contexts and desired quantities are unchanged; failed upgrades roll back
+and can be retried. This foundation does not verify or enable any retailer source,
+activate a scheduler, approve matches, or read receipts.
+
+### H Mart online capability
+
+The default registry now includes verified `hmart_online`, supporting only
+`online` evidence from seller `HMart - US`. App startup never fetches. Configure
+an explicit H Mart online context with `location_id:null`, then request selected
+`productId:itemId` identities. Source URLs refer to the public exact-product
+endpoint. The existing Centreville context and shelf/pickup source remain
+unverified; `stores.source_status` does not imply online stock verifies a shelf.
+`GET /api/sources` is the authoritative per-source channel capability list.
+See `docs/research/hmart.md` for captured evidence, smoke results, conservative
+package/form handling and incomplete category/produce coverage.
+
+## Daily refresh and source status (schema v5)
+
+`python -m staple_scout.scheduler --db <path> --config <json>` explicitly invokes
+the validated-source daily runner. `--dry-run` validates structure without HTTP
+or a claim; `--status` reads registered source attempt/success/failure status.
+Manual and launchd invocations share one durable UTC-day claim per database and a
+retained flock sidecar. Fifty requests total, five entries, at most three
+transient attempts with bounded backoff. No force flag, automatic source login,
+job installation/activation or notification delivery. See `docs/scheduling.md`.
+
+`GET /api/source-status[?context_id=...&channel=...]` returns one entry per
+registered source: `source_id`, `last_attempt`, `last_success`, `last_failure`.
+Each nonnull status includes run ID, context, channel, attempt/finish timestamps,
+status and safe error code. Last success requires accepted/unavailable source
+evidence; an entirely unresolved partial fetch does not replace it. Attempt
+success does not rewrite observed price timestamps or verify a local channel.
+
+Schema v5 adds durable day-claim state atomically and preserves all source/manual
+history. After a crash, that day's unfinished claim remains visible and cached;
+the next day can run once the process lock releases. HTTP429/5xx, transport errors
+and timeouts have classified transient codes for bounded retries; malformed
+source evidence, other HTTP errors and invalid configurations are not retried.

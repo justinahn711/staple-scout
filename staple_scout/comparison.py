@@ -76,6 +76,12 @@ def compare(staple: dict, observations: list[dict], now: datetime | None = None,
     for row in observations:
         normalized = unit_price(row, staple["basis"])
         reasons = []
+        if row.get('source_exclusion'):
+            reasons.append(row['source_exclusion'])
+        if row.get('valid_from') and now < datetime.fromisoformat(row['valid_from']):
+            reasons.append('offer_not_started')
+        if row.get('valid_until') and now >= datetime.fromisoformat(row['valid_until']):
+            reasons.append('offer_expired')
         if normalized is None:
             reasons.append("incompatible_dimension")
         if row.get("quantity_kind", "fixed") != "fixed":
