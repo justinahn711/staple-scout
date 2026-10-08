@@ -11,7 +11,7 @@ STORES = [
     ("hmart", "H Mart", "Centreville", "in_store", "not_connected", "Prices require manual observation."),
     ("lidl", "Lidl", "Unselected", "in_store", "not_connected", "Choose and record the local store before comparing prices."),
 ]
-SCHEMA_VERSION = 2  # Version 0 is original; 1 adds contexts; 2 adds variants/matches.
+SCHEMA_VERSION = 3
 
 LEGACY_SCHEMA = (
     """CREATE TABLE stores (
@@ -116,6 +116,17 @@ def migrate_product_matches(connection):
     connection.execute("""CREATE TRIGGER observation_variant_immutable BEFORE UPDATE ON observation_variants
         BEGIN SELECT RAISE(ABORT, 'Observation identity is immutable'); END""")
 
+def migrate_ingestion(connection):
+    connection.execute("""CREATE TABLE refresh_runs (
+        id INTEGER PRIMARY KEY, retailer TEXT NOT NULL REFERENCES stores(id), context_id INTEGER NOT NULL,
+        started_at TEXT NOT NULL, finished_at TEXT, status TEXT NOT NULL CHECK(status IN ('running','succeeded','failed')),
+        error TEXT, UNIQUE(retailer, started_at)
+    )""")
+    connection.execute("""CREATE TABLE refresh_results (
+        id INTEGER PRIMARY KEY, run_id INTEGER NOT NULL REFERENCES refresh_runs(id) ON DELETE CASCADE,
+        retailer_product_id TEXT, status TEXT NOT NULL, error TEXT, observation_id INTEGER REFERENCES observations(id)
+    )""")
+
 
 class Database:
     def __init__(self, path: str | Path):
@@ -148,6 +159,12 @@ class Database:
                 if connection.execute("PRAGMA foreign_key_check").fetchone() is not None:
                     raise RuntimeError("Database migration failed foreign key validation")
                 connection.execute("PRAGMA user_version = 2")
+                version = 2
+            if version == 2:
+                migrate_ingestion(connection)
+                if connection.execute("PRAGMA foreign_key_check").fetchone() is not None:
+                    raise RuntimeError("Database migration failed foreign key validation")
+                connection.execute("PRAGMA user_version = 3")
 
     @contextmanager
     def connect(self):
