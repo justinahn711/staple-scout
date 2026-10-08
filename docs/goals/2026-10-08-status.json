@@ -20,7 +20,7 @@
     16
   ],
   "scope_snapshot": "2026-10-08-initial-issues.json",
-  "goal_status": "active",
+  "goal_status": "blocked",
   "states": [
     "pending",
     "working",
@@ -273,5 +273,15 @@
       "blocker": null
     }
   ],
-  "continuation_requires_input": true
+  "continuation_requires_input": true,
+  "blocked_audit": {
+    "checked_at": "2026-10-08T13:32:07.537018+00:00",
+    "consecutive_turns_with_same_blocking_conditions": 3,
+    "conditions": [
+      "In-app browser input cannot change enabled visible Pickup control; old test-tab dialog is not available through supported dismissal API. Final interaction gates for issues3/12/5 remain unverified.",
+      "Target and Walmart require verified local source access; human-verification barriers remain and five-product local gates are missing."
+    ],
+    "independent_work": "Completed while blockers persisted: Wegmans adapter/full historical fixtures and isolated Walmart checkpoint. No pending/working issues remain.",
+    "outcome": "11 issues PR ready; 5 blocked; fixed scope unchanged; no PR merged; goal not complete."
+  }
 }
