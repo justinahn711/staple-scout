@@ -25,7 +25,9 @@ their separate validation gates; see each research PR for its current evidence.
 See [Wegmans evidence and limits](research/wegmans.md) for the observed public
 website request, five-product fixture, stock/promotion/weight semantics and
 explicit disposable-database live smoke command. The developer portal is not
-needed for this validated website path. No physical shelf verification is claimed.
+needed for this validated website path. No physical shelf verification or recurring-access permission is claimed.
+The historical issue1 report and all original research fixtures are retained
+separately from the newer JSON price evidence.
 
 ## Walmart
 

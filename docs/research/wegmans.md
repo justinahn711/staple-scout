@@ -8,6 +8,10 @@ login, browser automation at refresh time, or challenge bypass. This is an
 observed website interface, not a claim of an officially documented developer
 API or a permanent access guarantee. Earlier research in PR18 found no prices
 in initial HTML; the client-rendered product request supplies this new evidence.
+The [historical October6 report](wegmans-html-20261006.md) and all eight original
+research fixtures are preserved. Regression tests replay those projections and
+diagnostics as negative cases: none can become price evidence, and the five
+source barcode strings remain unchanged.
 
 The [store JSON](https://www.wegmans.com/api/stores/store-number/133) confirms
 storeNumber/id133, name Chantilly, 14361 Newbrook Drive, Chantilly VA20151.
@@ -91,8 +95,11 @@ or replaced SKUs require explicit selection and review; the unavailable milk
 is not silently substituted with a different product. Website contracts can
 change. The adapter uses httpx with a bounded timeout and has no embedded keys,
 login, automatic retries, search/discovery, browser fallback or background fetch.
-The daily runner can opt into this verified source using explicit staple/product
-pairs; it is not activated by installing or starting the app.
+The daily runner supports explicit staple/product pairs, but installing or
+starting the app never activates it. Public readability verifies the data
+contract, not permission for recurring extraction. The historical report records
+site usage restrictions and the unresolved supported recurring-access question.
+No recurring retailer fetch was installed or activated.
 
 ## Explicit live validation
 

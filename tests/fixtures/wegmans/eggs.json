@@ -1,0 +1,42 @@
+{
+  "fixture_kind": "sanitized_public_html_projection_not_api_response",
+  "source_url": "https://www.wegmans.com/shop/product/80133-Grade-AA-Large-Eggs-12-Count",
+  "requested_at": "2026-10-06T11:33:27.462815+00:00",
+  "retrieved_at": "2026-10-06T11:33:27.699036+00:00",
+  "http_status": 200,
+  "final_url": "https://www.wegmans.com/shop/product/80133-Grade-AA-Large-Eggs-12-Count",
+  "content_type": "text/html; charset=utf-8",
+  "raw_response_sha256": "0fe36896bfb7d0a907143409c67163fd621dfc1b9276edf4dcad07ca07f131ba",
+  "json_ld_product_projection": {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": "Wegmans Grade AA Large Eggs, 12 Count",
+    "brand": {
+      "@type": "Brand",
+      "name": "Wegmans"
+    },
+    "sku": "80133",
+    "gtin13": "00077890801338",
+    "category": "Dairy",
+    "url": "/shop/product/80133-Grade-AA-Large-Eggs-12-Count"
+  },
+  "visible_text_excerpt": [
+    "Wegmans Grade AA Large Eggs, 12 Count",
+    "12 ct."
+  ],
+  "json_ld_original_keys": [
+    "@context",
+    "@type",
+    "aggregateRating",
+    "brand",
+    "category",
+    "description",
+    "gtin13",
+    "image",
+    "name",
+    "sku",
+    "url"
+  ],
+  "json_ld_has_offers": false,
+  "page_mode_label": "In Store"
+}

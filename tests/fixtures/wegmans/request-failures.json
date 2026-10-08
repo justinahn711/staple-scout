@@ -1,0 +1,44 @@
+{
+  "fixture_kind": "local_request_diagnostics_not_retailer_response",
+  "sandbox_attempts": [
+    {
+      "url": "https://developer.wegmans.io/",
+      "retrieved_at": "2026-10-06T11:32:20.785652+00:00",
+      "error": "URLError",
+      "detail": "<urlopen error [Errno 8] nodename nor servname provided, or not known>"
+    },
+    {
+      "url": "https://www.wegmans.com/stores/chantilly-va",
+      "retrieved_at": "2026-10-06T11:32:20.786270+00:00",
+      "error": "URLError",
+      "detail": "<urlopen error [Errno 8] nodename nor servname provided, or not known>"
+    },
+    {
+      "url": "https://www.wegmans.com/shop/product/94427-Milk-Vitamin-D-Whole",
+      "retrieved_at": "2026-10-06T11:32:20.786556+00:00",
+      "error": "URLError",
+      "detail": "<urlopen error [Errno 8] nodename nor servname provided, or not known>"
+    }
+  ],
+  "python_tls_attempts": [
+    {
+      "url": "https://developer.wegmans.io/",
+      "retrieved_at": "2026-10-06T11:32:48.246177+00:00",
+      "error": "URLError",
+      "detail": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self-signed certificate in certificate chain (_ssl.c:1081)>"
+    },
+    {
+      "url": "https://www.wegmans.com/stores/chantilly-va",
+      "retrieved_at": "2026-10-06T11:32:48.246589+00:00",
+      "error": "URLError",
+      "detail": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)>"
+    },
+    {
+      "url": "https://www.wegmans.com/shop/product/94427-Milk-Vitamin-D-Whole",
+      "retrieved_at": "2026-10-06T11:32:48.246656+00:00",
+      "error": "URLError",
+      "detail": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)>"
+    }
+  ],
+  "resolution": "System curl succeeded with TLS verification enabled. These local failures do not show retailer denial."
+}

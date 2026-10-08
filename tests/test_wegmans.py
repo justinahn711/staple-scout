@@ -170,3 +170,22 @@ def test_bad_cache_metadata_fails(headers):
 def test_http_error_propagates_without_browser_fallback():
     with pytest.raises(httpx.HTTPStatusError):
         adapter(status=403).fetch(CTX, [IDS[0]], timeout=2)
+
+
+@pytest.mark.parametrize('fixture_name', ['milk', 'eggs', 'chicken', 'rice', 'bananas', 'store', 'portal', 'request-failures'])
+def test_historical_research_cannot_be_used_as_store_price_evidence(fixture_name):
+    historical = json.loads((Path(__file__).parent / f'fixtures/wegmans/{fixture_name}.json').read_text())
+    projection = historical.get('json_ld_product_projection', historical)
+    if 'sku' in projection:
+        canonical = next(row for row in RAW if row['skuId'] == projection['sku'])
+        assert historical['json_ld_has_offers'] is False
+        assert 'offers' not in historical['json_ld_original_keys']
+        # The oddly named JSON-LD gtin13 values are 14-digit source text, unchanged.
+        assert projection['gtin13'] == canonical['upc'][0]
+        assert isinstance(projection['gtin13'], str) and len(projection['gtin13']) == 14
+        assert 'price_inStore' not in projection and 'isAvailable' not in projection
+    # Sanitized HTML projections/diagnostics are deliberately incompatible with
+    # the observed JSON contract, even when a product and In Store label exist.
+    transport = httpx.MockTransport(lambda request: httpx.Response(200, json=projection))
+    with pytest.raises(ValueError):
+        WegmansAdapter(transport=transport).fetch(CTX, [projection.get('sku', '94427')], timeout=2)
