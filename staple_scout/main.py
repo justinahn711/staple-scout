@@ -14,15 +14,19 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from pydantic import ValidationError
 
+from .adapters import RefreshRequest
+from .ingestion import run_adapter, get_run, enrich_observations, RefreshConflict
+from .registry import default_sources
 from .comparison import compare
 from .database import Database, STORES, STORE_SELECT, as_record
 from .models import ObservationCreate, StapleCreate, StaplePatch, StorePatch, VariantCreate, MatchReview, Retailer, MatchStatus
 
 
-def create_app(db_path: str | Path | None = None) -> FastAPI:
+def create_app(db_path: str | Path | None = None, *, adapters=None) -> FastAPI:
     database = Database(db_path or os.environ.get("STAPLE_SCOUT_DB", "data/staple-scout.sqlite3"))
     app = FastAPI(title="Staple Scout", version="0.1.0", description="Local, manually observed grocery comparisons. Automated sources are not connected. Approval confirms a product satisfies your staple rules; it does not verify its price.")
     app.state.database = database
+    app.state.adapters = dict(default_sources() if adapters is None else adapters)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "[::1]"])
 
     @app.middleware("http")
@@ -48,6 +52,40 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
     @app.get("/api/health")
     def health():
         return {"status": "ok"}
+
+    @app.get("/api/sources")
+    def sources():
+        return [{"source_id": source.source_id, "retailer": source.retailer,
+                 "channels": sorted(source.channels), "validated": source.validated}
+                for source in app.state.adapters.values()]
+
+    @app.post("/api/refresh")
+    def refresh(body: RefreshRequest):
+        source = app.state.adapters.get(body.source_id)
+        if source is None:
+            raise HTTPException(404, "Unknown source")
+        try:
+            return run_adapter(database, source, body.context_id, body.channel,
+                               body.requests, body.idempotency_key)
+        except RefreshConflict as exc:
+            raise HTTPException(409, str(exc)) from None
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from None
+
+    @app.get("/api/refresh-runs")
+    def refresh_runs(source_id: str | None = None, limit: int = Query(default=50, ge=1, le=100)):
+        with database.connect() as connection:
+            return [get_run(connection, row['id']) for row in connection.execute(
+                "SELECT id FROM refresh_runs WHERE (? IS NULL OR source_id=?) ORDER BY id DESC LIMIT ?",
+                (source_id, source_id, limit))]
+
+    @app.get("/api/refresh-runs/{run_id}")
+    def refresh_run(run_id: int):
+        with database.connect() as connection:
+            result = get_run(connection, run_id)
+            if result is None:
+                raise HTTPException(404, "Refresh run not found")
+            return result
 
     @app.get("/api/stores")
     def stores():
@@ -236,7 +274,7 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
         if store_id is not None and store_id not in {row[0] for row in STORES}:
             raise HTTPException(422, "Unknown store ID")
         with database.connect() as connection:
-            return [as_record(row) for row in connection.execute("""
+            return enrich_observations(connection, [as_record(row) for row in connection.execute("""
                 SELECT o.*, ov.variant_id, COALESCE(sm.status, 'pending') AS match_status, v.retailer_product_id, v.manual_identity,
                     v.barcode, c.location AS store_location, c.location_id,
                     c.location_status, c.location_status != 'unconfigured' AS location_configured
@@ -245,7 +283,7 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
                     LEFT JOIN product_variants v ON v.id=ov.variant_id JOIN location_contexts c ON c.id = o.context_id
                 WHERE (? IS NULL OR o.staple_id = ?) AND (? IS NULL OR o.store_id = ?)
                     AND (? IS NULL OR o.context_id = ?) ORDER BY o.id
-            """, (staple_id, staple_id, store_id, store_id, context_id, context_id))]
+            """, (staple_id, staple_id, store_id, store_id, context_id, context_id))])
 
     @app.get("/api/comparisons")
     def comparisons(needed_only: bool = False,
@@ -277,6 +315,7 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
                 WHERE ranked.rank = 1 AND (? OR ranked.context_id = stores.preferred_context_id)
                 ORDER BY ranked.id
             """, (include_previous_contexts,)).fetchall()
+            rows = enrich_observations(connection, rows)
         grouped = {}
         for row in rows:
             if row["store_id"] in selected:

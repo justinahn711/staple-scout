@@ -343,7 +343,7 @@ def test_version_one_upgrade_and_match_migration_rollback(legacy_path, monkeypat
     monkeypatch.setattr(database, 'migrate_product_matches', migrate)
     db = database.Database(legacy_path)
     with db.connect() as connection:
-        assert connection.execute('PRAGMA user_version').fetchone()[0] == 3
+        assert connection.execute('PRAGMA user_version').fetchone()[0] == database.SCHEMA_VERSION
         assert connection.execute('PRAGMA foreign_key_check').fetchall() == []
         assert connection.execute("SELECT count(*) FROM staple_matches WHERE status='pending'").fetchone()[0] == 4
     final = snapshot(legacy_path)
