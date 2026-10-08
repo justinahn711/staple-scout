@@ -151,6 +151,7 @@ class Database:
                     raise RuntimeError("Incomplete original database schema")
                 migrate_location_contexts(connection)
                 migrate_product_matches(connection)
+                migrate_ingestion(connection)
                 if connection.execute("PRAGMA foreign_key_check").fetchone() is not None:
                     raise RuntimeError("Database migration failed foreign key validation")
                 connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
