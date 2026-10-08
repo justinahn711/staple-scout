@@ -31,3 +31,13 @@ This checkpoint documents the exact missing prerequisite; it is not a fallback
 adapter. No Walmart source registration, job activation or real-database test
 was added. Relevant fixture metadata and whitespace were checked; baseline
 backend tests remain separate from proof of a viable local source.
+
+## Resumed access check — October8 evening
+
+One normal unauthenticated GET to the same documented public store URL at
+21:07:04Z again redirected to `/blocked`; no public catalog lead or local
+product-price evidence was obtained. The earlier sanitized challenge fixture
+remains historical evidence; it is not restamped as a new price observation.
+Issue10 remains blocked on the same five-product local pickup source gate.
+No challenge was solved or bypassed, no other endpoint was probed, and no
+Walmart adapter was enabled.
