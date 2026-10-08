@@ -87,7 +87,7 @@ def migrate_location_contexts(connection):
 
 def migrate_product_matches(connection):
     connection.execute("""CREATE TABLE product_variants (
-        id INTEGER PRIMARY KEY, retailer TEXT NOT NULL, retailer_product_id TEXT,
+        id INTEGER PRIMARY KEY, retailer TEXT NOT NULL REFERENCES stores(id), retailer_product_id TEXT,
         manual_identity TEXT, barcode TEXT, package_quantity TEXT NOT NULL,
         package_unit TEXT NOT NULL, pack_count INTEGER NOT NULL, form TEXT NOT NULL,
         UNIQUE(retailer, retailer_product_id, package_quantity, package_unit, pack_count, form),
@@ -110,6 +110,11 @@ def migrate_product_matches(connection):
             VALUES (?, ?, ?, ?, ?, ?)""", (row['store_id'], f"legacy-observation-{row['obs_id']}", row['quantity'], row['unit'], row['pack_count'], row['product_name']))
         connection.execute("INSERT INTO observation_variants(observation_id, variant_id) VALUES (?, ?)", (row['id'], cur.lastrowid))
         connection.execute("INSERT INTO staple_matches(staple_id, variant_id, status) VALUES (?, ?, 'pending')", (connection.execute("SELECT staple_id FROM observations WHERE id = ?", (row['id'],)).fetchone()[0], cur.lastrowid))
+
+    connection.execute("""CREATE TRIGGER variant_identity_immutable BEFORE UPDATE ON product_variants
+        BEGIN SELECT RAISE(ABORT, 'Product variants are immutable; create a new version'); END""")
+    connection.execute("""CREATE TRIGGER observation_variant_immutable BEFORE UPDATE ON observation_variants
+        BEGIN SELECT RAISE(ABORT, 'Observation identity is immutable'); END""")
 
 
 class Database:

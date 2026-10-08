@@ -1,3 +1,4 @@
+from decimal import Decimal
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 import sqlite3
@@ -28,12 +29,16 @@ def add_observation(client, staple_id, **fields):
         "observed_at": (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat(),
         "approved": True, **fields,
     }
-    body.update(fields)
-    for v in client.get('/api/variants').json():
-        if v.get('manual_identity') and v['retailer']=='wegmans' and v['package_quantity']==body['quantity'] and v['package_unit']==body['unit'] and v['pack_count']==body['pack_count'] and v['form']==body['product_name']:
-            body.setdefault('variant_id', v['id']); break
+    # These fixtures explicitly reuse a product identity for refresh scenarios.
+    key = (staple_id, body["store_id"], body["product_name"], Decimal(body["quantity"]),
+           body["unit"], body.get("pack_count", 1))
+    identities = getattr(client, "test_variant_ids", {})
+    if key in identities:
+        body.setdefault("variant_id", identities[key])
     response = client.post("/api/observations", json=body)
     assert response.status_code == 201, response.text
+    identities[key] = response.json()["variant_id"]
+    client.test_variant_ids = identities
     return response.json()
 
 
@@ -240,14 +245,18 @@ def test_original_database_migrates_preserving_data_and_reopens_idempotently(leg
     migrated = snapshot(legacy_path)
     database.Database(legacy_path)
     assert snapshot(legacy_path) == migrated
-        with TestClient(create_app(legacy_path), base_url="http://localhost") as client:
-            result = client.get("/api/comparisons").json()[0]
-            assert result["winner_id"] is None
-            pending = client.get('/api/staples/1/matches').json()
-            assert pending and pending[0]['status'] == 'pending'
-            assert client.put(f"/api/staples/1/matches/{pending[0]['variant_id']}", json={'status':'approved'}).status_code == 200
-            assert client.get("/api/comparisons").json()[0]["winner_id"] == 11
-        assert next(o for o in result["offers"] if o["id"] == 13)["exclusion_reasons"] == ["location_not_configured"]
+    with TestClient(create_app(legacy_path), base_url="http://localhost") as client:
+        result = client.get("/api/comparisons").json()[0]
+        assert result["winner_id"] is None
+        history = client.get('/api/observations').json()
+        assert len({o['variant_id'] for o in history}) == len(history)
+        assert all(o['match_status'] == 'pending' for o in history)
+        pending = client.get('/api/staples/7/matches').json()
+        assert len(pending) == 4 and all(m['status'] == 'pending' for m in pending)
+        winner_variant = next(o['variant_id'] for o in history if o['id'] == 11)
+        assert client.put(f"/api/staples/7/matches/{winner_variant}", json={'status':'approved'}).status_code == 200
+        assert client.get("/api/comparisons").json()[0]["winner_id"] == 11
+        assert next(o for o in result["offers"] if o["id"] == 13)["exclusion_reasons"] == ["not_approved", "location_not_configured"]
         assert next(o for o in result["offers"] if o["id"] == 14)["channel"] == "online"
         select_other(client)
         assert client.get("/api/observations?store_id=wegmans").json()[0]["store_location"] == "Chantilly #133"
@@ -311,3 +320,32 @@ def test_database_enforces_immutable_context_and_store_ownership(legacy_path):
     ):
         with pytest.raises(sqlite3.IntegrityError), db.connect() as connection:
             connection.execute(statement)
+
+
+def test_version_one_upgrade_and_match_migration_rollback(legacy_path, monkeypatch):
+    # Build the previously released v1 schema, then exercise v1 -> v2 itself.
+    with sqlite3.connect(legacy_path) as connection:
+        connection.row_factory = sqlite3.Row
+        connection.execute("BEGIN IMMEDIATE")
+        database.migrate_location_contexts(connection)
+        connection.execute("PRAGMA user_version = 1")
+    original = snapshot(legacy_path)
+    migrate = database.migrate_product_matches
+
+    def fail_after_matches(connection):
+        migrate(connection)
+        raise RuntimeError("Injected match migration failure")
+
+    monkeypatch.setattr(database, 'migrate_product_matches', fail_after_matches)
+    with pytest.raises(RuntimeError, match='Injected match'):
+        database.Database(legacy_path)
+    assert snapshot(legacy_path) == original
+    monkeypatch.setattr(database, 'migrate_product_matches', migrate)
+    db = database.Database(legacy_path)
+    with db.connect() as connection:
+        assert connection.execute('PRAGMA user_version').fetchone()[0] == 2
+        assert connection.execute('PRAGMA foreign_key_check').fetchall() == []
+        assert connection.execute("SELECT count(*) FROM staple_matches WHERE status='pending'").fetchone()[0] == 4
+    final = snapshot(legacy_path)
+    database.Database(legacy_path)
+    assert snapshot(legacy_path) == final

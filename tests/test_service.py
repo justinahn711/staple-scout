@@ -28,11 +28,16 @@ def staple(client, **overrides):
 
 def observation(client, staple_id, **overrides):
     body = {"staple_id": staple_id, "store_id": "wegmans", "product_name": "Oats", "price": "6.00", "quantity": "12", "unit": "oz", "pack_count": 2, "channel": "in_store", "observed_at": (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat(), "available": True, "approved": True, **overrides}
-    variants = client.get('/api/variants').json()
-    match = next((v for v in variants if v['retailer']=='wegmans' and v.get('manual_identity') and v['package_quantity']==body['quantity'] and v['package_unit']==body['unit'] and v['pack_count']==body['pack_count'] and v['form']==body['product_name']), None)
-    if match and 'variant_id' not in body: body['variant_id'] = match['id']
+    # These fixtures explicitly reuse a product identity for refresh scenarios.
+    key = (staple_id, body["store_id"], body["product_name"], Decimal(body["quantity"]),
+           body["unit"], body.get("pack_count", 1))
+    identities = getattr(client, "test_variant_ids", {})
+    if key in identities:
+        body.setdefault("variant_id", identities[key])
     response = client.post("/api/observations", json=body)
     assert response.status_code == 201, response.text
+    identities[key] = response.json()["variant_id"]
+    client.test_variant_ids = identities
     return response.json()
 
 

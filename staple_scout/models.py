@@ -10,6 +10,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 Basis = Literal["oz", "fl_oz", "each"]
 Unit = Literal["oz", "lb", "g", "kg", "fl_oz", "ml", "l", "each"]
 Channel = Literal["in_store", "pickup", "online"]
+Retailer = Literal["wegmans", "walmart", "target", "hmart", "lidl"]
+MatchStatus = Literal["approved", "rejected", "pending"]
 Name = Annotated[str, Field(min_length=1, max_length=200)]
 Amount = Annotated[Decimal, Field(ge=0, le=1_000_000, max_digits=13, decimal_places=6)]
 Quantity = Annotated[Decimal, Field(gt=0, le=1_000_000, max_digits=13, decimal_places=6)]
@@ -73,7 +75,7 @@ class ObservationCreate(StrictModel):
     variant_id: int | None = Field(default=None, gt=0, strict=True)
     context_id: int | None = Field(default=None, gt=0, strict=True, description="Immutable location context. Omit to use the store's current preferred context; explicit null is invalid.")
     staple_id: int = Field(gt=0, strict=True)
-    store_id: Literal["wegmans", "walmart", "target", "hmart", "lidl"]
+    store_id: Retailer
     product_name: Name
     price: Amount = Field(description="Total purchase-package price as a decimal string, e.g. '5.99'.")
     quantity: Quantity = Field(description="Quantity per pack as a decimal string, e.g. '12'.")
@@ -83,7 +85,7 @@ class ObservationCreate(StrictModel):
     observed_at: datetime = Field(description="Actual observation time, with timezone. Future observations are rejected.")
     source_url: Annotated[str, Field(max_length=2048)] | None = None
     available: bool = Field(default=True, strict=True)
-    approved: bool = Field(default=False, strict=True, description="Manual confirmation that this exact product or substitution satisfies the staple's rules. No automatic product verification occurs.")
+    approved: bool = Field(default=False, strict=True, description="Explicit review for a new manual identity only. With variant_id, use the match-review endpoint; this historical flag cannot override pending or rejected reviews.")
     conditions: Annotated[str, Field(max_length=2000)] = ""
 
     @field_validator("context_id")
@@ -135,10 +137,10 @@ class ObservationCreate(StrictModel):
         return value
 
 class MatchReview(StrictModel):
-    status: Literal["approved", "rejected", "pending"]
+    status: MatchStatus
 
 class VariantCreate(StrictModel):
-    retailer: Annotated[str, Field(min_length=1, max_length=100)]
+    retailer: Retailer
     retailer_product_id: Annotated[str, Field(min_length=1, max_length=200)] | None = None
     manual_identity: Annotated[str, Field(min_length=1, max_length=200)] | None = None
     barcode: Annotated[str, Field(min_length=1, max_length=100)] | None = None
@@ -146,6 +148,13 @@ class VariantCreate(StrictModel):
     package_unit: Unit
     pack_count: int = Field(default=1, ge=1, le=10000, strict=True)
     form: Annotated[str, Field(min_length=1, max_length=200)]
+
+    @field_validator("package_quantity", mode="before", json_schema_input_type=str)
+    @classmethod
+    def decimal_string(cls, value):
+        if not isinstance(value, str):
+            raise ValueError("Use a decimal string, not a JSON number")
+        return value
 
     @model_validator(mode="after")
     def identity(self):
