@@ -1,0 +1,258 @@
+{
+  "repository": "justinahn711/staple-scout",
+  "scope_captured_at": "2026-10-08T00:06:35.772961-04:00",
+  "scope_numbers": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+  ],
+  "scope_snapshot": "2026-10-08-initial-issues.json",
+  "goal_status": "active",
+  "states": [
+    "pending",
+    "working",
+    "PR ready",
+    "merged",
+    "blocked"
+  ],
+  "runtime_worker_limit": 2,
+  "issues": [
+    {
+      "number": 1,
+      "title": "Validate Wegmans Chantilly price access and capture fixtures",
+      "url": "https://github.com/justinahn711/staple-scout/issues/1",
+      "status": "PR ready",
+      "dependencies": [],
+      "branch": "issue-1-wegmans-research",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-1",
+      "pr": "https://github.com/justinahn711/staple-scout/pull/18",
+      "validation": "Source evidence verified; 54-test baseline CI passes. Live price access remains blocked separately in #9.",
+      "blocker": null
+    },
+    {
+      "number": 2,
+      "title": "Persist product variants and approved staple matches",
+      "url": "https://github.com/justinahn711/staple-scout/issues/2",
+      "status": "working",
+      "dependencies": [
+        6
+      ],
+      "branch": "issue-2-product-matches",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-2",
+      "pr": null,
+      "validation": null,
+      "blocker": null
+    },
+    {
+      "number": 3,
+      "title": "Build staple setup and manual price-entry screens",
+      "url": "https://github.com/justinahn711/staple-scout/issues/3",
+      "status": "pending",
+      "dependencies": [
+        2
+      ],
+      "branch": null,
+      "worktree": null,
+      "pr": null,
+      "validation": null,
+      "blocker": null
+    },
+    {
+      "number": 4,
+      "title": "Validate and implement Target Chantilly price integration",
+      "url": "https://github.com/justinahn711/staple-scout/issues/4",
+      "status": "pending",
+      "dependencies": [
+        8
+      ],
+      "branch": null,
+      "worktree": null,
+      "pr": null,
+      "validation": null,
+      "blocker": null
+    },
+    {
+      "number": 5,
+      "title": "Build a weekly report from trusted comparisons and price history",
+      "url": "https://github.com/justinahn711/staple-scout/issues/5",
+      "status": "pending",
+      "dependencies": [
+        12,
+        16,
+        15
+      ],
+      "branch": null,
+      "worktree": null,
+      "pr": null,
+      "validation": null,
+      "blocker": null
+    },
+    {
+      "number": 6,
+      "title": "Configure store locations without rewriting price history",
+      "url": "https://github.com/justinahn711/staple-scout/issues/6",
+      "status": "PR ready",
+      "dependencies": [],
+      "branch": "issue-6-store-contexts",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-6",
+      "pr": "https://github.com/justinahn711/staple-scout/pull/17",
+      "validation": "90 tests pass; migration/context review complete; current PR CI passes.",
+      "blocker": null
+    },
+    {
+      "number": 7,
+      "title": "Validate Walmart Chantilly pickup prices and capture fixtures",
+      "url": "https://github.com/justinahn711/staple-scout/issues/7",
+      "status": "PR ready",
+      "dependencies": [],
+      "branch": "issue-7-walmart-research",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-7",
+      "pr": "https://github.com/justinahn711/staple-scout/pull/19",
+      "validation": "Source evidence verified; 54-test baseline CI passes. Local price access remains blocked separately in #10.",
+      "blocker": null
+    },
+    {
+      "number": 8,
+      "title": "Add a typed adapter contract and safe observation ingestion",
+      "url": "https://github.com/justinahn711/staple-scout/issues/8",
+      "status": "pending",
+      "dependencies": [
+        2
+      ],
+      "branch": null,
+      "worktree": null,
+      "pr": null,
+      "validation": null,
+      "blocker": null
+    },
+    {
+      "number": 9,
+      "title": "Implement the validated Wegmans price adapter",
+      "url": "https://github.com/justinahn711/staple-scout/issues/9",
+      "status": "blocked",
+      "dependencies": [
+        1,
+        8
+      ],
+      "branch": null,
+      "worktree": null,
+      "pr": null,
+      "validation": null,
+      "blocker": "Need a nonsecret working pricing request or supported Wegmans price API access; catalog pages contain no verified local offers. See PR18."
+    },
+    {
+      "number": 10,
+      "title": "Implement the validated Walmart local pickup adapter",
+      "url": "https://github.com/justinahn711/staple-scout/issues/10",
+      "status": "blocked",
+      "dependencies": [
+        7,
+        8
+      ],
+      "branch": null,
+      "worktree": null,
+      "pr": null,
+      "validation": null,
+      "blocker": "Direct Walmart local-store request reaches human verification; indexed offers belong to other locations. Need supported store-local access. See PR19."
+    },
+    {
+      "number": 11,
+      "title": "Add explicit shelf and pickup comparison modes",
+      "url": "https://github.com/justinahn711/staple-scout/issues/11",
+      "status": "pending",
+      "dependencies": [
+        2
+      ],
+      "branch": null,
+      "worktree": null,
+      "pr": null,
+      "validation": null,
+      "blocker": null
+    },
+    {
+      "number": 12,
+      "title": "Build comparison and this-week shopping views",
+      "url": "https://github.com/justinahn711/staple-scout/issues/12",
+      "status": "pending",
+      "dependencies": [
+        3,
+        11,
+        8
+      ],
+      "branch": null,
+      "worktree": null,
+      "pr": null,
+      "validation": null,
+      "blocker": null
+    },
+    {
+      "number": 13,
+      "title": "Validate and integrate the H Mart online catalog as reference prices",
+      "url": "https://github.com/justinahn711/staple-scout/issues/13",
+      "status": "working",
+      "dependencies": [
+        8
+      ],
+      "branch": "issue-13-hmart-reference",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-13",
+      "pr": null,
+      "validation": null,
+      "blocker": null
+    },
+    {
+      "number": 14,
+      "title": "Validate Lidl local price coverage and integrate supported offers",
+      "url": "https://github.com/justinahn711/staple-scout/issues/14",
+      "status": "blocked",
+      "dependencies": [
+        8
+      ],
+      "branch": null,
+      "worktree": null,
+      "pr": null,
+      "validation": null,
+      "blocker": "Need the user-selected Lidl location before validating local offers. User asked on 2026-10-08."
+    },
+    {
+      "number": 15,
+      "title": "Add reliable daily refresh and a Mac schedule",
+      "url": "https://github.com/justinahn711/staple-scout/issues/15",
+      "status": "pending",
+      "dependencies": [
+        8
+      ],
+      "branch": null,
+      "worktree": null,
+      "pr": null,
+      "validation": null,
+      "blocker": null
+    },
+    {
+      "number": 16,
+      "title": "Compare actual package costs for a requested quantity",
+      "url": "https://github.com/justinahn711/staple-scout/issues/16",
+      "status": "pending",
+      "dependencies": [
+        11
+      ],
+      "branch": null,
+      "worktree": null,
+      "pr": null,
+      "validation": null,
+      "blocker": null
+    }
+  ]
+}
