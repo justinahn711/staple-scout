@@ -24,3 +24,9 @@ there was no page overflow, every input had a label and no button was below44px.
 The original native deletion prompt blocked browser automation; the final
 in-page dialog replaced it. Its final interactive check is pending cancellation
 of the old browser prompt. No real staples or prices were added to user data.
+
+### Comparison review checkpoint (#12)
+
+Comparison and shopping screens display recorded evidence, exclusions, backend winner IDs, separate whole-package outlay, planned-store coverage and channel/context source health. Offline Node tests cover cheaper excluded offers, escaping, shopping gaps, filter URLs and cancellation. Full Python regression suite passes (200 tests). The final keyboard/phone browser check is pending: an older native confirmation in a disposable test tab currently blocks browser input. No claim of completed browser verification is made for these new screens.
+
+Read-only rendering verification on disposable fixtures: comparison screen at 1280px/390px shows the approved winner, a cheaper excluded offer, separate package outlay and a coverage gap. Phone document width is 390px with no overflow; comparison labels are associated and have 44px targets. Final interactive browser checks remain pending.

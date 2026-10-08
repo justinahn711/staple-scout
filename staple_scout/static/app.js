@@ -3,8 +3,10 @@
   const panel = document.querySelector("#panel"),
     status = document.querySelector("#status"),
     errors = document.querySelector("#error-region");
+  let disposeView = null;
   const state = {
-    tab: "staples",
+    tab: ["staples", "stores", "price", "matches", "compare", "shopping"].includes(location.hash.slice(1))
+      ? location.hash.slice(1) : "staples",
     staples: [],
     stores: [],
     token: 0,
@@ -74,6 +76,8 @@
     return d.toISOString().slice(0, 16);
   };
   async function load(message = "Ready") {
+    disposeView?.();
+    disposeView = null;
     const token = ++state.token;
     clear();
     panel.innerHTML = '<div class="loading">Loading your setup…</div>';
@@ -101,12 +105,22 @@
       t.tabIndex = t.dataset.tab === state.tab ? 0 : -1;
       panel.setAttribute("aria-labelledby", `tab-${state.tab}`);
     });
+    document.querySelector(".tab.active")?.scrollIntoView({block: "nearest", inline: "nearest"});
     ({
       staples: staplesView,
       stores: storesView,
       price: priceView,
       matches: matchesView,
+      compare: () => comparisonsView(false),
+      shopping: () => comparisonsView(true),
     })[state.tab]();
+  }
+  function comparisonsView(shopping) {
+    ++state.token;
+    clear();
+    disposeView = window.StapleComparisons.mount(panel, {
+      shopping, focusHeading: !state.keepTabFocus,
+    });
   }
   function staplesView() {
     ++state.token;
@@ -515,6 +529,7 @@
         state.keepTabFocus = false;
         state.token += 1;
         state.tab = t.dataset.tab;
+        history.replaceState(null, "", `#${state.tab}`);
         load();
       }),
   );
