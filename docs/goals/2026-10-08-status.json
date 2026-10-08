@@ -20,7 +20,7 @@
     16
   ],
   "scope_snapshot": "2026-10-08-initial-issues.json",
-  "goal_status": "blocked",
+  "goal_status": "active",
   "states": [
     "pending",
     "working",
@@ -39,7 +39,7 @@
       "branch": "issue-1-wegmans-research",
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-1",
       "pr": "https://github.com/justinahn711/staple-scout/pull/18",
-      "validation": "Original 54-test baseline research PR remains ready. Earlier HTML-only price-access blocker is superseded by public website JSON evidence, 254 tests and five-product live gate in PR31 (#9).",
+      "validation": "Original 54-test baseline research PR remains ready. Earlier HTML-only price-access blocker is superseded by public website JSON evidence, 262 tests and five-product live gate in PR31 (#9).",
       "blocker": null
     },
     {
@@ -60,15 +60,15 @@
       "number": 3,
       "title": "Build staple setup and manual price-entry screens",
       "url": "https://github.com/justinahn711/staple-scout/issues/3",
-      "status": "blocked",
+      "status": "PR ready",
       "dependencies": [
         2
       ],
       "branch": "issue-3-setup-ui",
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-3",
       "pr": "https://github.com/justinahn711/staple-scout/pull/28",
-      "validation": "200 tests and PR CI pass. Disposable-DB setup/edit/price/review/context/error workflows and 390px keyboard/labels/layout verified before old native prompt blocked input. Final replacement HTML dialog needs interactive confirmation.",
-      "blocker": "Implementation and offline review/tests complete; final interactive UI validation requires the user to cancel an old native deletion confirmation in the disposable in-app-browser test tab at http://127.0.0.1:8876/. Browser API input and closing that tab time out or have no effect. No real data is involved. PR remains draft pending validation.",
+      "validation": "200 Python tests and current-head PR CI pass. Final interactive disposable-DB validation passed: add/edit/manual price/review/context/error flows, HTML delete dialog Cancel and Escape retain data and return focus, Tab/Enter confirms fixture-only deletion, autofocus and 390px fit/44px controls. PR28 promoted ready at unchanged tested head a88c90f.",
+      "blocker": null,
       "integration_base": "issue-15-daily-refresh",
       "ci": "passed",
       "head": "a88c90f"
@@ -84,14 +84,16 @@
       "branch": "issue-4-target-integration",
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-4",
       "pr": "https://github.com/justinahn711/staple-scout/pull/22",
-      "validation": "54 baseline tests pass; verified store1827 and normal human-verification barrier. PR22 is research only and does not close #4.",
-      "blocker": "Normal public grocery browsing reaches a press-and-hold human-verification challenge. Store1827 verified; no five-product local-price gate or validated adapter. See isolated research branch; no prior requests exist to reuse."
+      "validation": "Evening normal website recheck: catalog cards render with Fair Lakes selected, while a press-and-hold verification frame is present. These do not validate Chantilly1827 prices. Sanitized DOM evidence committed as 0549c7d; current-head baseline CI passes. PR22 remains research only and does not close #4.",
+      "blocker": "Target normal public grocery page selects Fair Lakes and presents human verification. Need verified Chantilly1827 context and five traceable local products before an adapter can be implemented; no prior request exists to reuse.",
+      "head": "0549c7d",
+      "ci": "passed"
     },
     {
       "number": 5,
       "title": "Build a weekly report from trusted comparisons and price history",
       "url": "https://github.com/justinahn711/staple-scout/issues/5",
-      "status": "blocked",
+      "status": "PR ready",
       "dependencies": [
         12,
         16,
@@ -100,8 +102,8 @@
       "branch": "issue-5-weekly-report",
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-5",
       "pr": "https://github.com/justinahn711/staple-scout/pull/30",
-      "validation": "218 Python tests and three report frontend tests plus eight comparison tests pass. Independent code review, atomic schema6 migration rollback, cutoff source provenance, same-variant price drops, context/package/channel/unavailable cases and immutable reopen verified. Disposable smoke produced one recommendation, one gap, one traceable drop. Read-only 1280px/390px browser rendering passes; interactive validation pending.",
-      "blocker": "Implementation and offline review/tests complete; final interactive UI validation requires the user to cancel an old native deletion confirmation in the disposable in-app-browser test tab at http://127.0.0.1:8876/. Browser API input and closing that tab time out or have no effect. No real data is involved. PR remains draft pending validation.",
+      "validation": "218 Python and eleven total Node tests plus current-head PR CI pass. Actual UI validation passed: future-cutoff error preserves inputs, generate/reopen saved report, repeat inputs return identical report ID and original generated time, keyboard offer/source disclosures, traceable price drop and coverage gap, explicit unapproved offer exclusion. Latest assets reloaded and 390px layout/44px targets verified. PR30 promoted ready at unchanged tested head 7c529e9.",
+      "blocker": null,
       "integration_base": "issue-12-shopping-views",
       "ci": "passed",
       "head": "7c529e9"
@@ -175,10 +177,10 @@
       "branch": "issue-10-walmart-adapter",
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-10",
       "pr": "https://github.com/justinahn711/staple-scout/pull/32",
-      "validation": "Fresh normal public store-page GET at 2026-10-08T13:27:56Z still resolves to /blocked HTML titled Robot or human? Sanitized metadata/body hash saved; source gate remains unmet. Own branch/worktree includes reviewed PR19 research and PR27 foundation. Draft PR32 is a blocked-work checkpoint, not an implemented adapter or closure for #10. Baseline CI passes.",
+      "validation": "Normal public Chantilly5969 store-page request at 2026-10-08T21:07:04Z again redirected to human verification. Checkpoint documentation committed as 11e264e; current-head baseline CI passes. Draft PR32 records missing five-product local pickup gate and contains no implemented adapter.",
       "blocker": "Current public Chantilly5969 request still reaches human verification. Indexed prices are other-store/location-unknown and cannot validate pickup stock/price/seller. Need supported local source access; no challenge was solved or bypassed. See draft PR32 and source research PR19.",
       "integration_base": "issue-15-daily-refresh",
-      "head": "075c449",
+      "head": "11e264e",
       "ci": "passed"
     },
     {
@@ -199,7 +201,7 @@
       "number": 12,
       "title": "Build comparison and this-week shopping views",
       "url": "https://github.com/justinahn711/staple-scout/issues/12",
-      "status": "blocked",
+      "status": "PR ready",
       "dependencies": [
         3,
         11,
@@ -208,8 +210,8 @@
       "branch": "issue-12-shopping-views",
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-12",
       "pr": "https://github.com/justinahn711/staple-scout/pull/29",
-      "validation": "200 Python tests and eight Node frontend tests pass. Independent review, read-only actual 1280px/390px rendering and DOM-label/44px target checks pass. Filter changes, empty store selection, retry state, escaping, backend winner authority and cancellation covered offline. Final interactive browser check pending.",
-      "blocker": "Implementation and offline review/tests complete; final interactive UI validation requires the user to cancel an old native deletion confirmation in the disposable in-app-browser test tab at http://127.0.0.1:8876/. Browser API input and closing that tab time out or have no effect. No real data is involved. PR remains draft pending validation.",
+      "validation": "200 Python and eight Node tests plus current-head PR CI pass. Actual UI validation passed: Shelf/Pickup switching, store exclusion and empty selection, needed-only filtering, keyboard tab navigation, shopping coverage gaps, source status and backend-authoritative winner/package outlay. 390px interactions, 44px targets and no overflow verified. PR29 promoted ready at unchanged tested head 2ab7be6.",
+      "blocker": null,
       "integration_base": "issue-3-setup-ui",
       "ci": "passed",
       "head": "2ab7be6"
@@ -274,14 +276,33 @@
     }
   ],
   "continuation_requires_input": true,
-  "blocked_audit": {
-    "checked_at": "2026-10-08T13:32:07.537018+00:00",
-    "consecutive_turns_with_same_blocking_conditions": 3,
-    "conditions": [
-      "In-app browser input cannot change enabled visible Pickup control; old test-tab dialog is not available through supported dismissal API. Final interaction gates for issues3/12/5 remain unverified.",
-      "Target and Walmart require verified local source access; human-verification barriers remain and five-product local gates are missing."
+  "prior_blocked_audits": [
+    {
+      "checked_at": "2026-10-08T13:32:07.537018+00:00",
+      "consecutive_turns_with_same_blocking_conditions": 3,
+      "conditions": [
+        "In-app browser input cannot change enabled visible Pickup control; old test-tab dialog is not available through supported dismissal API. Final interaction gates for issues3/12/5 remain unverified.",
+        "Target and Walmart require verified local source access; human-verification barriers remain and five-product local gates are missing."
+      ],
+      "independent_work": "Completed while blockers persisted: Wegmans adapter/full historical fixtures and isolated Walmart checkpoint. No pending/working issues remain.",
+      "outcome": "11 issues PR ready; 5 blocked; fixed scope unchanged; no PR merged; goal not complete.",
+      "resumed_browser_input_recovered": true
+    }
+  ],
+  "updated_at": "2026-10-08T21:18:48.727617+00:00",
+  "resumed_audit": {
+    "checked_at": "2026-10-08T21:18:48.727617+00:00",
+    "consecutive_turns_with_same_blocking_conditions": 1,
+    "browser_input_recovered": true,
+    "progress": "Completed final interactive gates and promoted PR28/29/30; 14 of 16 issues now PR ready. Updated source evidence in PR22/32 and verified current-head CI.",
+    "remaining_blocked_issues": [
+      4,
+      10
     ],
-    "independent_work": "Completed while blockers persisted: Wegmans adapter/full historical fixtures and isolated Walmart checkpoint. No pending/working issues remain.",
-    "outcome": "11 issues PR ready; 5 blocked; fixed scope unchanged; no PR merged; goal not complete."
+    "conditions": [
+      "Target needs verified Chantilly1827 local source access; normal page shows Fair Lakes and human verification.",
+      "Walmart Chantilly5969 still redirects to human verification; validated local pickup source gate is missing."
+    ],
+    "outcome": "All independent work complete. Goal remains active and incomplete; fresh resumed audit has not reached the repeated-blocker threshold. No PR merged."
   }
 }
