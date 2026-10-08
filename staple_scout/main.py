@@ -12,6 +12,7 @@ from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.trustedhost import TrustedHostMiddleware
+from pydantic import ValidationError
 
 from .comparison import compare
 from .database import Database, STORES, STORE_SELECT, as_record
@@ -110,7 +111,7 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
     @app.post("/api/staples", status_code=201)
     def create_staple(body: StapleCreate):
         with database.connect() as connection:
-            cursor = connection.execute("INSERT INTO staples(name, basis, rules, needed) VALUES (?, ?, ?, ?)", (body.name, body.basis, body.rules, body.needed))
+            cursor = connection.execute("INSERT INTO staples(name, basis, rules, needed, desired_quantity, desired_unit) VALUES (?, ?, ?, ?, ?, ?)", (body.name, body.basis, body.rules, body.needed, format(body.desired_quantity.normalize(), "f") if body.desired_quantity is not None else None, body.desired_unit))
             return as_record(connection.execute("SELECT * FROM staples WHERE id = ?", (cursor.lastrowid,)).fetchone())
 
     @app.patch("/api/staples/{staple_id}", description="Changing name, basis, or rules clears approval on existing observations; price history is retained. Needed-only and no-op changes preserve approval.")
@@ -121,6 +122,15 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
             if existing is None:
                 raise HTTPException(404, "Staple not found")
             changes = body.model_dump(exclude_unset=True)
+            if "desired_quantity" in changes and changes["desired_quantity"] is not None:
+                changes["desired_quantity"] = format(changes["desired_quantity"].normalize(), "f")
+            # Validate against the saved basis/quantity as well as patch fields.
+            merged = {key: changes.get(key, existing[key]) for key in StapleCreate.model_fields}
+            merged["needed"] = bool(merged["needed"])
+            try:
+                StapleCreate.model_validate(merged)
+            except ValidationError:
+                raise HTTPException(422, "Desired quantity and unit must be a compatible pair for the staple basis") from None
             if changes:
                 if any(key in changes and changes[key] != existing[key] for key in ("name", "basis", "rules")):
                     connection.execute("UPDATE observations SET approved = 0 WHERE staple_id = ?", (staple_id,))
@@ -240,7 +250,10 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
     @app.get("/api/comparisons")
     def comparisons(needed_only: bool = False,
                     stores: str | None = Query(default=None, description="Comma-separated store IDs. Omit to include every store."),
+                    channel: str = Query(default="in_store", description="Comparison channel: in_store (shelf) or pickup."),
                     include_previous_contexts: bool = Query(default=False, description="Show previous contexts as excluded offers; only preferred contexts can win.")):
+        if channel not in {"in_store", "pickup"}:
+            raise HTTPException(422, "Unknown comparison channel")
         selected = {item.strip() for item in stores.split(",")} if stores is not None else {row[0] for row in STORES}
         if not selected or not selected.issubset({row[0] for row in STORES}):
             raise HTTPException(422, "Unknown or empty store ID")
@@ -270,7 +283,7 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
                 record = as_record(row)
                 record.pop("rank")
                 grouped.setdefault(row["staple_id"], []).append(record)
-        return [compare(as_record(staple), grouped.get(staple["id"], [])) for staple in staple_rows]
+        return [compare(as_record(staple), grouped.get(staple["id"], []), channel=channel) for staple in staple_rows]
 
     assets = Path(__file__).parent
     if (assets / "static").is_dir():
