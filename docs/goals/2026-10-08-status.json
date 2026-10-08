@@ -66,10 +66,10 @@
       ],
       "branch": "issue-3-setup-ui",
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-3",
-      "pr": null,
-      "validation": "Initial static UI failed coordinator review: flat match API read incorrectly, explicit product/context identity missing, async state/errors/focus incomplete. Parent owns remaining fixes and temporary-database desktop/mobile workflow validation. No PR yet.",
+      "pr": "https://github.com/justinahn711/staple-scout/pull/28",
+      "validation": "Draft PR28. 200 tests pass; independent code review and disposable-DB desktop/phone setup, edit, price, approval, identity and context workflows verified. Final in-page deletion-dialog browser check awaits cancellation of an older native prompt blocking browser input.",
       "blocker": null,
-      "integration_base": "issue-16-package-outlay"
+      "integration_base": "issue-15-daily-refresh"
     },
     {
       "number": 4,
@@ -129,15 +129,16 @@
       "number": 8,
       "title": "Add a typed adapter contract and safe observation ingestion",
       "url": "https://github.com/justinahn711/staple-scout/issues/8",
-      "status": "working",
+      "status": "PR ready",
       "dependencies": [
         2
       ],
       "branch": "issue-8-adapter-ingestion",
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-8",
-      "pr": null,
-      "validation": "Initial implementation failed review; requires strict runtime evidence validation, idempotency, exact context/variant matching, provenance and comprehensive fake-adapter tests. Worker hit usage limit; coordinator continuing.",
-      "blocker": null
+      "pr": "https://github.com/justinahn711/staple-scout/pull/24",
+      "validation": "172 offline tests pass; reviewed strict evidence/context/seller identity, v4 atomic migration, duplicate delivery, package/unknown/unavailable suppression, timeout and independent source failures. PR CI passes.",
+      "blocker": null,
+      "integration_base": "issue-16-package-outlay"
     },
     {
       "number": 9,
@@ -187,59 +188,62 @@
       "number": 12,
       "title": "Build comparison and this-week shopping views",
       "url": "https://github.com/justinahn711/staple-scout/issues/12",
-      "status": "pending",
+      "status": "working",
       "dependencies": [
         3,
         11,
         8
       ],
-      "branch": null,
-      "worktree": null,
+      "branch": "issue-12-shopping-views",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-12",
       "pr": null,
-      "validation": null,
-      "blocker": null
+      "validation": "Worker implementing comparison and shopping frontend against reviewed backend; integration, source health, package outlay and browser review pending.",
+      "blocker": null,
+      "integration_base": "issue-3-setup-ui"
     },
     {
       "number": 13,
       "title": "Validate and integrate the H Mart online catalog as reference prices",
       "url": "https://github.com/justinahn711/staple-scout/issues/13",
-      "status": "working",
+      "status": "PR ready",
       "dependencies": [
         8
       ],
       "branch": "issue-13-hmart-reference",
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-13",
-      "pr": null,
-      "validation": "Unauthenticated official VTEX HTTP206 response verified; five real product IDs/barcodes/online offers captured. Needs adapter and offline tests after #8.",
-      "blocker": null
+      "pr": "https://github.com/justinahn711/staple-scout/pull/26",
+      "validation": "189 tests and PR CI pass; independent review and final live five-product exact composite-ID ingestion smoke in disposable DB. Online-only reference prices, never local shelf/pickup winners.",
+      "blocker": null,
+      "integration_base": "issue-8-adapter-ingestion"
     },
     {
       "number": 14,
       "title": "Validate Lidl local price coverage and integrate supported offers",
       "url": "https://github.com/justinahn711/staple-scout/issues/14",
-      "status": "working",
+      "status": "PR ready",
       "dependencies": [
         8
       ],
       "branch": "issue-14-lidl-integration",
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-14",
-      "pr": null,
-      "validation": "Selected US01112 via normal in-app store flow; verified current regional flyer HTTP200 JSON with 12 real linked product references, package/price strings and dates. Unknown conditions, stock and promotional price semantics are retained; source remains disabled pending adapter/coverage validation. Evidence pushed at60550c8.",
+      "pr": "https://github.com/justinahn711/staple-scout/pull/25",
+      "validation": "Verified selected Chantilly US01112 store/flyer flow and 12 real regional product references including five groceries; 54 baseline tests pass. Reviewed documented-gap fallback: unknown stock/conditions/regular-price semantics keep Lidl disconnected.",
       "blocker": null
     },
     {
       "number": 15,
       "title": "Add reliable daily refresh and a Mac schedule",
       "url": "https://github.com/justinahn711/staple-scout/issues/15",
-      "status": "pending",
+      "status": "PR ready",
       "dependencies": [
         8
       ],
-      "branch": null,
-      "worktree": null,
-      "pr": null,
-      "validation": null,
-      "blocker": null
+      "branch": "issue-15-daily-refresh",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-15",
+      "pr": "https://github.com/justinahn711/staple-scout/pull/27",
+      "validation": "200 tests and PR CI pass; independent review, temporary-DB live runner and daily replay cache smoke. Migration, locking, bounded retries, source health and launchd instructions verified. No job activated.",
+      "blocker": null,
+      "integration_base": "issue-13-hmart-reference"
     },
     {
       "number": 16,
