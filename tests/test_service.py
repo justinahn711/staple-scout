@@ -94,6 +94,21 @@ def test_each_eligibility_condition_and_winner(client):
     assert result["offers"][-1]["unit_price"] is None
 
 
+def test_comparison_channel_is_explicit_and_never_mixes_shelf_pickup_or_online(client):
+    item = staple(client)
+    shelf = observation(client, item["id"], product_name="Shelf", price="8")
+    pickup = observation(client, item["id"], product_name="Pickup", price="1", channel="pickup")
+    online = observation(client, item["id"], product_name="Online", price="0.10", channel="online")
+    shelf_result = client.get("/api/comparisons?channel=in_store").json()[0]
+    assert shelf_result["winner_id"] == shelf["id"]
+    assert next(o for o in shelf_result["offers"] if o["id"] == pickup["id"])["exclusion_reasons"] == ["not_in_store"]
+    pickup_result = client.get("/api/comparisons?channel=pickup").json()[0]
+    assert pickup_result["winner_id"] == pickup["id"]
+    assert next(o for o in pickup_result["offers"] if o["id"] == shelf["id"])["exclusion_reasons"] == ["not_pickup"]
+    assert next(o for o in pickup_result["offers"] if o["id"] == online["id"])["exclusion_reasons"] == ["not_pickup"]
+    assert client.get("/api/comparisons?channel=online").status_code == 422
+
+
 def test_freshness_boundary_and_recomputed_age():
     now = datetime.now(timezone.utc)
     row = {"id": 1, "price": "1", "quantity": "1", "pack_count": 1, "unit": "each", "approved": True, "available": True, "conditions": "", "channel": "in_store", "observed_at": (now - timedelta(hours=48) + timedelta(microseconds=1)).isoformat()}
