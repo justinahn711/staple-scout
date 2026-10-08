@@ -60,15 +60,16 @@
       "number": 3,
       "title": "Build staple setup and manual price-entry screens",
       "url": "https://github.com/justinahn711/staple-scout/issues/3",
-      "status": "pending",
+      "status": "working",
       "dependencies": [
         2
       ],
-      "branch": null,
-      "worktree": null,
+      "branch": "issue-3-setup-ui",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-3",
       "pr": null,
-      "validation": null,
-      "blocker": null
+      "validation": "Initial static UI failed coordinator review: flat match API read incorrectly, explicit product/context identity missing, async state/errors/focus incomplete. Parent owns remaining fixes and temporary-database desktop/mobile workflow validation. No PR yet.",
+      "blocker": null,
+      "integration_base": "issue-16-package-outlay"
     },
     {
       "number": 4,
@@ -80,8 +81,8 @@
       ],
       "branch": "issue-4-target-integration",
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-4",
-      "pr": null,
-      "validation": null,
+      "pr": "https://github.com/justinahn711/staple-scout/pull/22",
+      "validation": "54 baseline tests pass; verified store1827 and normal human-verification barrier. PR22 is research only and does not close #4.",
       "blocker": "Normal public grocery browsing reaches a press-and-hold human-verification challenge. Store1827 verified; no five-product local-price gate or validated adapter. See isolated research branch; no prior requests exist to reuse."
     },
     {
@@ -179,7 +180,7 @@
       "branch": "issue-11-comparison-modes",
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-11",
       "pr": "https://github.com/justinahn711/staple-scout/pull/21",
-      "validation": "117 tests pass; reviewed separate shelf/pickup channels, explicit gaps, latest-unavailable suppression and eligibility/location rules.",
+      "validation": "117 tests pass; reviewed separate shelf/pickup channels, explicit gaps, latest-unavailable suppression and eligibility/location rules. PR CI passes.",
       "blocker": null
     },
     {
@@ -223,7 +224,7 @@
       "branch": "issue-14-lidl-integration",
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-14",
       "pr": null,
-      "validation": "Official selected store US01112 confirmed. Coordinator completed ordinary favorite-store flow and reached current regional flyer. Public viewer JSON returns 12 product references; offer terms/price semantics remain under validation. No adapter enabled.",
+      "validation": "Selected US01112 via normal in-app store flow; verified current regional flyer HTTP200 JSON with 12 real linked product references, package/price strings and dates. Unknown conditions, stock and promotional price semantics are retained; source remains disabled pending adapter/coverage validation. Evidence pushed at60550c8.",
       "blocker": null
     },
     {
@@ -244,14 +245,14 @@
       "number": 16,
       "title": "Compare actual package costs for a requested quantity",
       "url": "https://github.com/justinahn711/staple-scout/issues/16",
-      "status": "pending",
+      "status": "PR ready",
       "dependencies": [
         11
       ],
       "branch": "issue-16-package-outlay",
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-16",
-      "pr": null,
-      "validation": null,
+      "pr": "https://github.com/justinahn711/staple-scout/pull/23",
+      "validation": "136 tests pass; independent code review and migration rollback, exact conversions, package-cost/unit-price distinction, labeled excess and uncertain weight checks. CI passes.",
       "blocker": null
     }
   ]
