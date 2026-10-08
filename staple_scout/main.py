@@ -12,7 +12,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from .comparison import compare
 from .database import Database, STORES, STORE_SELECT, as_record
-from .models import ObservationCreate, StapleCreate, StaplePatch, StorePatch
+from .models import ObservationCreate, StapleCreate, StaplePatch, StorePatch, VariantCreate, MatchReview
 
 
 def create_app(db_path: str | Path | None = None) -> FastAPI:
@@ -121,6 +121,7 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
             if changes:
                 if any(key in changes and changes[key] != existing[key] for key in ("name", "basis", "rules")):
                     connection.execute("UPDATE observations SET approved = 0 WHERE staple_id = ?", (staple_id,))
+                    connection.execute("UPDATE staple_matches SET status = 'pending', approved_at = NULL WHERE staple_id = ?", (staple_id,))
                 columns = ", ".join(f"{key} = ?" for key in changes)
                 connection.execute(f"UPDATE staples SET {columns} WHERE id = ?", (*changes.values(), staple_id))
             return as_record(connection.execute("SELECT * FROM staples WHERE id = ?", (staple_id,)).fetchone())
@@ -143,6 +144,9 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
             connection.execute("BEGIN IMMEDIATE")
             store = store_record(connection, body.store_id)
             values["context_id"] = body.context_id if body.context_id is not None else store["preferred_context_id"]
+            if body.variant_id is not None and connection.execute("SELECT 1 FROM product_variants WHERE id = ?", (body.variant_id,)).fetchone() is None:
+                raise HTTPException(422, "Unknown variant")
+            variant_id = values.pop("variant_id", None)
             if connection.execute("SELECT id FROM staples WHERE id = ?", (body.staple_id,)).fetchone() is None:
                 raise HTTPException(404, "Staple not found")
             placeholders = ", ".join("?" for _ in values)
@@ -150,7 +154,44 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
                 cursor = connection.execute(f"INSERT INTO observations ({', '.join(values)}) VALUES ({placeholders})", tuple(values.values()))
             except sqlite3.IntegrityError:
                 raise HTTPException(422, "Invalid observation reference") from None
+            if variant_id is not None:
+                connection.execute("INSERT INTO observation_variants(observation_id, variant_id) VALUES (?, ?)", (cursor.lastrowid, variant_id))
             return as_record(connection.execute("SELECT * FROM observations WHERE id = ?", (cursor.lastrowid,)).fetchone())
+
+    @app.post("/api/variants", status_code=201)
+    def create_variant(body: VariantCreate):
+        values = body.model_dump(); values["package_quantity"] = format(body.package_quantity, "f")
+        with database.connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            keys = ", ".join(values); marks = ", ".join("?" for _ in values)
+            try:
+                row = connection.execute(f"INSERT INTO product_variants ({keys}) VALUES ({marks}) RETURNING *", tuple(values.values())).fetchone()
+            except sqlite3.IntegrityError:
+                raise HTTPException(409, "Variant identity already exists") from None
+            return as_record(row)
+
+    @app.get("/api/variants")
+    def variants(retailer: str | None = None):
+        with database.connect() as connection:
+            return [as_record(r) for r in connection.execute("SELECT * FROM product_variants WHERE (? IS NULL OR retailer = ?) ORDER BY id", (retailer, retailer))]
+
+    @app.get("/api/staples/{staple_id}/matches")
+    def matches(staple_id: int, status: str | None = None):
+        with database.connect() as connection:
+            if connection.execute("SELECT 1 FROM staples WHERE id = ?", (staple_id,)).fetchone() is None: raise HTTPException(404, "Staple not found")
+            return [as_record(r) for r in connection.execute("""SELECT m.*, v.retailer, v.retailer_product_id, v.manual_identity, v.barcode,
+                v.package_quantity, v.package_unit, v.pack_count, v.form FROM staple_matches m JOIN product_variants v ON v.id=m.variant_id
+                WHERE m.staple_id=? AND (? IS NULL OR m.status=?) ORDER BY m.id""", (staple_id, status, status))]
+
+    @app.put("/api/staples/{staple_id}/matches/{variant_id}")
+    def review_match(staple_id: int, variant_id: int, body: MatchReview):
+        with database.connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            if connection.execute("SELECT 1 FROM staples WHERE id=?", (staple_id,)).fetchone() is None: raise HTTPException(404, "Staple not found")
+            if connection.execute("SELECT 1 FROM product_variants WHERE id=?", (variant_id,)).fetchone() is None: raise HTTPException(404, "Variant not found")
+            connection.execute("""INSERT INTO staple_matches(staple_id,variant_id,status,approved_at) VALUES(?,?,?,CASE WHEN ?='approved' THEN datetime('now') END)
+                ON CONFLICT(staple_id,variant_id) DO UPDATE SET status=excluded.status, approved_at=excluded.approved_at""", (staple_id, variant_id, body.status, body.status))
+            return as_record(connection.execute("SELECT * FROM staple_matches WHERE staple_id=? AND variant_id=?", (staple_id, variant_id)).fetchone())
 
     @app.get("/api/observations", description="Original observation history, including previous location contexts and superseded prices.")
     def observation_history(staple_id: int | None = Query(default=None, gt=0),

@@ -113,3 +113,21 @@ initializers serialize, successful upgrades are not rerun, and newer unsupported
 schema versions are refused. The original schema did not capture earlier
 location changes, so the migration cannot recover any such lost provenance.
 Existing JSON fields remain available; context and provenance fields are additive.
+
+## Product variants and match review
+
+`POST /api/variants` accepts `retailer`, exactly one of `retailer_product_id` or
+`manual_identity`, optional `barcode` (text), `package_quantity`, `package_unit`,
+`pack_count`, and `form`. Retailer product IDs are stable across listing renames.
+Manual identities are explicit and are never merged by name or barcode. `GET
+/api/variants` optionally filters by retailer; duplicate identities return 409.
+
+`GET /api/staples/{id}/matches` returns variant details and persistent `pending`,
+`approved`, or `rejected` status. `PUT /api/staples/{staple_id}/matches/{variant_id}`
+accepts `{"status":"approved"|"rejected"|"pending"}`. No match is inferred.
+Changing staple name, basis, or rules sets reviews to pending while retaining
+price history. Package/form changes require a new immutable variant and review.
+
+Schema version 2 adds variants, matches, and observation associations. Legacy
+observations retain IDs and all provenance; each receives a distinct pending
+manual identity. Migration is one transaction and rolls back on failure.

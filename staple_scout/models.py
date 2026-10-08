@@ -70,6 +70,7 @@ class StorePatch(StrictModel):
 
 
 class ObservationCreate(StrictModel):
+    variant_id: int | None = Field(default=None, gt=0, strict=True)
     context_id: int | None = Field(default=None, gt=0, strict=True, description="Immutable location context. Omit to use the store's current preferred context; explicit null is invalid.")
     staple_id: int = Field(gt=0, strict=True)
     store_id: Literal["wegmans", "walmart", "target", "hmart", "lidl"]
@@ -132,3 +133,22 @@ class ObservationCreate(StrictModel):
         if not valid:
             raise ValueError("Source URL must be an HTTP(S) URL without credentials")
         return value
+
+class MatchReview(StrictModel):
+    status: Literal["approved", "rejected", "pending"]
+
+class VariantCreate(StrictModel):
+    retailer: Annotated[str, Field(min_length=1, max_length=100)]
+    retailer_product_id: Annotated[str, Field(min_length=1, max_length=200)] | None = None
+    manual_identity: Annotated[str, Field(min_length=1, max_length=200)] | None = None
+    barcode: Annotated[str, Field(min_length=1, max_length=100)] | None = None
+    package_quantity: Quantity
+    package_unit: Unit
+    pack_count: int = Field(default=1, ge=1, le=10000, strict=True)
+    form: Annotated[str, Field(min_length=1, max_length=200)]
+
+    @model_validator(mode="after")
+    def identity(self):
+        if (self.retailer_product_id is None) == (self.manual_identity is None):
+            raise ValueError("Provide exactly one retailer_product_id or manual_identity")
+        return self
