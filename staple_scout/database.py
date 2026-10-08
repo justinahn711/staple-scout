@@ -108,6 +108,7 @@ def migrate_product_matches(connection):
             (retailer, manual_identity, package_quantity, package_unit, pack_count, form)
             VALUES (?, ?, ?, ?, ?, ?)""", (row['store_id'], f"legacy-observation-{row['obs_id']}", row['quantity'], row['unit'], row['pack_count'], row['product_name']))
         connection.execute("INSERT INTO observation_variants(observation_id, variant_id) VALUES (?, ?)", (row['id'], cur.lastrowid))
+        connection.execute("INSERT INTO staple_matches(staple_id, variant_id, status) VALUES (?, ?, 'pending')", (connection.execute("SELECT staple_id FROM observations WHERE id = ?", (row['id'],)).fetchone()[0], cur.lastrowid))
 
 
 class Database:

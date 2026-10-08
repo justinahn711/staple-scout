@@ -156,6 +156,7 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
                 raise HTTPException(422, "Invalid observation reference") from None
             if variant_id is not None:
                 connection.execute("INSERT INTO observation_variants(observation_id, variant_id) VALUES (?, ?)", (cursor.lastrowid, variant_id))
+                connection.execute("INSERT INTO staple_matches(staple_id, variant_id, status) VALUES (?, ?, 'pending') ON CONFLICT DO NOTHING", (body.staple_id, variant_id))
             return as_record(connection.execute("SELECT * FROM observations WHERE id = ?", (cursor.lastrowid,)).fetchone())
 
     @app.post("/api/variants", status_code=201)
@@ -223,10 +224,12 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
                     contexts.location_id, contexts.location_status,
                     contexts.location_status != 'unconfigured' AS location_configured,
                     ranked.context_id = stores.preferred_context_id AS is_current_context FROM (
-                    SELECT observations.*, ROW_NUMBER() OVER (
+                    SELECT observations.*, mv.variant_id, COALESCE(m.status, 'pending') AS match_status, ROW_NUMBER() OVER (
                         PARTITION BY staple_id, store_id, context_id, product_name, channel, quantity, unit, pack_count
                         ORDER BY observed_at DESC, id DESC
                     ) AS rank FROM observations
+                    LEFT JOIN observation_variants mv ON mv.observation_id = observations.id
+                    LEFT JOIN staple_matches m ON m.staple_id = observations.staple_id AND m.variant_id = mv.variant_id
                 ) ranked JOIN stores ON stores.id = ranked.store_id
                 JOIN location_contexts contexts ON contexts.id = ranked.context_id
                 WHERE ranked.rank = 1 AND (? OR ranked.context_id = stores.preferred_context_id)

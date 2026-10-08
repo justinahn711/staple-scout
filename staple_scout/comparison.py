@@ -41,7 +41,9 @@ def compare(staple: dict, observations: list[dict], now: datetime | None = None)
         reasons = []
         if normalized is None:
             reasons.append("incompatible_dimension")
-        if not row["approved"]:
+        if row.get("match_status") != "approved":
+            reasons.append("match_rejected" if row.get("match_status") == "rejected" else "match_pending")
+        elif not row["approved"]:
             reasons.append("not_approved")
         if not row["available"]:
             reasons.append("unavailable")
