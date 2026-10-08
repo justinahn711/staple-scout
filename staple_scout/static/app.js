@@ -105,6 +105,7 @@
       t.tabIndex = t.dataset.tab === state.tab ? 0 : -1;
       panel.setAttribute("aria-labelledby", `tab-${state.tab}`);
     });
+    document.querySelector(".tab.active")?.scrollIntoView({block: "nearest", inline: "nearest"});
     ({
       staples: staplesView,
       stores: storesView,
