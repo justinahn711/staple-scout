@@ -265,3 +265,26 @@ unverified; `stores.source_status` does not imply online stock verifies a shelf.
 `GET /api/sources` is the authoritative per-source channel capability list.
 See `docs/research/hmart.md` for captured evidence, smoke results, conservative
 package/form handling and incomplete category/produce coverage.
+
+## Daily refresh and source status (schema v5)
+
+`python -m staple_scout.scheduler --db <path> --config <json>` explicitly invokes
+the validated-source daily runner. `--dry-run` validates structure without HTTP
+or a claim; `--status` reads registered source attempt/success/failure status.
+Manual and launchd invocations share one durable UTC-day claim per database and a
+retained flock sidecar. Fifty requests total, five entries, at most three
+transient attempts with bounded backoff. No force flag, automatic source login,
+job installation/activation or notification delivery. See `docs/scheduling.md`.
+
+`GET /api/source-status[?context_id=...&channel=...]` returns one entry per
+registered source: `source_id`, `last_attempt`, `last_success`, `last_failure`.
+Each nonnull status includes run ID, context, channel, attempt/finish timestamps,
+status and safe error code. Last success requires accepted/unavailable source
+evidence; an entirely unresolved partial fetch does not replace it. Attempt
+success does not rewrite observed price timestamps or verify a local channel.
+
+Schema v5 adds durable day-claim state atomically and preserves all source/manual
+history. After a crash, that day's unfinished claim remains visible and cached;
+the next day can run once the process lock releases. HTTP429/5xx, transport errors
+and timeouts have classified transient codes for bounded retries; malformed
+source evidence, other HTTP errors and invalid configurations are not retried.

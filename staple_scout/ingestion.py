@@ -4,6 +4,8 @@ import json
 from datetime import datetime, timezone
 from itertools import islice
 
+import httpx
+
 from .adapters import AdapterContext, OfferEvidence, ProductRequest
 
 
@@ -154,6 +156,10 @@ def run_adapter(database, registration, context_id, channel, requests, idempoten
     except Exception as exc:
         # Persist only classified error codes. Retailer exceptions may include tokens,
         # HTML, cookies or private URLs and must never enter the database/API/logs.
+        if isinstance(exc, httpx.HTTPStatusError):
+            error = 'source_http_retryable' if exc.response.status_code == 429 or exc.response.status_code >= 500 else 'source_http_error'
+        elif isinstance(exc, httpx.TransportError) and not isinstance(exc, httpx.TimeoutException):
+            error = 'source_network_error'
         if isinstance(exc, TimeoutError) or type(exc).__name__ in {'ReadTimeout', 'ConnectTimeout', 'TimeoutException', 'PoolTimeout', 'WriteTimeout'}:
             error = 'source_timeout'
         with database.connect() as db:

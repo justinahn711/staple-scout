@@ -17,6 +17,7 @@ from pydantic import ValidationError
 from .adapters import RefreshRequest
 from .ingestion import run_adapter, get_run, enrich_observations, RefreshConflict
 from .registry import default_sources
+from .scheduler import source_status
 from .comparison import compare
 from .database import Database, STORES, STORE_SELECT, as_record
 from .models import ObservationCreate, StapleCreate, StaplePatch, StorePatch, VariantCreate, MatchReview, Retailer, MatchStatus
@@ -58,6 +59,13 @@ def create_app(db_path: str | Path | None = None, *, adapters=None) -> FastAPI:
         return [{"source_id": source.source_id, "retailer": source.retailer,
                  "channels": sorted(source.channels), "validated": source.validated}
                 for source in app.state.adapters.values()]
+
+    @app.get("/api/source-status")
+    def source_statuses(context_id: int | None = Query(default=None, gt=0), channel: str | None = None):
+        if channel is not None and channel not in {"in_store", "pickup", "online"}:
+            raise HTTPException(422, "Unknown channel")
+        return [source_status(database, source_id, context_id=context_id, channel=channel)
+                for source_id in app.state.adapters]
 
     @app.post("/api/refresh")
     def refresh(body: RefreshRequest):
