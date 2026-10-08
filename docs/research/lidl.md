@@ -1,12 +1,14 @@
 # Lidl Chantilly source research
 
 Reviewed 2026-10-08 (America/New_York). Selected location is Lidl store
-`14445`, 14445 Chantilly Crossing Lane, Chantilly, VA 20151-2116. The official
+`US01112`, at 14445 Chantilly Crossing Lane, Chantilly, VA 20151-2116. The official
 store page returned HTTP 200 and exposes the address in both Schema.org JSON-LD
 and visible page text. Its metadata links to the official Weekly Ad page
 `/c/offers-leaflets/s10092873`.
 
-The Weekly Ad page also returned HTTP 200, but explicitly presents a store
+The public store payload identifies offer region `1469` and exposes a
+`/p/api/storestock` path, but does not include product records in this page
+response. The Weekly Ad page also returned HTTP 200, but explicitly presents a store
 selection/regionalization overlay before showing offers. The response did not
 contain product offer records, prices, effective dates, or regular-price
 catalog data for the selected store. No login, challenge bypass, guessed store
