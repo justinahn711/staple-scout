@@ -1,0 +1,15 @@
+{
+  "fixture_kind": "sanitized_indexed_web_tool_evidence_not_live_retailer_response",
+  "source_url": "https://www.walmart.com/store/5969-chantilly-va/shopping-services",
+  "inspected_on": "2026-10-06",
+  "source_crawl_label": "3 weeks ago",
+  "http_status": null,
+  "visible_text_excerpt": "Walmart Supercenter #5969 4368 Chantilly Shopping Center Dr, Chantilly, VA 20151",
+  "advertised_fulfillment_modes": [
+    "pickup",
+    "delivery",
+    "shipping"
+  ],
+  "verified_product_offers": 0,
+  "note": "Public indexed store identity evidence; the separate direct request returned a challenge. Store selection for product requests was not established."
+}
