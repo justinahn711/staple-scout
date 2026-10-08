@@ -9,7 +9,7 @@ function harness(responses, options = {}) {
   const panel = { _html: '', set innerHTML(value) { this._html = value; }, get innerHTML() { return this._html; }, setAttribute() {}, removeAttribute() {}, querySelector(selector) { if (selector === "[data-retry]" || selector === "[data-refresh]") return controls[selector]; return null; }, querySelectorAll(selector) { return controls[selector] || []; } };
   let aborted = false;
   class AbortControllerFake { constructor() { this.signal = { aborted: false }; } abort() { aborted = true; this.signal.aborted = true; } }
-  const context = { window: {}, console, AbortController: AbortControllerFake, URLSearchParams, fetch: async (url, init) => { calls.push(String(url)); if (options.gate) await options.gate; const value = responses.slice().sort((a, b) => b[0].length - a[0].length).find(([prefix]) => String(url).startsWith(prefix))?.[1]; if (value instanceof Error) throw value; return { ok: true, json: async () => value }; } };
+  const context = { window: {}, console, AbortController: AbortControllerFake, URLSearchParams, fetch: async (url, init) => { calls.push(String(url)); if (options.gate) await options.gate; let value = responses.slice().sort((a, b) => b[0].length - a[0].length).find(([prefix]) => String(url).startsWith(prefix))?.[1]; if (typeof value === "function") value = await value(String(url)); if (value instanceof Error) throw value; return { ok: true, json: async () => value }; } };
   vm.runInNewContext(fs.readFileSync('staple_scout/static/comparisons.js', 'utf8'), context);
   return { panel, calls, context, controls, wasAborted: () => aborted };
 }
@@ -46,8 +46,49 @@ test('selected channel and planned stores are included in comparison URL', async
   assert.ok(h.calls.some(url => url.includes('/api/comparisons?') && url.includes('channel=in_store') && url.includes('stores=wegmans') && url.includes('needed_only=true')));
 });
 
-test('pickup mode is sent to comparisons endpoint', async () => {
+test('initial comparison defaults to shelf mode', async () => {
   const h = harness([['/api/staples/1/matches', []], ['/api/staples', staples], ['/api/stores', stores], ['/api/sources', sources], ['/api/comparisons', []], ['/api/source-status', statuses]]);
   h.context.window.StapleComparisons.mount(h.panel, { focusHeading: false }); await new Promise(setImmediate);
   assert.ok(h.calls.some(url => url.includes('/api/comparisons?') && url.includes('channel=in_store')));
+});
+
+function control(properties = {}) {
+  return {...properties, events:{}, focus() {}, addEventListener(name, fn) {this.events[name]=fn;}};
+}
+function baseResponses(comparisons = []) {
+  return [['/api/staples/1/matches', []], ['/api/staples', staples], ['/api/stores', stores],
+    ['/api/sources', sources], ['/api/comparisons', comparisons], ['/api/source-status', statuses]];
+}
+const tick = () => new Promise(setImmediate);
+
+test('changing channel sends pickup and empty planned stores never means all stores', async () => {
+  const h=harness(baseResponses());
+  const pickup=control({value:'pickup',id:'filter-pickup'});
+  const store=control({dataset:{storeFilter:'wegmans'},checked:true,id:'filter-wegmans'});
+  h.controls['[name=comparison-channel]']=[pickup]; h.controls['[data-store-filter]']=[store];
+  h.context.window.StapleComparisons.mount(h.panel,{focusHeading:false}); await tick();
+  pickup.onchange(); await tick();
+  assert.match(h.calls.filter(url=>url.startsWith('/api/comparisons')).at(-1),/channel=pickup/);
+  const count=h.calls.length; store.checked=false; store.onchange(); await tick();
+  assert.equal(h.calls.length,count); assert.match(h.panel.innerHTML,/Select a planned store/);
+});
+
+test('failed refresh retries the preserved filters', async () => {
+  const responses=baseResponses(); const h=harness(responses);
+  const pickup=control({value:'pickup',id:'filter-pickup'}),retry=control();
+  h.controls['[name=comparison-channel]']=[pickup]; h.controls['[data-refresh]']=retry;
+  h.context.window.StapleComparisons.mount(h.panel,{focusHeading:false}); await tick();
+  responses.find(row=>row[0]==='/api/comparisons')[1]=Error('offline');
+  pickup.onchange(); await tick(); assert.match(h.panel.innerHTML,/Couldn’t update comparisons/);
+  responses.find(row=>row[0]==='/api/comparisons')[1]=[];
+  retry.events.click(); await tick();
+  assert.match(h.calls.filter(url=>url.startsWith('/api/comparisons')).at(-1),/channel=pickup/);
+});
+
+test('money and product API strings are escaped', async () => {
+  const offer={id:1,product_name:'<img src=x>',price:'<script>',unit_price:'<svg>',basis:'oz',
+    eligible:false,exclusion_reasons:['stale'],quantity_kind:'fixed'};
+  const h=harness(baseResponses([{staple:staples[0],offers:[offer],winner_id:null}]));
+  h.context.window.StapleComparisons.mount(h.panel,{focusHeading:false}); await tick();
+  assert.match(h.panel.innerHTML,/\$&lt;script&gt;/); assert.doesNotMatch(h.panel.innerHTML,/<img src=x>/);
 });
