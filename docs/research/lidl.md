@@ -20,7 +20,7 @@ The store fixture preserves exact address evidence and the offer-page access
 result. A normal GET to the payload-exposed `/p/api/storestock` path returned
 HTTP 404 (`The current request is not defined by this API`) at
 2026-10-08T04:14:00Z. CUA could not perform the UI selection because the
-configured environment reported `Browser is not available: chrome`; no
+configured environment reported the exact in-app error `Browser is not available: iab`; no
 selection or prices were fabricated. It is not a price fixture. A future bounded attempt needs the supported
 store-selection flow or a documented public regional feed, then must capture
 five items with product identity, package size, regular versus promotional
