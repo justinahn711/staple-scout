@@ -1,6 +1,7 @@
 """Verified source capabilities. Constructing a registry never fetches prices."""
 from .adapters import AdapterRegistration
 from .hmart import HMartAdapter
+from .wegmans import WegmansAdapter
 
 
 def default_sources():
@@ -11,4 +12,9 @@ def default_sources():
         channels=frozenset({'online'}), sellers=frozenset({'HMart - US'}),
         validated=True, timeout=10,
     )
-    return {source.source_id: source}
+    wegmans = AdapterRegistration(
+        source_id='wegmans_in_store', retailer='wegmans', adapter=WegmansAdapter(),
+        channels=frozenset({'in_store'}), sellers=frozenset({'Wegmans'}),
+        validated=True, timeout=10,
+    )
+    return {source.source_id: source, wegmans.source_id: wegmans}

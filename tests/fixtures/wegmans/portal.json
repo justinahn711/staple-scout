@@ -1,0 +1,11 @@
+{
+  "fixture_kind": "sanitized_public_html_projection_not_api_response",
+  "source_url": "https://developer.wegmans.io/",
+  "retrieval_window_start": "2026-10-06T11:32:48+00:00",
+  "retrieval_window_end": "2026-10-06T11:33:04+00:00",
+  "http_status": 200,
+  "final_url": "https://developer.wegmans.io/signin?returnUrl=%2F",
+  "content_type": "text/html",
+  "title": "Sign in - Wegmans Enterprise APIs",
+  "raw_response_sha256": "240c43818468629e756c2e1dae7d8452679c67b8c2f95e3d6f719872de3a2700"
+}

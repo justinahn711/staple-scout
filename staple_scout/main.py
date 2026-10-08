@@ -25,7 +25,7 @@ from .models import ObservationCreate, StapleCreate, StaplePatch, StorePatch, Va
 
 def create_app(db_path: str | Path | None = None, *, adapters=None) -> FastAPI:
     database = Database(db_path or os.environ.get("STAPLE_SCOUT_DB", "data/staple-scout.sqlite3"))
-    app = FastAPI(title="Staple Scout", version="0.1.0", description="Local, manually observed grocery comparisons. Automated sources are not connected. Approval confirms a product satisfies your staple rules; it does not verify its price.")
+    app = FastAPI(title="Staple Scout", version="0.1.0", description="Local grocery comparisons with explicit manual or validated source evidence. Source capabilities and refreshes are available under /api/sources and /api/refresh. Approval confirms a product satisfies your staple rules; it does not verify its price.")
     app.state.database = database
     app.state.adapters = dict(default_sources() if adapters is None else adapters)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "[::1]"])

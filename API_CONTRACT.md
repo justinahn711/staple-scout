@@ -288,3 +288,27 @@ history. After a crash, that day's unfinished claim remains visible and cached;
 the next day can run once the process lock releases. HTTP429/5xx, transport errors
 and timeouts have classified transient codes for bounded retries; malformed
 source evidence, other HTTP errors and invalid configurations are not retried.
+
+### Wegmans Chantilly in-store capability
+
+The default registry also includes verified `wegmans_in_store`, channel
+`in_store`, seller `Wegmans`, for exact location ID `133` only. It accepts
+explicit numeric retailer product IDs; it cannot fetch pickup/delivery or other
+stores. `GET /api/sources` exposes this capability without HTTP fetching. The
+legacy store `source_status` field is not the registry capability authority.
+
+Public website product JSON must confirm all product/store identities and its
+`133-Instore` price channel. Fixed source packages normalize lb/oz/count/gallon;
+weighed purchases retain estimated total/weight and never win exact comparisons.
+Missing stock/price/size stays unresolved, explicit unavailable remains visible,
+and coupon/loyalty terms remain conditional. Only the base in-store price is
+imported. Matches start pending; import never approves substitutes.
+
+See `docs/research/wegmans.md` for field mapping, whitelisted five-product
+fixtures and the opt-in live gate. HTTP access failures preserve prior evidence
+and report `source_http_error` (for example403/404) or `source_http_retryable`
+(429/5xx); check normal public access/product availability before retrying.
+Adapter extraction/identity changes report `source_error`; common evidence
+validation failures report `invalid_evidence`. Check the source contract before
+retrying; never substitute another channel or product as a fallback. No login
+or challenge bypass is implemented.

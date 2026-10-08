@@ -1,0 +1,42 @@
+{
+  "fixture_kind": "sanitized_public_html_projection_not_api_response",
+  "source_url": "https://www.wegmans.com/shop/product/57084",
+  "requested_at": "2026-10-06T11:33:27.632873+00:00",
+  "retrieved_at": "2026-10-06T11:33:27.958253+00:00",
+  "http_status": 200,
+  "final_url": "https://www.wegmans.com/shop/product/57084",
+  "content_type": "text/html; charset=utf-8",
+  "raw_response_sha256": "999748d5f68320c5bc3f1adb6e91889461317f18ae1772bcfae7f5db39d3dfaf",
+  "json_ld_product_projection": {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": "Wegmans Boneless, Skinless Chicken Breasts with Rib Meat, FAMILY PACK",
+    "brand": {
+      "@type": "Brand",
+      "name": "Wegmans"
+    },
+    "sku": "57084",
+    "gtin13": "02002867000009",
+    "category": "Meat",
+    "url": "/shop/product/57084"
+  },
+  "visible_text_excerpt": [
+    "Wegmans Boneless, Skinless Chicken Breasts with Rib Meat, FAMILY PACK",
+    "Avg. 4.8 lbs"
+  ],
+  "json_ld_original_keys": [
+    "@context",
+    "@type",
+    "aggregateRating",
+    "brand",
+    "category",
+    "description",
+    "gtin13",
+    "image",
+    "name",
+    "sku",
+    "url"
+  ],
+  "json_ld_has_offers": false,
+  "page_mode_label": "In Store"
+}
