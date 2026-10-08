@@ -22,12 +22,17 @@ def add_staple(client):
 
 
 def add_observation(client, staple_id, **fields):
-    response = client.post("/api/observations", json={
+    body = {
         "staple_id": staple_id, "store_id": "wegmans", "product_name": "Oats",
         "price": "4.00", "quantity": "16", "unit": "oz", "channel": "in_store",
         "observed_at": (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat(),
         "approved": True, **fields,
-    })
+    }
+    body.update(fields)
+    for v in client.get('/api/variants').json():
+        if v.get('manual_identity') and v['retailer']=='wegmans' and v['package_quantity']==body['quantity'] and v['package_unit']==body['unit'] and v['pack_count']==body['pack_count'] and v['form']==body['product_name']:
+            body.setdefault('variant_id', v['id']); break
+    response = client.post("/api/observations", json=body)
     assert response.status_code == 201, response.text
     return response.json()
 
@@ -235,9 +240,13 @@ def test_original_database_migrates_preserving_data_and_reopens_idempotently(leg
     migrated = snapshot(legacy_path)
     database.Database(legacy_path)
     assert snapshot(legacy_path) == migrated
-    with TestClient(create_app(legacy_path), base_url="http://localhost") as client:
-        result = client.get("/api/comparisons").json()[0]
-        assert result["winner_id"] == 11
+        with TestClient(create_app(legacy_path), base_url="http://localhost") as client:
+            result = client.get("/api/comparisons").json()[0]
+            assert result["winner_id"] is None
+            pending = client.get('/api/staples/1/matches').json()
+            assert pending and pending[0]['status'] == 'pending'
+            assert client.put(f"/api/staples/1/matches/{pending[0]['variant_id']}", json={'status':'approved'}).status_code == 200
+            assert client.get("/api/comparisons").json()[0]["winner_id"] == 11
         assert next(o for o in result["offers"] if o["id"] == 13)["exclusion_reasons"] == ["location_not_configured"]
         assert next(o for o in result["offers"] if o["id"] == 14)["channel"] == "online"
         select_other(client)
