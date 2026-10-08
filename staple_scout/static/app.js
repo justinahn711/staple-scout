@@ -3,6 +3,7 @@
   const panel = document.querySelector("#panel"),
     status = document.querySelector("#status"),
     errors = document.querySelector("#error-region");
+  let disposeView = null;
   const state = {
     tab: "staples",
     staples: [],
@@ -74,6 +75,8 @@
     return d.toISOString().slice(0, 16);
   };
   async function load(message = "Ready") {
+    disposeView?.();
+    disposeView = null;
     const token = ++state.token;
     clear();
     panel.innerHTML = '<div class="loading">Loading your setup…</div>';
@@ -106,7 +109,16 @@
       stores: storesView,
       price: priceView,
       matches: matchesView,
+      compare: () => comparisonsView(false),
+      shopping: () => comparisonsView(true),
     })[state.tab]();
+  }
+  function comparisonsView(shopping) {
+    ++state.token;
+    clear();
+    disposeView = window.StapleComparisons.mount(panel, {
+      shopping, focusHeading: !state.keepTabFocus,
+    });
   }
   function staplesView() {
     ++state.token;

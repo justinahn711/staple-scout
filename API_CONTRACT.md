@@ -302,3 +302,7 @@ history. After a crash, that day's unfinished claim remains visible and cached;
 the next day can run once the process lock releases. HTTP429/5xx, transport errors
 and timeouts have classified transient codes for bounded retries; malformed
 source evidence, other HTTP errors and invalid configurations are not retried.
+
+## Comparison and shopping screens
+
+The local shell adds Compare prices and This week tabs. Both use explicit shelf/pickup, planned-store and needed filters. An empty store selection never silently expands to all stores. Offer eligibility and both winner IDs come from the API; the frontend does not rank prices. Shopping groups unit-price winners and keeps coverage gaps visible. Source attempts/success/failures are filtered to the selected channel and preferred location. Online H Mart remains separate. No retail refresh is triggered by opening these screens.
