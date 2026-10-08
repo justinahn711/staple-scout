@@ -144,8 +144,11 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
             connection.execute("BEGIN IMMEDIATE")
             store = store_record(connection, body.store_id)
             values["context_id"] = body.context_id if body.context_id is not None else store["preferred_context_id"]
-            if body.variant_id is not None and connection.execute("SELECT 1 FROM product_variants WHERE id = ?", (body.variant_id,)).fetchone() is None:
-                raise HTTPException(422, "Unknown variant")
+            if body.variant_id is not None:
+                variant = connection.execute("SELECT * FROM product_variants WHERE id = ?", (body.variant_id,)).fetchone()
+                if variant is None: raise HTTPException(422, "Unknown variant")
+                if variant["retailer"] != body.store_id or variant["package_quantity"] != format(body.quantity, "f") or variant["package_unit"] != body.unit or variant["pack_count"] != body.pack_count:
+                    raise HTTPException(422, "Observation package or retailer does not match variant")
             variant_id = values.pop("variant_id", None)
             if connection.execute("SELECT id FROM staples WHERE id = ?", (body.staple_id,)).fetchone() is None:
                 raise HTTPException(404, "Staple not found")
@@ -164,6 +167,10 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
         values = body.model_dump(); values["package_quantity"] = format(body.package_quantity, "f")
         with database.connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
+            identity = "retailer_product_id" if body.retailer_product_id is not None else "manual_identity"
+            existing = connection.execute(f"SELECT * FROM product_variants WHERE retailer=? AND {identity}=? AND package_quantity=? AND package_unit=? AND pack_count=? AND form=?", (body.retailer, getattr(body, identity), values["package_quantity"], body.package_unit, body.pack_count, body.form)).fetchone()
+            if existing is not None:
+                return as_record(existing)
             keys = ", ".join(values); marks = ", ".join("?" for _ in values)
             try:
                 row = connection.execute(f"INSERT INTO product_variants ({keys}) VALUES ({marks}) RETURNING *", tuple(values.values())).fetchone()
@@ -225,8 +232,8 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
                     contexts.location_status != 'unconfigured' AS location_configured,
                     ranked.context_id = stores.preferred_context_id AS is_current_context FROM (
                     SELECT observations.*, mv.variant_id, COALESCE(m.status, 'pending') AS match_status, ROW_NUMBER() OVER (
-                        PARTITION BY staple_id, store_id, context_id, product_name, channel, quantity, unit, pack_count
-                        ORDER BY observed_at DESC, id DESC
+                        PARTITION BY observations.staple_id, observations.store_id, observations.context_id, observations.product_name, observations.channel, observations.quantity, observations.unit, observations.pack_count
+                        ORDER BY observations.observed_at DESC, observations.id DESC
                     ) AS rank FROM observations
                     LEFT JOIN observation_variants mv ON mv.observation_id = observations.id
                     LEFT JOIN staple_matches m ON m.staple_id = observations.staple_id AND m.variant_id = mv.variant_id

@@ -90,7 +90,8 @@ def migrate_product_matches(connection):
         id INTEGER PRIMARY KEY, retailer TEXT NOT NULL, retailer_product_id TEXT,
         manual_identity TEXT, barcode TEXT, package_quantity TEXT NOT NULL,
         package_unit TEXT NOT NULL, pack_count INTEGER NOT NULL, form TEXT NOT NULL,
-        UNIQUE(retailer, retailer_product_id), UNIQUE(retailer, manual_identity),
+        UNIQUE(retailer, retailer_product_id, package_quantity, package_unit, pack_count, form),
+        UNIQUE(retailer, manual_identity, package_quantity, package_unit, pack_count, form),
         CHECK((retailer_product_id IS NOT NULL) != (manual_identity IS NOT NULL)),
         CHECK(length(trim(package_quantity)) > 0), CHECK(length(trim(form)) > 0)
     )""")
@@ -139,7 +140,8 @@ class Database:
                 connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
             elif version == 1:
                 migrate_product_matches(connection)
-                connection.execute("PRAGMA foreign_key_check")
+                if connection.execute("PRAGMA foreign_key_check").fetchone() is not None:
+                    raise RuntimeError("Database migration failed foreign key validation")
                 connection.execute("PRAGMA user_version = 2")
 
     @contextmanager
