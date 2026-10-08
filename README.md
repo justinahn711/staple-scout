@@ -34,7 +34,9 @@ hosting need an explicit deployment and authentication design first.
 
 ## First comparison
 
-1. Use `GET /api/stores` to see the configured stores and source status.
+1. Use `GET /api/stores` to see the configured stores and source status. Use
+   `PATCH /api/stores/{store_id}` to select a location; configuration does not
+   connect or verify a retailer price source.
 2. Use `POST /api/staples` to add something you actually buy. Choose `oz` for
    weight, `fl_oz` for liquid volume, or `each` for meaningful counts. Describe
    acceptable substitutes in `rules`; these are instructions for your manual
@@ -66,7 +68,11 @@ This 48-hour threshold is an initial conservative product choice, not a claim
 about how frequently any retailer changes prices. `winner_id: null` means there
 is no qualifying observation; it does not mean an item is free or unavailable
 everywhere. Store inventory is only as reliable as the recorded observation.
-Lidl remains ineligible until its location is configured in a later milestone.
+Lidl remains ineligible until you configure its actual location. Switching a
+preferred location preserves old observations under their original context;
+they cannot win for the new location. When recording a price, pass the
+`context_id` you reviewed to avoid ambiguity if the preference changes meanwhile.
+Use `GET /api/observations` to inspect the original price history.
 Changing a staple's name, unit basis, or rules clears its previous approvals;
 record a new approved observation after checking the revised requirements.
 

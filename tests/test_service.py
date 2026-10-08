@@ -28,8 +28,16 @@ def staple(client, **overrides):
 
 def observation(client, staple_id, **overrides):
     body = {"staple_id": staple_id, "store_id": "wegmans", "product_name": "Oats", "price": "6.00", "quantity": "12", "unit": "oz", "pack_count": 2, "channel": "in_store", "observed_at": (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat(), "available": True, "approved": True, **overrides}
+    # These fixtures explicitly reuse a product identity for refresh scenarios.
+    key = (staple_id, body["store_id"], body["product_name"], Decimal(body["quantity"]),
+           body["unit"], body.get("pack_count", 1))
+    identities = getattr(client, "test_variant_ids", {})
+    if key in identities:
+        body.setdefault("variant_id", identities[key])
     response = client.post("/api/observations", json=body)
     assert response.status_code == 201, response.text
+    identities[key] = response.json()["variant_id"]
+    client.test_variant_ids = identities
     return response.json()
 
 
@@ -84,6 +92,33 @@ def test_each_eligibility_condition_and_winner(client):
         assert not offer["eligible"]
         assert offer["exclusion_reasons"] == [reason]
     assert result["offers"][-1]["unit_price"] is None
+
+
+def test_comparison_channel_is_explicit_and_never_mixes_shelf_pickup_or_online(client):
+    item = staple(client)
+    shelf = observation(client, item["id"], product_name="Same product", price="8")
+    pickup = observation(client, item["id"], product_name="Same product", price="1", channel="pickup")
+    online = observation(client, item["id"], product_name="Same product", price="0.10", channel="online")
+    shelf_result = client.get("/api/comparisons?channel=in_store").json()[0]
+    assert shelf_result["winner_id"] == shelf["id"]
+    assert next(o for o in shelf_result["offers"] if o["id"] == pickup["id"])["exclusion_reasons"] == ["not_in_store"]
+    pickup_result = client.get("/api/comparisons?channel=pickup").json()[0]
+    assert pickup_result["winner_id"] == pickup["id"]
+    assert next(o for o in pickup_result["offers"] if o["id"] == shelf["id"])["exclusion_reasons"] == ["not_pickup"]
+    assert next(o for o in pickup_result["offers"] if o["id"] == online["id"])["exclusion_reasons"] == ["not_pickup"]
+    assert client.get("/api/comparisons?channel=online").status_code == 422
+
+
+def test_comparison_reports_channel_gap_and_rejects_internal_unknown_channel():
+    item = {"basis": "each"}
+    empty = compare(item, [], channel="pickup")
+    assert empty["channel"] == "pickup" and empty["winner_id"] is None
+    assert empty["gap"] == "no_observations"
+    row = {"id": 1, "price": "1", "quantity": "1", "pack_count": 1, "unit": "each", "approved": False,
+           "available": True, "conditions": "", "channel": "pickup", "observed_at": datetime.now(timezone.utc).isoformat()}
+    assert compare(item, [row], channel="pickup")["gap"] == "no_eligible_offers"
+    with pytest.raises(ValueError):
+        compare(item, [], channel="online")
 
 
 def test_freshness_boundary_and_recomputed_age():
@@ -248,3 +283,51 @@ def test_winner_compares_unit_price_not_package_price_and_ties_are_stable(client
 def test_api_explorer_describes_decimal_inputs_as_strings(client):
     schema = client.get("/openapi.json").json()["components"]["schemas"]["ObservationCreate"]["properties"]
     assert schema["price"]["type"] == schema["quantity"]["type"] == "string"
+
+
+@pytest.mark.parametrize("fields,reason", [
+    ({"approved": False}, "not_approved"),
+    ({"available": False}, "unavailable"),
+    ({"conditions": "Lidl Plus member"}, "conditional_price"),
+    ({"unit": "fl_oz"}, "incompatible_dimension"),
+    ({"observed_at": (datetime.now(timezone.utc) - timedelta(hours=49)).isoformat()}, "stale"),
+])
+def test_pickup_applies_all_eligibility_rules(client, fields, reason):
+    item = staple(client)
+    row = observation(client, item['id'], channel='pickup', **fields)
+    result = client.get('/api/comparisons?channel=pickup').json()[0]
+    assert result['winner_id'] is None
+    assert result['gap'] == 'no_eligible_offers'
+    assert reason in result['offers'][0]['exclusion_reasons']
+    assert result['offers'][0]['id'] == row['id']
+
+
+def test_latest_unavailable_pickup_suppresses_old_cheap_price(client):
+    item = staple(client)
+    older = observation(client, item['id'], channel='pickup', price='1',
+        observed_at=(datetime.now(timezone.utc) - timedelta(hours=1)).isoformat())
+    newer = observation(client, item['id'], channel='pickup', price='8', available=False,
+        observed_at=(datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat())
+    assert older['variant_id'] == newer['variant_id']
+    result = client.get('/api/comparisons?channel=pickup').json()[0]
+    assert result['winner_id'] is None
+    assert [o['id'] for o in result['offers']] == [newer['id']]
+    assert result['offers'][0]['exclusion_reasons'] == ['unavailable']
+    assert len(client.get('/api/observations').json()) == 2
+
+
+def test_pickup_wrong_location_and_rejected_match_cannot_win(client):
+    item = staple(client)
+    old = observation(client, item['id'], channel='pickup', price='1')
+    client.patch('/api/stores/wegmans', json={'context': {'location': 'Another store', 'location_id': 'other'}})
+    default = client.get('/api/comparisons?channel=pickup').json()[0]
+    assert default['winner_id'] is None and default['gap'] == 'no_observations'
+    historical = client.get('/api/comparisons?channel=pickup&include_previous_contexts=true').json()[0]
+    assert historical['winner_id'] is None
+    assert historical['offers'][0]['exclusion_reasons'] == ['location_not_current']
+    assert historical['offers'][0]['id'] == old['id']
+    client.patch('/api/stores/wegmans', json={'context_id': old['context_id']})
+    client.put(f"/api/staples/{item['id']}/matches/{old['variant_id']}", json={'status': 'rejected'})
+    rejected = client.get('/api/comparisons?channel=pickup').json()[0]
+    assert rejected['winner_id'] is None
+    assert rejected['offers'][0]['exclusion_reasons'] == ['match_rejected']
