@@ -48,7 +48,9 @@ def test_empty_start_and_source_honesty(client):
     stores = client.get("/api/stores").json()
     assert {row["id"] for row in stores} == {"wegmans", "walmart", "target", "hmart", "lidl"}
     assert all(row["source_status"] == "not_connected" for row in stores)
-    assert client.get("/", follow_redirects=False).headers["location"] == "/docs"
+    root = client.get("/", follow_redirects=False)
+    assert root.status_code == 200
+    assert "Staple Scout" in root.text
 
 
 @pytest.mark.parametrize("unit,quantity,basis,expected", [
