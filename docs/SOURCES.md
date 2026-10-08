@@ -1,16 +1,17 @@
 # Retailer source evidence
 
-Reviewed October 5, 2026 (America/New_York). Public pages were inspected; no live
-price adapter has yet been validated or enabled in this repository. Earlier API
-successes supplied in the project brief are useful leads, not fresh test results.
+Updated October 8, 2026 (America/New_York). The registry includes validated
+Wegmans Chantilly in-store evidence and H Mart online reference evidence. App
+startup performs no retailer request. Other sources remain disconnected pending
+their separate validation gates; see each research PR for its current evidence.
 
 | Retailer | Location | Current evidence | Integration state |
 |---|---|---|---|
-| Wegmans | Chantilly; #133 reported in brief | Developer portal exists but opens at sign-in; exact endpoint and access still needed | Not connected |
+| Wegmans | Chantilly #133 verified | Anonymous public product JSON confirms store/channel; five-product gate passed | `wegmans_in_store`, in_store only |
 | Walmart | Chantilly Supercenter #5969, tentative user location | Official local store page lists grocery pickup and delivery | Not connected |
-| Target | Chantilly; ID not validated | Brief reports RedSky success; exact request and channel still needed | Not connected |
-| H Mart | Centreville | Brief reports VTEX JSON/barcodes; local shelf correspondence not established | Not connected |
-| Lidl | Specific location undecided | Website exposes products/deals; complete location-specific coverage unverified | Not connected |
+| Target | Chantilly #1827 verified in research PR22 | Normal browsing reaches human verification; five-product price gate incomplete | Not connected |
+| H Mart | Centreville shelf context; online catalog separate | Five exact product/SKU online references validated; no local shelf correspondence | `hmart_online`, online reference only |
+| Lidl | User-selected Chantilly US01112 | Research PR25 documents regional/flyer evidence and unresolved regular-price/stock semantics | Not connected |
 
 ## Wegmans
 
@@ -21,8 +22,10 @@ successes supplied in the project brief are useful leads, not fresh test results
   says online ordering prices are about 15% above in-store prices. Preserve the
   actual channel; never derive shelf prices by dividing by a blanket markup.
 
-Next: obtain the previously working request or documented supported API details,
-then validate store identity and in-store mode with a small product sample.
+See [Wegmans evidence and limits](research/wegmans.md) for the observed public
+website request, five-product fixture, stock/promotion/weight semantics and
+explicit disposable-database live smoke command. The developer portal is not
+needed for this validated website path. No physical shelf verification is claimed.
 
 ## Walmart
 

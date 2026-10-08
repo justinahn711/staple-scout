@@ -141,10 +141,10 @@ def test_five_online_records_ingest_pending_and_cannot_win_local_modes(tmp_path)
                 assert 'Centreville stock' in offer['conditions']
 
 
-def test_registry_has_only_verified_online_reference_without_fetching():
+def test_registry_preserves_verified_online_reference_without_fetching():
     from staple_scout.registry import default_sources
     sources = default_sources()
-    assert set(sources) == {'hmart_online'}
+    assert set(sources) == {'hmart_online', 'wegmans_in_store'}
     assert sources['hmart_online'].validated and sources['hmart_online'].channels == frozenset({'online'})
 
 
