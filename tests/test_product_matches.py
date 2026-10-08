@@ -39,3 +39,46 @@ def test_variant_package_mismatch_rejected(client):
     sid=staple(client); vid=variant(client)['id']
     r=client.post('/api/observations',json={'staple_id':sid,'variant_id':vid,'store_id':'wegmans','product_name':'Rice','price':'4','quantity':'32','unit':'oz','channel':'in_store','observed_at':datetime.now(timezone.utc).isoformat()})
     assert r.status_code == 422
+
+def test_explicit_pending_match_cannot_be_bypassed_by_observation_approval(client):
+    sid=staple(client); vid=variant(client)['id']; observation(client,sid,vid)
+    client.put(f'/api/staples/{sid}/matches/{vid}',json={'status':'pending'})
+    row=client.post('/api/observations',json={'staple_id':sid,'variant_id':vid,'store_id':'wegmans','product_name':'Rice','price':'3','quantity':'16','unit':'oz','channel':'in_store','approved':True,'observed_at':datetime.now(timezone.utc).isoformat()})
+    assert row.status_code==201
+    assert client.get('/api/comparisons').json()[0]['winner_id'] is None
+
+def test_approved_match_applies_to_refreshed_unapproved_observation(client):
+    sid=staple(client); vid=variant(client)['id']; observation(client,sid,vid)
+    client.put(f'/api/staples/{sid}/matches/{vid}',json={'status':'approved'})
+    row=observation(client,sid,vid,'2')
+    assert client.get('/api/comparisons').json()[0]['winner_id']==row['id']
+
+def test_renamed_listing_same_variant_supersedes_old_offer(client):
+    sid=staple(client); vid=variant(client)['id']; observation(client,sid,vid,'9')
+    client.put(f'/api/staples/{sid}/matches/{vid}',json={'status':'approved'})
+    row=client.post('/api/observations',json={'staple_id':sid,'variant_id':vid,'store_id':'wegmans','product_name':'Renamed rice','price':'4','quantity':'16','unit':'oz','channel':'in_store','observed_at':datetime.now(timezone.utc).isoformat()}).json()
+    assert [x['id'] for x in client.get('/api/comparisons').json()[0]['offers']]==[row['id']]
+
+def test_same_manual_name_does_not_merge_distinct_explicit_identities(client):
+    a=variant(client,retailer_product_id=None,manual_identity='manual-a')
+    b=variant(client,retailer_product_id=None,manual_identity='manual-b')
+    assert a['id'] != b['id']
+    assert variant(client,retailer_product_id=None,manual_identity='manual-a')['id']==a['id']
+
+def test_invalid_retailer_and_decimal_json_rejected(client):
+    assert client.post('/api/variants',json={'retailer':'','retailer_product_id':'x','package_quantity':'1','package_unit':'oz','form':'bag'}).status_code==422
+    assert client.post('/api/variants',json={'retailer':'wegmans','retailer_product_id':'x','package_quantity':1,'package_unit':'oz','form':'bag'}).status_code==422
+
+def test_package_version_requires_new_review_and_keeps_history(client):
+    sid=staple(client); old=variant(client); observation(client,sid,old['id'])
+    client.put(f'/api/staples/{sid}/matches/{old["id"]}',json={'status':'approved'})
+    new=variant(client,package_quantity='32'); assert new['id'] != old['id']
+    assert client.get(f'/api/staples/{sid}/matches').json()[0]['status']=='approved'
+    assert client.get('/api/observations').json()
+
+def test_rule_invalidation_cannot_revive_with_observation_flag(client):
+    sid=staple(client); vid=variant(client)['id']; observation(client,sid,vid)
+    client.put(f'/api/staples/{sid}/matches/{vid}',json={'status':'approved'})
+    client.patch(f'/api/staples/{sid}',json={'rules':'organic'})
+    observation(client,sid,vid)
+    assert client.get('/api/comparisons').json()[0]['winner_id'] is None
