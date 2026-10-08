@@ -109,6 +109,18 @@ def test_comparison_channel_is_explicit_and_never_mixes_shelf_pickup_or_online(c
     assert client.get("/api/comparisons?channel=online").status_code == 422
 
 
+def test_comparison_reports_channel_gap_and_rejects_internal_unknown_channel():
+    item = {"basis": "each"}
+    empty = compare(item, [], channel="pickup")
+    assert empty["channel"] == "pickup" and empty["winner_id"] is None
+    assert empty["gap"] == "no_observations"
+    row = {"id": 1, "price": "1", "quantity": "1", "pack_count": 1, "unit": "each", "approved": False,
+           "available": True, "conditions": "", "channel": "pickup", "observed_at": datetime.now(timezone.utc).isoformat()}
+    assert compare(item, [row], channel="pickup")["gap"] == "no_eligible_offers"
+    with pytest.raises(ValueError):
+        compare(item, [], channel="online")
+
+
 def test_freshness_boundary_and_recomputed_age():
     now = datetime.now(timezone.utc)
     row = {"id": 1, "price": "1", "quantity": "1", "pack_count": 1, "unit": "each", "approved": True, "available": True, "conditions": "", "channel": "in_store", "observed_at": (now - timedelta(hours=48) + timedelta(microseconds=1)).isoformat()}
