@@ -1,0 +1,11 @@
+{
+  "fixture_kind": "sanitized_public_access_recheck_not_price_evidence",
+  "retrieved_at": "2026-10-08T13:27:56.890997+00:00",
+  "source_url": "https://www.walmart.com/store/5969-chantilly-va/shopping-services",
+  "http_status": 200,
+  "content_type": "text/html; charset=utf-8",
+  "final_origin_path": "https://www.walmart.com/blocked",
+  "challenge_detected": true,
+  "raw_response_sha256": "35ba06376bc2ead89ab20e31981c96ee6a4b04a13c705f2312fb50bf1ee76c9d",
+  "title": "Robot or human?"
+}
