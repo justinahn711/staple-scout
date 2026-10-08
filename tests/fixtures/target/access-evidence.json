@@ -1,0 +1,28 @@
+{
+  "inspected_at": "2026-10-08T04:18:49Z",
+  "retailer": "target",
+  "store": {
+    "id": "1827",
+    "address": "14391 Chantilly Crossing Ln, Chantilly, VA 20151-2118",
+    "source_url": "https://www.target.com/sl/chantilly-store/1827",
+    "http_status": 200
+  },
+  "public_website_configuration": {
+    "base_url": "https://redsky.target.com",
+    "observed_routes": [
+      "redsky_aggregations/v1/web/plp_client_v1",
+      "redsky_aggregations/v1/web/pdp_client_v1"
+    ],
+    "access_keys_retained": false,
+    "live_price_request_validated": false
+  },
+  "browser_attempt": {
+    "url": "https://www.target.com/c/grocery/-/N-5xt1a",
+    "result": "human_verification",
+    "visible_text": "Quick verification Press & hold to confirm you\u2019re a human (and not a bot).",
+    "challenge_attempted": false
+  },
+  "product_evidence": [],
+  "channel": null,
+  "price_access_verified": false
+}
