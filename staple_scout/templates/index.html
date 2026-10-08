@@ -3,17 +3,18 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Staple Scout · Setup</title>
+    <title>Staple Scout</title>
     <link rel="stylesheet" href="/static/app.css" />
+    <link rel="stylesheet" href="/static/comparisons.css" />
   </head>
   <body>
     <header class="top">
       <div class="top-inner">
-        <a class="brand" href="/" aria-label="Staple Scout setup"
+        <a class="brand" href="/" aria-label="Staple Scout"
           ><span class="brand-mark">SS</span
           ><span
             ><strong>Staple Scout</strong
-            ><small>Local grocery setup</small></span
+            ><small>Your grocery staples</small></span
           ></a
         >
         <p id="status" class="status" role="status" aria-live="polite">
@@ -22,7 +23,7 @@
       </div>
     </header>
     <main>
-      <nav class="tabs" aria-label="Setup sections" role="tablist">
+      <nav class="tabs" aria-label="Grocery sections" role="tablist">
         <button
           class="tab active"
           role="tab"
@@ -42,6 +43,8 @@
         >
           Review matches
         </button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="compare">Compare prices</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="shopping">This week</button>
       </nav>
       <div
         id="error-region"
@@ -52,6 +55,7 @@
       ></div>
       <section role="tabpanel" id="panel" aria-live="polite"></section>
     </main>
+    <script src="/static/comparisons.js" defer></script>
     <script src="/static/app.js" defer></script>
   </body>
 </html>
