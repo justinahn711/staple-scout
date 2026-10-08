@@ -70,14 +70,19 @@ Monetary amounts and input quantities are decimal strings. Persistent storage de
   original `store_location`, `location_id`, `location_status`, and
   `location_configured`. Unknown store filters or nonpositive integer filters
   return 422; unmatched valid filters return an empty list.
-- `GET /api/comparisons?needed_only=false&stores=wegmans,walmart&include_previous_contexts=false`: array of
-  `{staple: {...}, offers: [...], winner_id: number|null}`.
+- `GET /api/comparisons?needed_only=false&stores=wegmans,walmart&channel=in_store&include_previous_contexts=false`: array of
+  `{staple: {...}, offers: [...], winner_id: number|null, channel: string,
+  gap: string|null}`. `gap` is `no_observations` or `no_eligible_offers` when
+  `winner_id` is null, and null when a winner exists.
   Each offer includes observation input fields, `id`, `store_name`, original
   `store_location`, `location_id`, `location_status`, `location_configured`,
   `is_current_context`, `unit_price` decimal string|null, `basis`, `eligible` boolean,
-  `exclusion_reasons` string array. Winner lowest unit price among eligible,
-  available, approved, fresh (<48h), unconditional in_store observations.
-  Online/pickup observations remain visible with an exclusion reason. Never
+  `exclusion_reasons` string array. Winner is the lowest unit price among
+  eligible, available, approved, fresh (<48h), unconditional observations in
+  the selected channel; this is a unit-price winner, not package outlay.
+  `channel` accepts `in_store` (shelf, default) or `pickup`; unknown values
+  return 422. Only observations matching the requested channel can win.
+  Online observations remain visible with an exclusion reason. Never
   claim they are verified shelf prices. Freshness reevaluated on every request.
   Only preferred-context observations are shown by default. With
   `include_previous_contexts=true`, older contexts also appear but are excluded

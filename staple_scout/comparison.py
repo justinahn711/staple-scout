@@ -32,7 +32,10 @@ def unit_price(observation: dict, basis: str) -> Decimal | None:
         return Decimal(observation["price"]) / total
 
 
-def compare(staple: dict, observations: list[dict], now: datetime | None = None) -> dict:
+def compare(staple: dict, observations: list[dict], now: datetime | None = None,
+            channel: str = "in_store") -> dict:
+    if channel not in {"in_store", "pickup"}:
+        raise ValueError(f"Unknown comparison channel: {channel}")
     now = now or datetime.now(timezone.utc)
     offers = []
     candidates = []
@@ -54,8 +57,8 @@ def compare(staple: dict, observations: list[dict], now: datetime | None = None)
             reasons.append("location_not_current")
         if not row.get("location_configured", True) or row.get("store_location", "").strip().lower() == "unselected":
             reasons.append("location_not_configured")
-        if row["channel"] != "in_store":
-            reasons.append("not_in_store")
+        if row["channel"] != channel:
+            reasons.append("not_in_store" if channel == "in_store" else f"not_{channel}")
         age = now - datetime.fromisoformat(row["observed_at"])
         if age < timedelta(0):
             reasons.append("future_observation")
@@ -68,4 +71,7 @@ def compare(staple: dict, observations: list[dict], now: datetime | None = None)
         offers.append(offer)
         if not reasons:
             candidates.append((normalized, row["id"]))
-    return {"staple": staple, "offers": offers, "winner_id": min(candidates)[1] if candidates else None}
+    winner_id = min(candidates)[1] if candidates else None
+    return {"staple": staple, "offers": offers, "winner_id": winner_id,
+            "channel": channel,
+            "gap": None if winner_id is not None else ("no_observations" if not offers else "no_eligible_offers")}
