@@ -23,3 +23,22 @@ retrieve product identity, package quantity, local availability, channel, price,
 conditions and evidence time for five representative staples at store 1827.
 The user has no older API requests to supply; investigation started from the
 websites as requested. Manual observations remain available in the app.
+
+## Resumed access check — October8 evening
+
+Normal public store/grocery GETs still return HTML. Ordinary in-app browser
+navigation now renders some catalog product cards, but its selected-store
+button reads **Fair Lakes**, and the page also displays a press-and-hold human
+verification iframe. The Health Data Consent notice remains unaccepted. No
+challenge or consent action was performed, and no local price was imported.
+The sanitized DOM observation is in
+`tests/fixtures/target/browser-recheck-20261008.json`; advertising URLs, session
+identifiers, keys, cookies and raw page content are omitted.
+
+This narrows the blocker: public catalog cards can be visible, but the required
+Chantilly1827 selection and five-product local price/stock/channel gate remain
+unverified behind normal browsing verification. Fair Lakes product displays
+cannot be relabeled as Chantilly prices. No adapter or source registration was
+added. Resume after normal access permits selecting the intended store and
+validating the complete product/offer contract; no automated challenge bypass
+or account login is part of this work.

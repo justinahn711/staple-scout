@@ -1,0 +1,14 @@
+{
+  "fixture_kind": "sanitized_browser_access_observation_not_price_evidence",
+  "recorded_at": "2026-10-08T21:15:52.056864+00:00",
+  "source_url": "https://www.target.com/c/grocery/-/N-5xt1a",
+  "requested_local_store": "Chantilly 1827",
+  "visible_selected_store": "Fair Lakes",
+  "catalog_cards_visible": true,
+  "human_verification_iframe_visible": true,
+  "human_verification_instruction": "Press and hold to confirm you are human",
+  "health_data_consent_notice_visible": true,
+  "consent_or_challenge_interaction_performed": false,
+  "local_five_product_price_stock_gate_met": false,
+  "price_observations_imported": 0
+}
