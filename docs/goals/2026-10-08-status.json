@@ -157,11 +157,11 @@
       "branch": "issue-9-wegmans-adapter",
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-9",
       "pr": "https://github.com/justinahn711/staple-scout/pull/31",
-      "validation": "254 offline Python tests pass (54 Wegmans tests); independent review complete; five-product live smoke at 2026-10-08T13:18:22Z imported five traceable in-store observations into a disposable DB with all matches pending. Push and PR CI pass.",
+      "validation": "262 offline Python tests pass (62 Wegmans cases including all eight historical research fixtures). Reviewed research PR18 is incorporated locally to satisfy dependencies and avoid a later documentation add/add conflict; original report retained as historical. Independent review and earlier five-product disposable live gate remain valid; runtime unchanged. Updated push/PR CI pass.",
       "blocker": null,
       "integration_base": "issue-15-daily-refresh",
       "ci": "passed",
-      "head": "4452191"
+      "head": "a907a4c"
     },
     {
       "number": 10,
@@ -172,11 +172,14 @@
         7,
         8
       ],
-      "branch": null,
-      "worktree": null,
-      "pr": null,
-      "validation": null,
-      "blocker": "Direct Walmart local-store request reaches human verification; indexed offers belong to other locations. Need supported store-local access. See PR19."
+      "branch": "issue-10-walmart-adapter",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-10",
+      "pr": "https://github.com/justinahn711/staple-scout/pull/32",
+      "validation": "Fresh normal public store-page GET at 2026-10-08T13:27:56Z still resolves to /blocked HTML titled Robot or human? Sanitized metadata/body hash saved; source gate remains unmet. Own branch/worktree includes reviewed PR19 research and PR27 foundation. Draft PR32 is a blocked-work checkpoint, not an implemented adapter or closure for #10. Baseline CI passes.",
+      "blocker": "Current public Chantilly5969 request still reaches human verification. Indexed prices are other-store/location-unknown and cannot validate pickup stock/price/seller. Need supported local source access; no challenge was solved or bypassed. See draft PR32 and source research PR19.",
+      "integration_base": "issue-15-daily-refresh",
+      "head": "075c449",
+      "ci": "passed"
     },
     {
       "number": 11,
