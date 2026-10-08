@@ -1,1 +1,57 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Staple Scout · Setup</title><link rel="stylesheet" href="/static/app.css"></head><body><header class="top"><div class="top-inner"><a class="brand" href="/" aria-label="Staple Scout setup"><span class="brand-mark">SS</span><span><strong>Staple Scout</strong><small>Local grocery setup</small></span></a><p id="status" class="status" role="status" aria-live="polite">Loading your setup…</p></div></header><main><nav class="tabs" aria-label="Setup sections" role="tablist"><button class="tab active" role="tab" aria-selected="true" data-tab="staples">Staples</button><button class="tab" role="tab" aria-selected="false" data-tab="stores">Stores</button><button class="tab" role="tab" aria-selected="false" data-tab="price">Record price</button><button class="tab" role="tab" aria-selected="false" data-tab="matches">Review matches</button></nav><div id="error-region" class="error-region" role="alert" hidden></div><section id="panel" aria-live="polite"></section></main><script src="/static/app.js" defer></script></body></html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Staple Scout · Setup</title>
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="top-inner">
+        <a class="brand" href="/" aria-label="Staple Scout setup"
+          ><span class="brand-mark">SS</span
+          ><span
+            ><strong>Staple Scout</strong
+            ><small>Local grocery setup</small></span
+          ></a
+        >
+        <p id="status" class="status" role="status" aria-live="polite">
+          Loading your setup…
+        </p>
+      </div>
+    </header>
+    <main>
+      <nav class="tabs" aria-label="Setup sections" role="tablist">
+        <button
+          class="tab active"
+          role="tab"
+          aria-selected="true"
+          data-tab="staples"
+        >
+          Staples</button
+        ><button class="tab" role="tab" aria-selected="false" data-tab="stores">
+          Stores</button
+        ><button class="tab" role="tab" aria-selected="false" data-tab="price">
+          Record price</button
+        ><button
+          class="tab"
+          role="tab"
+          aria-selected="false"
+          data-tab="matches"
+        >
+          Review matches
+        </button>
+      </nav>
+      <div
+        id="error-region"
+        tabindex="-1"
+        class="error-region"
+        role="alert"
+        hidden
+      ></div>
+      <section role="tabpanel" id="panel" aria-live="polite"></section>
+    </main>
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>
