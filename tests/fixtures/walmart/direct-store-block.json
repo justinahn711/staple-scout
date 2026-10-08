@@ -1,0 +1,17 @@
+{
+  "fixture_kind": "sanitized_direct_http_block_evidence",
+  "source_url": "https://www.walmart.com/store/5969-chantilly-va/shopping-services",
+  "retrieved_at_utc_approximate": "2026-10-06T11:37:07.702131+00:00",
+  "timestamp_basis": "local output file modification time immediately after curl wrote the response",
+  "method": "GET",
+  "http_status_after_redirects": 200,
+  "final_url_without_query": "https://www.walmart.com/blocked",
+  "sanitization": "All redirect query parameters and all scripts removed; no challenge identifier persisted.",
+  "content_type": "text/html; charset=utf-8",
+  "raw_response_sha256": "35ba06376bc2ead89ab20e31981c96ee6a4b04a13c705f2312fb50bf1ee76c9d",
+  "title": "Robot or human?",
+  "visible_text_excerpt": "Activate and hold the button to confirm that you’re human. Thank You!",
+  "outcome": "human_verification_required",
+  "response_contains_verified_store_data": false,
+  "action_taken": "Stopped direct retrieval; no challenge interaction or bypass attempted."
+}
