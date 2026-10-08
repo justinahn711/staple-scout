@@ -316,7 +316,7 @@ def test_database_enforces_immutable_context_and_store_ownership(legacy_path):
         "UPDATE observations SET context_id = 2 WHERE id = 11",
         "UPDATE stores SET preferred_context_id = 2 WHERE id = 'wegmans'",
         "UPDATE stores SET preferred_context_id = NULL WHERE id = 'wegmans'",
-        "INSERT INTO observations SELECT 99, staple_id, store_id, 2, product_name, price, quantity, unit, pack_count, channel, observed_at, source_url, available, approved, conditions FROM observations WHERE id = 11",
+        "INSERT INTO observations SELECT 99, staple_id, store_id, 2, product_name, price, quantity, unit, pack_count, channel, observed_at, source_url, available, approved, conditions, quantity_kind FROM observations WHERE id = 11",
     ):
         with pytest.raises(sqlite3.IntegrityError), db.connect() as connection:
             connection.execute(statement)
@@ -343,9 +343,42 @@ def test_version_one_upgrade_and_match_migration_rollback(legacy_path, monkeypat
     monkeypatch.setattr(database, 'migrate_product_matches', migrate)
     db = database.Database(legacy_path)
     with db.connect() as connection:
-        assert connection.execute('PRAGMA user_version').fetchone()[0] == 3
+        assert connection.execute('PRAGMA user_version').fetchone()[0] == database.SCHEMA_VERSION
         assert connection.execute('PRAGMA foreign_key_check').fetchall() == []
         assert connection.execute("SELECT count(*) FROM staple_matches WHERE status='pending'").fetchone()[0] == 4
+    final = snapshot(legacy_path)
+    database.Database(legacy_path)
+    assert snapshot(legacy_path) == final
+
+
+def test_quantity_migration_v2_rolls_back_then_preserves_prices_and_matches(legacy_path, monkeypatch):
+    with sqlite3.connect(legacy_path) as connection:
+        connection.row_factory = sqlite3.Row
+        connection.execute('BEGIN IMMEDIATE')
+        database.migrate_location_contexts(connection)
+        database.migrate_product_matches(connection)
+        connection.execute("UPDATE staple_matches SET status='approved' WHERE id=1")
+        connection.execute('PRAGMA user_version = 2')
+    original = snapshot(legacy_path)
+    migrate = database.migrate_desired_quantities
+
+    def fail_after_alter(connection):
+        migrate(connection)
+        raise RuntimeError('Injected quantity migration failure')
+
+    monkeypatch.setattr(database, 'migrate_desired_quantities', fail_after_alter)
+    with pytest.raises(RuntimeError, match='Injected quantity'):
+        database.Database(legacy_path)
+    assert snapshot(legacy_path) == original
+    monkeypatch.setattr(database, 'migrate_desired_quantities', migrate)
+    db = database.Database(legacy_path)
+    with db.connect() as connection:
+        assert connection.execute('PRAGMA user_version').fetchone()[0] == database.SCHEMA_VERSION
+        assert tuple(connection.execute('SELECT desired_quantity,desired_unit FROM staples').fetchone()) == (None, None)
+        assert connection.execute("SELECT count(*) FROM observations WHERE quantity_kind='fixed'").fetchone()[0] == 4
+        assert connection.execute("SELECT status FROM staple_matches WHERE id=1").fetchone()[0] == 'approved'
+        assert tuple(connection.execute('SELECT price,source_url FROM observations WHERE id=11').fetchone()) == ('5.00', 'https://example.com/oats')
+        assert connection.execute('PRAGMA foreign_key_check').fetchall() == []
     final = snapshot(legacy_path)
     database.Database(legacy_path)
     assert snapshot(legacy_path) == final

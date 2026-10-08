@@ -11,7 +11,7 @@ STORES = [
     ("hmart", "H Mart", "Centreville", "in_store", "not_connected", "Prices require manual observation."),
     ("lidl", "Lidl", "Unselected", "in_store", "not_connected", "Choose and record the local store before comparing prices."),
 ]
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4  # 1 contexts; 2 matches; 3 desired quantities; 4 source ingestion.
 
 LEGACY_SCHEMA = (
     """CREATE TABLE stores (
@@ -116,17 +116,37 @@ def migrate_product_matches(connection):
     connection.execute("""CREATE TRIGGER observation_variant_immutable BEFORE UPDATE ON observation_variants
         BEGIN SELECT RAISE(ABORT, 'Observation identity is immutable'); END""")
 
-def migrate_ingestion(connection):
+def migrate_desired_quantities(connection):
+    connection.execute("ALTER TABLE staples ADD COLUMN desired_quantity TEXT")
+    connection.execute("ALTER TABLE staples ADD COLUMN desired_unit TEXT")
+    connection.execute("""ALTER TABLE observations ADD COLUMN quantity_kind TEXT NOT NULL
+        DEFAULT 'fixed' CHECK(quantity_kind IN ('fixed','estimated','variable'))""")
+
+
+def migrate_source_ingestion(connection):
     connection.execute("""CREATE TABLE refresh_runs (
-        id INTEGER PRIMARY KEY, retailer TEXT NOT NULL REFERENCES stores(id), context_id INTEGER NOT NULL,
-        started_at TEXT NOT NULL, finished_at TEXT, status TEXT NOT NULL CHECK(status IN ('running','succeeded','failed')),
-        error TEXT, UNIQUE(retailer, started_at)
+        id INTEGER PRIMARY KEY, source_id TEXT NOT NULL,
+        retailer TEXT NOT NULL REFERENCES stores(id), context_id INTEGER NOT NULL,
+        channel TEXT NOT NULL CHECK(channel IN ('in_store','pickup','online')),
+        idempotency_key TEXT NOT NULL, fingerprint TEXT NOT NULL,
+        started_at TEXT NOT NULL, finished_at TEXT,
+        status TEXT NOT NULL CHECK(status IN ('running','succeeded','partial','failed')),
+        error TEXT, UNIQUE(source_id, idempotency_key),
+        FOREIGN KEY(context_id, retailer) REFERENCES location_contexts(id, store_id)
     )""")
     connection.execute("""CREATE TABLE refresh_results (
-        id INTEGER PRIMARY KEY, run_id INTEGER NOT NULL REFERENCES refresh_runs(id) ON DELETE CASCADE,
-        retailer_product_id TEXT, status TEXT NOT NULL, error TEXT, seller TEXT, retrieved_at TEXT,
-        observation_id INTEGER REFERENCES observations(id), UNIQUE(run_id, retailer_product_id)
+        id INTEGER PRIMARY KEY, run_id INTEGER NOT NULL REFERENCES refresh_runs(id),
+        source_record_id TEXT NOT NULL, retailer_product_id TEXT NOT NULL,
+        observed_at TEXT NOT NULL, retrieved_at TEXT NOT NULL, evidence_json TEXT NOT NULL,
+        status TEXT NOT NULL CHECK(status IN ('accepted','unresolved','unavailable')),
+        reason TEXT, variant_id INTEGER REFERENCES product_variants(id),
+        UNIQUE(run_id, source_record_id)
     )""")
+    connection.execute("""CREATE TABLE observation_imports (
+        observation_id INTEGER PRIMARY KEY REFERENCES observations(id) ON DELETE CASCADE,
+        result_id INTEGER NOT NULL REFERENCES refresh_results(id)
+    )""")
+    connection.execute("CREATE INDEX refresh_product_state ON refresh_results(retailer_product_id, observed_at DESC, id DESC)")
 
 
 class Database:
@@ -151,22 +171,18 @@ class Database:
                 elif not {"stores", "staples", "observations"}.issubset(tables):
                     raise RuntimeError("Incomplete original database schema")
                 migrate_location_contexts(connection)
+                version = 1
+            if version == 1:
                 migrate_product_matches(connection)
-                migrate_ingestion(connection)
-                if connection.execute("PRAGMA foreign_key_check").fetchone() is not None:
-                    raise RuntimeError("Database migration failed foreign key validation")
-                connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
-            elif version == 1:
-                migrate_product_matches(connection)
-                if connection.execute("PRAGMA foreign_key_check").fetchone() is not None:
-                    raise RuntimeError("Database migration failed foreign key validation")
-                connection.execute("PRAGMA user_version = 2")
                 version = 2
             if version == 2:
-                migrate_ingestion(connection)
-                if connection.execute("PRAGMA foreign_key_check").fetchone() is not None:
-                    raise RuntimeError("Database migration failed foreign key validation")
-                connection.execute("PRAGMA user_version = 3")
+                migrate_desired_quantities(connection)
+                version = 3
+            if version == 3:
+                migrate_source_ingestion(connection)
+            if connection.execute("PRAGMA foreign_key_check").fetchone() is not None:
+                raise RuntimeError("Database migration failed foreign key validation")
+            connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
 
     @contextmanager
     def connect(self):
