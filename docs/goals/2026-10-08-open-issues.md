@@ -14,19 +14,19 @@ Each issue uses its own branch and isolated worktree. Dependencies may use revie
 | Issue | State | Depends on | PR / evidence / blocker |
 |---|---|---|---|
 | [#1](https://github.com/justinahn711/staple-scout/issues/1) Validate Wegmans Chantilly price access and capture fixtures | PR ready | — | https://github.com/justinahn711/staple-scout/pull/18 |
-| [#2](https://github.com/justinahn711/staple-scout/issues/2) Persist product variants and approved staple matches | working | #6 |  |
+| [#2](https://github.com/justinahn711/staple-scout/issues/2) Persist product variants and approved staple matches | PR ready | #6 | https://github.com/justinahn711/staple-scout/pull/20 |
 | [#3](https://github.com/justinahn711/staple-scout/issues/3) Build staple setup and manual price-entry screens | pending | #2 |  |
-| [#4](https://github.com/justinahn711/staple-scout/issues/4) Validate and implement Target Chantilly price integration | pending | #8 |  |
+| [#4](https://github.com/justinahn711/staple-scout/issues/4) Validate and implement Target Chantilly price integration | blocked | #8 | Normal public grocery browsing reaches a press-and-hold human-verification challenge. Store1827 verified; no five-product local-price gate or validated adapter. See isolated research branch; no prior requests exist to reuse. |
 | [#5](https://github.com/justinahn711/staple-scout/issues/5) Build a weekly report from trusted comparisons and price history | pending | #12, #16, #15 |  |
 | [#6](https://github.com/justinahn711/staple-scout/issues/6) Configure store locations without rewriting price history | PR ready | — | https://github.com/justinahn711/staple-scout/pull/17 |
 | [#7](https://github.com/justinahn711/staple-scout/issues/7) Validate Walmart Chantilly pickup prices and capture fixtures | PR ready | — | https://github.com/justinahn711/staple-scout/pull/19 |
-| [#8](https://github.com/justinahn711/staple-scout/issues/8) Add a typed adapter contract and safe observation ingestion | pending | #2 |  |
-| [#9](https://github.com/justinahn711/staple-scout/issues/9) Implement the validated Wegmans price adapter | blocked | #1, #8 | Need a nonsecret working pricing request or supported Wegmans price API access; catalog pages contain no verified local offers. See PR18. |
+| [#8](https://github.com/justinahn711/staple-scout/issues/8) Add a typed adapter contract and safe observation ingestion | working | #2 | Initial implementation failed review; requires strict runtime evidence validation, idempotency, exact context/variant matching, provenance and comprehensive fake-adapter tests. Worker hit usage limit; coordinator continuing. |
+| [#9](https://github.com/justinahn711/staple-scout/issues/9) Implement the validated Wegmans price adapter | blocked | #1, #8 | Website research has not yielded verified local pricing access. User has no existing API requests; further website investigation may proceed, but implementation requires supported price access. See PR18. |
 | [#10](https://github.com/justinahn711/staple-scout/issues/10) Implement the validated Walmart local pickup adapter | blocked | #7, #8 | Direct Walmart local-store request reaches human verification; indexed offers belong to other locations. Need supported store-local access. See PR19. |
-| [#11](https://github.com/justinahn711/staple-scout/issues/11) Add explicit shelf and pickup comparison modes | pending | #2 |  |
+| [#11](https://github.com/justinahn711/staple-scout/issues/11) Add explicit shelf and pickup comparison modes | PR ready | #2 | https://github.com/justinahn711/staple-scout/pull/21 |
 | [#12](https://github.com/justinahn711/staple-scout/issues/12) Build comparison and this-week shopping views | pending | #3, #11, #8 |  |
-| [#13](https://github.com/justinahn711/staple-scout/issues/13) Validate and integrate the H Mart online catalog as reference prices | working | #8 | Assigned; research phase can precede adapter dependency. |
-| [#14](https://github.com/justinahn711/staple-scout/issues/14) Validate Lidl local price coverage and integrate supported offers | blocked | #8 | Need the user-selected Lidl location before validating local offers. User asked on 2026-10-08. |
+| [#13](https://github.com/justinahn711/staple-scout/issues/13) Validate and integrate the H Mart online catalog as reference prices | working | #8 | Unauthenticated official VTEX HTTP206 response verified; five real product IDs/barcodes/online offers captured. Needs adapter and offline tests after #8. |
+| [#14](https://github.com/justinahn711/staple-scout/issues/14) Validate Lidl local price coverage and integrate supported offers | working | #8 | Official selected store US01112 confirmed. Coordinator completed ordinary favorite-store flow and reached current regional flyer. Public viewer JSON returns 12 product references; offer terms/price semantics remain under validation. No adapter enabled. |
 | [#15](https://github.com/justinahn711/staple-scout/issues/15) Add reliable daily refresh and a Mac schedule | pending | #8 |  |
 | [#16](https://github.com/justinahn711/staple-scout/issues/16) Compare actual package costs for a requested quantity | pending | #11 |  |
 
@@ -39,3 +39,7 @@ Each issue uses its own branch and isolated worktree. Dependencies may use revie
 5. Record #9/#10/#14 input/access blockers and revisit if the user supplies needed information.
 
 Previous AGENTS.md instructions were explicitly revoked by the user. Existing product constraints remain in the fixed issue bodies and accepted brief.
+
+## User clarification
+
+On 2026-10-08, user selected Lidl in Chantilly, VA, and confirmed there are no prior Wegmans or Target API requests to reuse. Research should proceed from retailer websites. Official Lidl location: https://www.lidl.com/s/en-US/stores/chantilly/chantilly-crossing-lane-14445/.

@@ -46,14 +46,14 @@
       "number": 2,
       "title": "Persist product variants and approved staple matches",
       "url": "https://github.com/justinahn711/staple-scout/issues/2",
-      "status": "working",
+      "status": "PR ready",
       "dependencies": [
         6
       ],
       "branch": "issue-2-product-matches",
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-2",
-      "pr": null,
-      "validation": null,
+      "pr": "https://github.com/justinahn711/staple-scout/pull/20",
+      "validation": "108 tests pass; reviewed authoritative match state, identity/version migration, rollback, approvals and renamed price refreshes. PR CI passes.",
       "blocker": null
     },
     {
@@ -74,15 +74,15 @@
       "number": 4,
       "title": "Validate and implement Target Chantilly price integration",
       "url": "https://github.com/justinahn711/staple-scout/issues/4",
-      "status": "pending",
+      "status": "blocked",
       "dependencies": [
         8
       ],
-      "branch": null,
-      "worktree": null,
+      "branch": "issue-4-target-integration",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-4",
       "pr": null,
       "validation": null,
-      "blocker": null
+      "blocker": "Normal public grocery browsing reaches a press-and-hold human-verification challenge. Store1827 verified; no five-product local-price gate or validated adapter. See isolated research branch; no prior requests exist to reuse."
     },
     {
       "number": 5,
@@ -128,14 +128,14 @@
       "number": 8,
       "title": "Add a typed adapter contract and safe observation ingestion",
       "url": "https://github.com/justinahn711/staple-scout/issues/8",
-      "status": "pending",
+      "status": "working",
       "dependencies": [
         2
       ],
-      "branch": null,
-      "worktree": null,
+      "branch": "issue-8-adapter-ingestion",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-8",
       "pr": null,
-      "validation": null,
+      "validation": "Initial implementation failed review; requires strict runtime evidence validation, idempotency, exact context/variant matching, provenance and comprehensive fake-adapter tests. Worker hit usage limit; coordinator continuing.",
       "blocker": null
     },
     {
@@ -151,7 +151,7 @@
       "worktree": null,
       "pr": null,
       "validation": null,
-      "blocker": "Need a nonsecret working pricing request or supported Wegmans price API access; catalog pages contain no verified local offers. See PR18."
+      "blocker": "Website research has not yielded verified local pricing access. User has no existing API requests; further website investigation may proceed, but implementation requires supported price access. See PR18."
     },
     {
       "number": 10,
@@ -172,14 +172,14 @@
       "number": 11,
       "title": "Add explicit shelf and pickup comparison modes",
       "url": "https://github.com/justinahn711/staple-scout/issues/11",
-      "status": "pending",
+      "status": "PR ready",
       "dependencies": [
         2
       ],
-      "branch": null,
-      "worktree": null,
-      "pr": null,
-      "validation": null,
+      "branch": "issue-11-comparison-modes",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-11",
+      "pr": "https://github.com/justinahn711/staple-scout/pull/21",
+      "validation": "117 tests pass; reviewed separate shelf/pickup channels, explicit gaps, latest-unavailable suppression and eligibility/location rules.",
       "blocker": null
     },
     {
@@ -209,22 +209,22 @@
       "branch": "issue-13-hmart-reference",
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-13",
       "pr": null,
-      "validation": null,
+      "validation": "Unauthenticated official VTEX HTTP206 response verified; five real product IDs/barcodes/online offers captured. Needs adapter and offline tests after #8.",
       "blocker": null
     },
     {
       "number": 14,
       "title": "Validate Lidl local price coverage and integrate supported offers",
       "url": "https://github.com/justinahn711/staple-scout/issues/14",
-      "status": "blocked",
+      "status": "working",
       "dependencies": [
         8
       ],
-      "branch": null,
-      "worktree": null,
+      "branch": "issue-14-lidl-integration",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-14",
       "pr": null,
-      "validation": null,
-      "blocker": "Need the user-selected Lidl location before validating local offers. User asked on 2026-10-08."
+      "validation": "Official selected store US01112 confirmed. Coordinator completed ordinary favorite-store flow and reached current regional flyer. Public viewer JSON returns 12 product references; offer terms/price semantics remain under validation. No adapter enabled.",
+      "blocker": null
     },
     {
       "number": 15,
@@ -248,8 +248,8 @@
       "dependencies": [
         11
       ],
-      "branch": null,
-      "worktree": null,
+      "branch": "issue-16-package-outlay",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-16",
       "pr": null,
       "validation": null,
       "blocker": null
