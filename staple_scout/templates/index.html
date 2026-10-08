@@ -6,6 +6,7 @@
     <title>Staple Scout</title>
     <link rel="stylesheet" href="/static/app.css" />
     <link rel="stylesheet" href="/static/comparisons.css" />
+    <link rel="stylesheet" href="/static/reports.css" />
   </head>
   <body>
     <header class="top">
@@ -45,6 +46,7 @@
         </button>
         <button class="tab" role="tab" aria-selected="false" data-tab="compare">Compare prices</button>
         <button class="tab" role="tab" aria-selected="false" data-tab="shopping">This week</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="report">Weekly report</button>
       </nav>
       <div
         id="error-region"
@@ -56,6 +58,7 @@
       <section role="tabpanel" id="panel" aria-live="polite"></section>
     </main>
     <script src="/static/comparisons.js" defer></script>
+    <script src="/static/reports.js" defer></script>
     <script src="/static/app.js" defer></script>
   </body>
 </html>
