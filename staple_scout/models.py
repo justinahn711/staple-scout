@@ -29,6 +29,13 @@ class StapleCreate(StrictModel):
     desired_quantity: Quantity | None = None
     desired_unit: Unit | None = None
 
+    @field_validator("desired_quantity", mode="before", json_schema_input_type=str | None)
+    @classmethod
+    def desired_decimal_string(cls, value):
+        if value is not None and not isinstance(value, str):
+            raise ValueError("Use a decimal string, not a JSON number")
+        return value
+
     @model_validator(mode="after")
     def desired_pair_and_basis(self):
         if (self.desired_quantity is None) != (self.desired_unit is None):
@@ -46,6 +53,13 @@ class StaplePatch(StrictModel):
     desired_quantity: Quantity | None = None
     desired_unit: Unit | None = None
 
+    @field_validator("desired_quantity", mode="before", json_schema_input_type=str | None)
+    @classmethod
+    def desired_decimal_string(cls, value):
+        if value is not None and not isinstance(value, str):
+            raise ValueError("Use a decimal string, not a JSON number")
+        return value
+
     @model_validator(mode="after")
     def reject_explicit_null(self):
         ordinary = self.model_fields_set - {"desired_quantity", "desired_unit"}
@@ -53,6 +67,8 @@ class StaplePatch(StrictModel):
             raise ValueError("Fields cannot be null; omit fields that are unchanged")
         if ("desired_quantity" in self.model_fields_set) != ("desired_unit" in self.model_fields_set):
             raise ValueError("desired_quantity and desired_unit must be provided together")
+        if "desired_quantity" in self.model_fields_set and (self.desired_quantity is None) != (self.desired_unit is None):
+            raise ValueError("Clear both desired quantity fields together")
         if "desired_quantity" in self.model_fields_set and self.desired_quantity is not None and self.desired_unit is not None:
             if ((self.basis == "oz" and self.desired_unit not in {"oz", "lb", "g", "kg"}) or (self.basis == "fl_oz" and self.desired_unit not in {"fl_oz", "ml", "l"}) or (self.basis == "each" and self.desired_unit != "each")):
                 raise ValueError("desired unit is incompatible with staple basis")
@@ -97,6 +113,7 @@ class ObservationCreate(StrictModel):
     product_name: Name
     price: Amount = Field(description="Total purchase-package price as a decimal string, e.g. '5.99'.")
     quantity: Quantity = Field(description="Quantity per pack as a decimal string, e.g. '12'.")
+    quantity_kind: Literal["fixed", "estimated", "variable"] = "fixed"
     unit: Unit
     pack_count: int = Field(default=1, ge=1, le=10000, strict=True)
     channel: Channel = Field(description="in_store means a manually observed shelf price; pickup and online are not shelf prices.")

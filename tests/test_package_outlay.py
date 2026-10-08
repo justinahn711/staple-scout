@@ -20,11 +20,11 @@ def make_staple(client, **extra):
 
 
 def add_offer(client, staple_id, *, price="3", quantity="10", unit="oz", pack_count=1,
-              channel="in_store", approved=True, available=True, conditions="", product_name="Rice", observed_at=None):
+              channel="in_store", approved=True, available=True, conditions="", product_name="Rice", observed_at=None, quantity_kind="fixed"):
     body = {"staple_id": staple_id, "store_id": "wegmans", "product_name": product_name,
             "price": price, "quantity": quantity, "unit": unit, "pack_count": pack_count,
             "channel": channel, "observed_at": observed_at or datetime.now(timezone.utc).isoformat(),
-            "approved": approved, "available": available, "conditions": conditions}
+            "approved": approved, "available": available, "conditions": conditions, "quantity_kind": quantity_kind}
     response = client.post("/api/observations", json=body)
     assert response.status_code == 201, response.text
     return response.json()
@@ -82,3 +82,77 @@ def test_ineligible_offers_do_not_provide_outlay_winners(client):
     assert result["unit_price_winner_id"] == good["id"]
     assert result["purchase_cost_winner_id"] == good["id"]
     assert client.get("/api/comparisons?channel=pickup").json()[0]["purchase_cost_winner_id"] is None
+
+
+@pytest.mark.parametrize('basis,required,desired_unit,quantity,unit,expected_packages,expected_excess', [
+    ('oz', '30', 'g', '10', 'g', 3, '0'),
+    ('oz', '30', 'g', '20', 'g', 2, '10'),
+    ('oz', '1', 'kg', '500', 'g', 2, '0'),
+    ('oz', '1', 'lb', '8', 'oz', 2, '0'),
+    ('oz', '24', 'oz', '1', 'lb', 2, '8'),
+    ('oz', '28.349523', 'g', '1', 'oz', 1, '0.000000125'),
+    ('fl_oz', '1', 'l', '250', 'ml', 4, '0'),
+    ('fl_oz', '29.573529', 'ml', '1', 'fl_oz', 1, '0.0000005625'),
+    ('each', '7', 'each', '6', 'each', 2, '5'),
+])
+def test_conversions_use_exact_package_boundaries_and_label_excess(client, basis, required,
+        desired_unit, quantity, unit, expected_packages, expected_excess):
+    item = make_staple(client, basis=basis, desired_quantity=required, desired_unit=desired_unit)
+    add_offer(client, item['id'], quantity=quantity, unit=unit, price='1.99')
+    offer = client.get('/api/comparisons').json()[0]['offers'][0]
+    assert offer['packages_needed'] == expected_packages
+    assert Decimal(offer['purchase_cost']) == Decimal('1.99') * expected_packages
+    assert Decimal(offer['excess_quantity']) == Decimal(expected_excess)
+    assert offer['excess_unit'] == desired_unit
+
+
+def test_multipack_price_is_for_entire_purchase_package(client):
+    item = make_staple(client, desired_quantity='45', desired_unit='oz')
+    add_offer(client, item['id'], quantity='10', pack_count=2, price='5')
+    result = client.get('/api/comparisons').json()[0]
+    offer = result['offers'][0]
+    assert offer['packages_needed'] == 3
+    assert offer['purchase_cost'] == '15'
+    assert offer['excess_quantity'] == '15'
+    assert result['purchase_gap'] is None
+
+
+@pytest.mark.parametrize('kind', ['estimated', 'variable'])
+def test_uncertain_weight_is_visible_but_exact_totals_are_unsupported(client, kind):
+    item = make_staple(client, desired_quantity='30', desired_unit='oz')
+    add_offer(client, item['id'], quantity_kind=kind)
+    result = client.get('/api/comparisons').json()[0]
+    assert result['winner_id'] is None and result['purchase_cost_winner_id'] is None
+    assert result['offers'][0]['exclusion_reasons'] == ['uncertain_quantity']
+    assert 'purchase_cost' not in result['offers'][0]
+    assert result['purchase_gap'] == 'no_eligible_offers'
+
+
+def test_quantity_preferences_preserve_review_and_validate_saved_basis(client):
+    item = make_staple(client)
+    row = add_offer(client, item['id'])
+    url = f"/api/staples/{item['id']}"
+    assert client.patch(url, json={'desired_quantity': '3', 'desired_unit': 'each'}).status_code == 422
+    assert client.patch(url, json={'desired_quantity': None, 'desired_unit': 'oz'}).status_code == 422
+    assert client.patch(url, json={'desired_quantity': '3', 'desired_unit': None}).status_code == 422
+    assert client.patch(url, json={'desired_quantity': 3, 'desired_unit': 'oz'}).status_code == 422
+    assert client.patch(url, json={'desired_quantity': '3', 'desired_unit': 'oz'}).status_code == 200
+    assert client.get(f"/api/staples/{item['id']}/matches").json()[0]['status'] == 'approved'
+    assert client.get('/api/comparisons').json()[0]['winner_id'] == row['id']
+    assert client.patch(url, json={'basis': 'each'}).status_code == 422
+    assert client.patch(url, json={'desired_quantity': None, 'desired_unit': None}).status_code == 200
+    result = client.get('/api/comparisons').json()[0]
+    assert result['winner_id'] == row['id']
+    assert result['purchase_cost_winner_id'] is None and result['purchase_gap'] == 'quantity_not_requested'
+
+
+def test_purchase_cost_honors_selected_channel_and_incompatible_offers(client):
+    item = make_staple(client, desired_quantity='30', desired_unit='oz')
+    shelf = add_offer(client, item['id'], price='3')
+    pickup = add_offer(client, item['id'], channel='pickup', price='2')
+    add_offer(client, item['id'], unit='fl_oz', price='0.01')
+    result = client.get('/api/comparisons').json()[0]
+    assert result['purchase_cost_winner_id'] == shelf['id']
+    assert result['offers'][-1]['exclusion_reasons'] == ['incompatible_dimension']
+    assert 'purchase_cost' not in result['offers'][-1]
+    assert client.get('/api/comparisons?channel=pickup').json()[0]['purchase_cost_winner_id'] == pickup['id']

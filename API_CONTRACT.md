@@ -160,3 +160,39 @@ approval flags, and require explicit review before winning. No price/source/date
 or location data is rewritten by this migration. Rule changes invalidate current
 reviews without removing product or price history. Variant identity/configuration
 and observation-to-variant assignments are immutable.
+
+
+## Requested quantities and whole-package outlay
+
+Staples optionally store `desired_quantity` (positive decimal string) and
+`desired_unit`. Both must be provided together and match the staple's comparison
+dimension. PATCH validates the merged saved record: changing basis cannot leave
+an incompatible saved desired quantity. PATCH both fields to null to clear the
+request. Changing only desired quantity/unit or needed preserves match reviews.
+
+Comparison `winner_id` remains the unit-price winner, also returned as
+`unit_price_winner_id`. With a desired quantity, `purchase_cost_winner_id` identifies
+the cheapest whole-package outlay among offers eligible in the selected channel.
+For eligible fixed-size offers, `packages_needed` is the ceiling of requested
+amount divided by total package amount (per-pack size times pack count),
+`purchase_cost` is total package price times packages needed, and
+`excess_quantity`/`excess_unit` describe the leftover amount in the requested unit.
+Each multipack's observation price is the price of the entire purchase package.
+Ties use the observation ID. No mixing packages, travel, coupons or promotion
+optimization occurs. Decimal arithmetic uses exact finite conversions to grams,
+milliliters or count before ceiling; displayed fractional conversions may repeat.
+
+No desired quantity preserves unit-price behavior, sets the purchase winner to
+null and returns `purchase_gap: "quantity_not_requested"`. A request with no
+eligible offer returns null and `purchase_gap: "no_eligible_offers"`.
+
+Observations accept `quantity_kind: "fixed"|"estimated"|"variable"`, default
+`fixed` for the existing exact-size contract. Estimated/variable weights are
+visible but excluded with `uncertain_quantity`; they cannot produce exact package
+outlay or win either comparison. Incompatible units and all existing freshness,
+review, stock, location, channel and condition rules still apply.
+
+Schema v3 adds desired staple quantities and quantity kind to observations in an
+atomic migration. Existing desired quantities start null and existing package
+quantities retain the original fixed-size interpretation. No stored prices or
+observation dates are changed.

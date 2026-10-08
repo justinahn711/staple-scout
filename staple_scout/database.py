@@ -119,6 +119,8 @@ def migrate_product_matches(connection):
 def migrate_desired_quantities(connection):
     connection.execute("ALTER TABLE staples ADD COLUMN desired_quantity TEXT")
     connection.execute("ALTER TABLE staples ADD COLUMN desired_unit TEXT")
+    connection.execute("""ALTER TABLE observations ADD COLUMN quantity_kind TEXT NOT NULL
+        DEFAULT 'fixed' CHECK(quantity_kind IN ('fixed','estimated','variable'))""")
 
 
 class Database:
