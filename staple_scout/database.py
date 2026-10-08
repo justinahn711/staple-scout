@@ -11,7 +11,7 @@ STORES = [
     ("hmart", "H Mart", "Centreville", "in_store", "not_connected", "Prices require manual observation."),
     ("lidl", "Lidl", "Unselected", "in_store", "not_connected", "Choose and record the local store before comparing prices."),
 ]
-SCHEMA_VERSION = 4  # 1 contexts; 2 matches; 3 desired quantities; 4 source ingestion.
+SCHEMA_VERSION = 5  # 1 contexts; 2 matches; 3 quantities; 4 ingestion; 5 daily claims.
 
 LEGACY_SCHEMA = (
     """CREATE TABLE stores (
@@ -149,6 +149,14 @@ def migrate_source_ingestion(connection):
     connection.execute("CREATE INDEX refresh_product_state ON refresh_results(retailer_product_id, observed_at DESC, id DESC)")
 
 
+def migrate_daily_refresh(connection):
+    connection.execute("""CREATE TABLE scheduler_runs (
+        day TEXT PRIMARY KEY, started_at TEXT NOT NULL, finished_at TEXT,
+        status TEXT NOT NULL CHECK(status IN ('running','succeeded','partial','failed')),
+        error TEXT, claim_id TEXT NOT NULL UNIQUE
+    )""")
+
+
 class Database:
     def __init__(self, path: str | Path):
         self.path = str(path)
@@ -180,6 +188,9 @@ class Database:
                 version = 3
             if version == 3:
                 migrate_source_ingestion(connection)
+                version = 4
+            if version == 4:
+                migrate_daily_refresh(connection)
             if connection.execute("PRAGMA foreign_key_check").fetchone() is not None:
                 raise RuntimeError("Database migration failed foreign key validation")
             connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")

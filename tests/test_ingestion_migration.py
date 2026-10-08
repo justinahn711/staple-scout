@@ -7,7 +7,7 @@ from staple_scout import database
 
 
 def version_three(path):
-    with patch.object(database, 'migrate_source_ingestion', lambda _: None), patch.object(database, 'SCHEMA_VERSION', 3):
+    with patch.object(database, 'migrate_source_ingestion', lambda _: None), patch.object(database, 'SCHEMA_VERSION', 3), patch.object(database, 'migrate_daily_refresh', lambda _: None):
         db = database.Database(path)
     with db.connect() as connection:
         connection.execute("INSERT INTO staples(name,basis,rules,needed,desired_quantity,desired_unit) VALUES('Rice','oz','plain',1,'32','oz')")
@@ -32,7 +32,7 @@ def test_v3_upgrade_preserves_rows_reviews_and_is_idempotent(tmp_path):
         original = {table: [dict(row) for row in connection.execute(f'SELECT * FROM {table}')] for table in ('staples','observations','product_variants','staple_matches','location_contexts')}
     upgraded = database.Database(path)
     with upgraded.connect() as connection:
-        assert connection.execute('PRAGMA user_version').fetchone()[0] == 4
+        assert connection.execute('PRAGMA user_version').fetchone()[0] == database.SCHEMA_VERSION
         assert connection.execute('PRAGMA foreign_key_check').fetchall() == []
         assert connection.execute('SELECT count(*) FROM refresh_runs').fetchone()[0] == 0
         for table, rows in original.items():
@@ -54,4 +54,4 @@ def test_v3_upgrade_rolls_back_partial_ddl_and_retries(tmp_path):
         database.Database(path)
     assert dump(path) == before
     database.Database(path)
-    assert dump(path)[1] == 4
+    assert dump(path)[1] == database.SCHEMA_VERSION
