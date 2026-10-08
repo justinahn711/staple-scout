@@ -110,7 +110,7 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
     @app.post("/api/staples", status_code=201)
     def create_staple(body: StapleCreate):
         with database.connect() as connection:
-            cursor = connection.execute("INSERT INTO staples(name, basis, rules, needed) VALUES (?, ?, ?, ?)", (body.name, body.basis, body.rules, body.needed))
+            cursor = connection.execute("INSERT INTO staples(name, basis, rules, needed, desired_quantity, desired_unit) VALUES (?, ?, ?, ?, ?, ?)", (body.name, body.basis, body.rules, body.needed, str(body.desired_quantity) if body.desired_quantity is not None else None, body.desired_unit))
             return as_record(connection.execute("SELECT * FROM staples WHERE id = ?", (cursor.lastrowid,)).fetchone())
 
     @app.patch("/api/staples/{staple_id}", description="Changing name, basis, or rules clears approval on existing observations; price history is retained. Needed-only and no-op changes preserve approval.")
@@ -121,6 +121,8 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
             if existing is None:
                 raise HTTPException(404, "Staple not found")
             changes = body.model_dump(exclude_unset=True)
+            if "desired_quantity" in changes and changes["desired_quantity"] is not None:
+                changes["desired_quantity"] = str(changes["desired_quantity"])
             if changes:
                 if any(key in changes and changes[key] != existing[key] for key in ("name", "basis", "rules")):
                     connection.execute("UPDATE observations SET approved = 0 WHERE staple_id = ?", (staple_id,))

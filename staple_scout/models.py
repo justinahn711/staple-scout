@@ -26,6 +26,16 @@ class StapleCreate(StrictModel):
     basis: Basis
     rules: Annotated[str, Field(max_length=2000)] = ""
     needed: bool = Field(default=True, strict=True)
+    desired_quantity: Quantity | None = None
+    desired_unit: Unit | None = None
+
+    @model_validator(mode="after")
+    def desired_pair_and_basis(self):
+        if (self.desired_quantity is None) != (self.desired_unit is None):
+            raise ValueError("desired_quantity and desired_unit must be provided together")
+        if self.desired_unit is not None and ((self.basis == "oz" and self.desired_unit not in {"oz", "lb", "g", "kg"}) or (self.basis == "fl_oz" and self.desired_unit not in {"fl_oz", "ml", "l"}) or (self.basis == "each" and self.desired_unit != "each")):
+            raise ValueError("desired unit is incompatible with staple basis")
+        return self
 
 
 class StaplePatch(StrictModel):
@@ -33,11 +43,19 @@ class StaplePatch(StrictModel):
     basis: Basis | None = None
     rules: Annotated[str, Field(max_length=2000)] | None = None
     needed: bool | None = Field(default=None, strict=True)
+    desired_quantity: Quantity | None = None
+    desired_unit: Unit | None = None
 
     @model_validator(mode="after")
     def reject_explicit_null(self):
-        if any(getattr(self, field) is None for field in self.model_fields_set):
+        ordinary = self.model_fields_set - {"desired_quantity", "desired_unit"}
+        if any(getattr(self, field) is None for field in ordinary):
             raise ValueError("Fields cannot be null; omit fields that are unchanged")
+        if ("desired_quantity" in self.model_fields_set) != ("desired_unit" in self.model_fields_set):
+            raise ValueError("desired_quantity and desired_unit must be provided together")
+        if "desired_quantity" in self.model_fields_set and self.desired_quantity is not None and self.desired_unit is not None:
+            if ((self.basis == "oz" and self.desired_unit not in {"oz", "lb", "g", "kg"}) or (self.basis == "fl_oz" and self.desired_unit not in {"fl_oz", "ml", "l"}) or (self.basis == "each" and self.desired_unit != "each")):
+                raise ValueError("desired unit is incompatible with staple basis")
         return self
 
 
