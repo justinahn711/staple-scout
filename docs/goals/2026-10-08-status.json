@@ -69,7 +69,9 @@
       "pr": "https://github.com/justinahn711/staple-scout/pull/28",
       "validation": "200 tests and PR CI pass. Disposable-DB setup/edit/price/review/context/error workflows and 390px keyboard/labels/layout verified before old native prompt blocked input. Final replacement HTML dialog needs interactive confirmation.",
       "blocker": "Implementation and offline review/tests complete; final interactive UI validation requires the user to cancel an old native deletion confirmation in the disposable in-app-browser test tab at http://127.0.0.1:8876/. Browser API input and closing that tab time out or have no effect. No real data is involved. PR remains draft pending validation.",
-      "integration_base": "issue-15-daily-refresh"
+      "integration_base": "issue-15-daily-refresh",
+      "ci": "passed",
+      "head": "a88c90f"
     },
     {
       "number": 4,
@@ -100,7 +102,9 @@
       "pr": "https://github.com/justinahn711/staple-scout/pull/30",
       "validation": "218 Python tests and three report frontend tests plus eight comparison tests pass. Independent code review, atomic schema6 migration rollback, cutoff source provenance, same-variant price drops, context/package/channel/unavailable cases and immutable reopen verified. Disposable smoke produced one recommendation, one gap, one traceable drop. Read-only 1280px/390px browser rendering passes; interactive validation pending.",
       "blocker": "Implementation and offline review/tests complete; final interactive UI validation requires the user to cancel an old native deletion confirmation in the disposable in-app-browser test tab at http://127.0.0.1:8876/. Browser API input and closing that tab time out or have no effect. No real data is involved. PR remains draft pending validation.",
-      "integration_base": "issue-12-shopping-views"
+      "integration_base": "issue-12-shopping-views",
+      "ci": "passed",
+      "head": "7c529e9"
     },
     {
       "number": 6,
@@ -200,7 +204,9 @@
       "pr": "https://github.com/justinahn711/staple-scout/pull/29",
       "validation": "200 Python tests and eight Node frontend tests pass. Independent review, read-only actual 1280px/390px rendering and DOM-label/44px target checks pass. Filter changes, empty store selection, retry state, escaping, backend winner authority and cancellation covered offline. Final interactive browser check pending.",
       "blocker": "Implementation and offline review/tests complete; final interactive UI validation requires the user to cancel an old native deletion confirmation in the disposable in-app-browser test tab at http://127.0.0.1:8876/. Browser API input and closing that tab time out or have no effect. No real data is involved. PR remains draft pending validation.",
-      "integration_base": "issue-3-setup-ui"
+      "integration_base": "issue-3-setup-ui",
+      "ci": "passed",
+      "head": "2ab7be6"
     },
     {
       "number": 13,
