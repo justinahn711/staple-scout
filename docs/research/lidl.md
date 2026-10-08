@@ -1,30 +1,54 @@
 # Lidl Chantilly source research
 
-Reviewed 2026-10-08 (America/New_York). Selected location is Lidl store
-`US01112`, at 14445 Chantilly Crossing Lane, Chantilly, VA 20151-2116. The official
-store page returned HTTP 200 and exposes the address in both Schema.org JSON-LD
-and visible page text. Its metadata links to the official Weekly Ad page
-`/c/offers-leaflets/s10092873`.
+Selected by the user: Chantilly, VA. The official store payload identifies
+**US01112**, 14445 Chantilly Crossing Lane, Chantilly VA 20151-2116; its
+`offerRegion` is `1469`. The address number is not a store ID.
 
-The public store payload identifies offer region `1469` and exposes a
-`/p/api/storestock` path, but does not include product records in this page
-response. The Weekly Ad page also returned HTTP 200, but explicitly presents a store
-selection/regionalization overlay before showing offers. The response did not
-contain product offer records, prices, effective dates, or regular-price
-catalog data for the selected store. No login, challenge bypass, guessed store
-key, or private endpoint was used. Therefore this research does not establish
-five representative staple prices or regular-price coverage, and no Lidl
-adapter should be enabled.
+## Reproduced public source
 
-The store fixture preserves exact address evidence and the offer-page access
-result. A normal GET to the payload-exposed `/p/api/storestock` path returned
-HTTP 404 (`The current request is not defined by this API`) at
-2026-10-08T04:14:00Z. CUA could not perform the UI selection because the
-configured environment reported the exact in-app error `Browser is not available: iab`; no
-selection or prices were fabricated. It is not a price fixture. A future bounded attempt needs the supported
-store-selection flow or a documented public regional feed, then must capture
-five items with product identity, package size, regular versus promotional
-price, effective dates, membership eligibility and must-buy quantity. Flyer
-images alone cannot establish complete regular-price coverage.
+The coordinator completed the ordinary favorite-store selection on the official
+store page using the in-app browser. That page displayed "My Favorite Store" and
+linked the current leaflet to `weekly-ad-10-7-2026-10-13-2026-3194fb/ar/1112`.
+The viewer displays a 32-page weekly ad for October 7–13, 2026.
 
-Sources: [Chantilly store](https://www.lidl.com/s/en-US/stores/chantilly/chantilly-crossing-lane-14445/), [Weekly Ads](https://www.lidl.com/c/offers-leaflets/s10092873).
+The viewer's public JavaScript constructs an unauthenticated GET to
+`https://www.lidl.com/flyer/endpoints/v4/flyer` with `flyer_identifier`,
+`region_id` and `region_code`. Replaying that observed request for `1112`
+returned HTTP 200 with `success:true`, an active flyer, the selected code in
+its region list, offer dates and 12 linked product records. No key, login,
+challenge bypass, or guessed region was used. Store payload `offerRegion=1469`
+and viewer link code `1112` are distinct source fields; do not interchange them.
+
+The sanitized API-shaped fixture retains all 12 product references, exact price
+strings, package description text, canonical paths, flyer dates and source
+provenance. Its capture time comes from the downloaded response file's timestamp;
+server `dateTime` is retained separately. Five examples include espresso coffee
+(10 oz), gyro sandwich kit (38 oz), frozen breakfast croissants (four count / 18 oz),
+frozen chicken fries (24 oz) and frozen crispy chicken strips (25 oz).
+These are real catalog references linked from this flyer, not proof of complete
+staple coverage. Milk, plain rice, eggs, bread and fresh produce have no structured
+product records in this sample. Many printed flyer products are image/text-only.
+
+## Price and condition limits
+
+The product reference's `price` field does not identify regular versus promotional
+price, membership eligibility, must-buy quantity, per-item effective dates,
+availability, or store shelf verification. The flyer-level dates cannot prove
+all product prices have the same offer terms. The viewer's general disclaimer
+says prices may vary by location, availability is not guaranteed, and Lidl Plus
+coupons can require activation. These unknowns must remain explicit; an empty
+conditions field would incorrectly imply an unconditional offer.
+
+**Adapter remains disabled pending #8 and extraction/condition validation.**
+The public response is viable as flyer reference evidence, but has not passed a
+five-staple local shelf-price gate. Any adapter must preserve unknown conditions
+and exclude these records from cheapest-store recommendations until terms are
+supported. Do not claim regular-price catalog coverage from a weekly ad.
+
+Earlier worker-only browser availability errors were tooling limitations;
+the coordinator successfully used the in-app browser, so they are not retailer
+access blockers. The unsupported bare storestock probe is not price evidence.
+
+Sources: [official Chantilly store](https://www.lidl.com/s/en-US/stores/chantilly/chantilly-crossing-lane-14445/),
+[current selected-store leaflet](https://www.lidl.com/flyer/esi-flyer/weekly-ad-10-7-2026-10-13-2026-3194fb/ar/1112),
+[public viewer request](https://www.lidl.com/flyer/endpoints/v4/flyer?flyer_identifier=weekly-ad-10-7-2026-10-13-2026-3194fb&region_id=1112&region_code=1112).
