@@ -60,15 +60,15 @@
       "number": 3,
       "title": "Build staple setup and manual price-entry screens",
       "url": "https://github.com/justinahn711/staple-scout/issues/3",
-      "status": "working",
+      "status": "blocked",
       "dependencies": [
         2
       ],
       "branch": "issue-3-setup-ui",
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-3",
       "pr": "https://github.com/justinahn711/staple-scout/pull/28",
-      "validation": "Draft PR28. 200 tests pass; independent code review and disposable-DB desktop/phone setup, edit, price, approval, identity and context workflows verified. Final in-page deletion-dialog browser check awaits cancellation of an older native prompt blocking browser input.",
-      "blocker": null,
+      "validation": "200 tests and PR CI pass. Disposable-DB setup/edit/price/review/context/error workflows and 390px keyboard/labels/layout verified before old native prompt blocked input. Final replacement HTML dialog needs interactive confirmation.",
+      "blocker": "Implementation and offline review/tests complete; final interactive UI validation requires the user to cancel an old native deletion confirmation in the disposable in-app-browser test tab at http://127.0.0.1:8876/. Browser API input and closing that tab time out or have no effect. No real data is involved. PR remains draft pending validation.",
       "integration_base": "issue-15-daily-refresh"
     },
     {
@@ -89,17 +89,18 @@
       "number": 5,
       "title": "Build a weekly report from trusted comparisons and price history",
       "url": "https://github.com/justinahn711/staple-scout/issues/5",
-      "status": "pending",
+      "status": "blocked",
       "dependencies": [
         12,
         16,
         15
       ],
-      "branch": null,
-      "worktree": null,
-      "pr": null,
-      "validation": null,
-      "blocker": null
+      "branch": "issue-5-weekly-report",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-5",
+      "pr": "https://github.com/justinahn711/staple-scout/pull/30",
+      "validation": "218 Python tests and three report frontend tests plus eight comparison tests pass. Independent code review, atomic schema6 migration rollback, cutoff source provenance, same-variant price drops, context/package/channel/unavailable cases and immutable reopen verified. Disposable smoke produced one recommendation, one gap, one traceable drop. Read-only 1280px/390px browser rendering passes; interactive validation pending.",
+      "blocker": "Implementation and offline review/tests complete; final interactive UI validation requires the user to cancel an old native deletion confirmation in the disposable in-app-browser test tab at http://127.0.0.1:8876/. Browser API input and closing that tab time out or have no effect. No real data is involved. PR remains draft pending validation.",
+      "integration_base": "issue-12-shopping-views"
     },
     {
       "number": 6,
@@ -188,7 +189,7 @@
       "number": 12,
       "title": "Build comparison and this-week shopping views",
       "url": "https://github.com/justinahn711/staple-scout/issues/12",
-      "status": "working",
+      "status": "blocked",
       "dependencies": [
         3,
         11,
@@ -196,9 +197,9 @@
       ],
       "branch": "issue-12-shopping-views",
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-12",
-      "pr": null,
-      "validation": "Worker implementing comparison and shopping frontend against reviewed backend; integration, source health, package outlay and browser review pending.",
-      "blocker": null,
+      "pr": "https://github.com/justinahn711/staple-scout/pull/29",
+      "validation": "200 Python tests and eight Node frontend tests pass. Independent review, read-only actual 1280px/390px rendering and DOM-label/44px target checks pass. Filter changes, empty store selection, retry state, escaping, backend winner authority and cancellation covered offline. Final interactive browser check pending.",
+      "blocker": "Implementation and offline review/tests complete; final interactive UI validation requires the user to cancel an old native deletion confirmation in the disposable in-app-browser test tab at http://127.0.0.1:8876/. Browser API input and closing that tab time out or have no effect. No real data is involved. PR remains draft pending validation.",
       "integration_base": "issue-3-setup-ui"
     },
     {
@@ -259,5 +260,6 @@
       "validation": "136 tests pass; independent code review and migration rollback, exact conversions, package-cost/unit-price distinction, labeled excess and uncertain weight checks. CI passes.",
       "blocker": null
     }
-  ]
+  ],
+  "continuation_requires_input": true
 }
