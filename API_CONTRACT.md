@@ -253,3 +253,15 @@ Schema v4 adds run/result/import-link tables atomically. Existing manual prices,
 reviews, contexts and desired quantities are unchanged; failed upgrades roll back
 and can be retried. This foundation does not verify or enable any retailer source,
 activate a scheduler, approve matches, or read receipts.
+
+### H Mart online capability
+
+The default registry now includes verified `hmart_online`, supporting only
+`online` evidence from seller `HMart - US`. App startup never fetches. Configure
+an explicit H Mart online context with `location_id:null`, then request selected
+`productId:itemId` identities. Source URLs refer to the public exact-product
+endpoint. The existing Centreville context and shelf/pickup source remain
+unverified; `stores.source_status` does not imply online stock verifies a shelf.
+`GET /api/sources` is the authoritative per-source channel capability list.
+See `docs/research/hmart.md` for captured evidence, smoke results, conservative
+package/form handling and incomplete category/produce coverage.

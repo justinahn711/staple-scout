@@ -1,1 +1,150 @@
-{"source":{"url":"https://www.hmart.com/api/catalog_system/pub/products/search/?ft=rice&_from=0&_to=4","http_status":206,"resources":"0-4/538","retrieved_at":"2026-10-08T04:10:07Z"},"products":[{"productId":"332","productName":"Brown Rice Rice Paper 7.05oz(200g)","linkText":"brown-rice-rice-paper-7-05oz-200g--1","items":[{"itemId":"332","ean":"880925185119","name":"Brown Rice Rice Paper 7.05oz(200g)","sellers":[{"sellerId":"1","sellerName":"HMart - US","commertialOffer":{"Price":4.99,"ListPrice":4.99,"IsAvailable":true,"AvailableQuantity":100,"PriceValidUntil":"2027-10-06T00:00:00Z"}}]}]},{"productId":"72","productName":"Korean Rice Suhyang Rice 22lb(10kg)","linkText":"korean-rice-suhyang-rice-22lb-10kg--1","items":[{"itemId":"72","ean":"880912827429","name":"Korean Rice Suhyang Rice 22lb(10kg)","sellers":[{"sellerId":"1","sellerName":"HMart - US","commertialOffer":{"Price":47.99,"ListPrice":47.99,"IsAvailable":true,"AvailableQuantity":100,"PriceValidUntil":"2026-10-09T04:00:00Z"}}]}]},{"productId":"8011","productName":"Korean Rice Suhyang Rice 11lb (5kg)","linkText":"korean-rice-suhyang-rice-11lb--5kg--1","items":[{"itemId":"8027","ean":"880912827432","name":"Korean Rice Suhyang Rice 11lb (5kg)","sellers":[{"sellerId":"1","sellerName":"HMart - US","commertialOffer":{"Price":22.99,"ListPrice":22.99,"IsAvailable":true,"AvailableQuantity":10,"PriceValidUntil":"2026-10-22T07:00:00Z"}}]}]},{"productId":"63","productName":"Rice Brown Haiga Rice 4.4lb(2kg)","linkText":"rice-brown-haiga-rice-4-4lb-2kg--1","items":[{"itemId":"63","ean":"9726735263","name":"Rice Brown Haiga Rice 4.4lb(2kg)","sellers":[{"sellerId":"1","sellerName":"HMart - US","commertialOffer":{"Price":20.99,"ListPrice":20.99,"IsAvailable":true,"AvailableQuantity":10,"PriceValidUntil":"2027-10-07T00:00:00Z"}}]}]},{"productId":"13422","productName":"Rice Poppop Original(Rice) 0.7 Oz (20g)","linkText":"rice-poppop-original-rice--0-7-oz--20g-","items":[{"itemId":"11307","ean":"880939708312","name":"Rice Poppop Original(Rice) 0.7 Oz (20g)","sellers":[{"sellerId":"1","sellerName":"HMart - US","commertialOffer":{"Price":3.99,"ListPrice":3.99,"IsAvailable":true,"AvailableQuantity":100,"PriceValidUntil":"2027-10-06T00:00:00Z"}}]}]}]}
+{
+  "source": {
+    "url": "https://www.hmart.com/api/catalog_system/pub/products/search/?ft=rice&_from=0&_to=4",
+    "http_status": 206,
+    "resources": "0-4/538",
+    "retrieved_at": "2026-10-08T04:10:07Z"
+  },
+  "products": [
+    {
+      "productId": "332",
+      "productName": "Brown Rice Rice Paper 7.05oz(200g)",
+      "linkText": "brown-rice-rice-paper-7-05oz-200g--1",
+      "items": [
+        {
+          "itemId": "332",
+          "ean": "880925185119",
+          "name": "Brown Rice Rice Paper 7.05oz(200g)",
+          "sellers": [
+            {
+              "sellerId": "1",
+              "sellerName": "HMart - US",
+              "commertialOffer": {
+                "Price": 4.99,
+                "ListPrice": 4.99,
+                "IsAvailable": true,
+                "AvailableQuantity": 100,
+                "PriceValidUntil": "2027-10-06T00:00:00Z"
+              }
+            }
+          ]
+        }
+      ],
+      "Refrigerated": [
+        "Dry"
+      ]
+    },
+    {
+      "productId": "72",
+      "productName": "Korean Rice Suhyang Rice 22lb(10kg)",
+      "linkText": "korean-rice-suhyang-rice-22lb-10kg--1",
+      "items": [
+        {
+          "itemId": "72",
+          "ean": "880912827429",
+          "name": "Korean Rice Suhyang Rice 22lb(10kg)",
+          "sellers": [
+            {
+              "sellerId": "1",
+              "sellerName": "HMart - US",
+              "commertialOffer": {
+                "Price": 47.99,
+                "ListPrice": 47.99,
+                "IsAvailable": true,
+                "AvailableQuantity": 100,
+                "PriceValidUntil": "2026-10-09T04:00:00Z"
+              }
+            }
+          ]
+        }
+      ],
+      "Refrigerated": [
+        "Dry"
+      ]
+    },
+    {
+      "productId": "8011",
+      "productName": "Korean Rice Suhyang Rice 11lb (5kg)",
+      "linkText": "korean-rice-suhyang-rice-11lb--5kg--1",
+      "items": [
+        {
+          "itemId": "8027",
+          "ean": "880912827432",
+          "name": "Korean Rice Suhyang Rice 11lb (5kg)",
+          "sellers": [
+            {
+              "sellerId": "1",
+              "sellerName": "HMart - US",
+              "commertialOffer": {
+                "Price": 22.99,
+                "ListPrice": 22.99,
+                "IsAvailable": true,
+                "AvailableQuantity": 10,
+                "PriceValidUntil": "2026-10-22T07:00:00Z"
+              }
+            }
+          ]
+        }
+      ],
+      "Refrigerated": [
+        "Dry"
+      ]
+    },
+    {
+      "productId": "63",
+      "productName": "Rice Brown Haiga Rice 4.4lb(2kg)",
+      "linkText": "rice-brown-haiga-rice-4-4lb-2kg--1",
+      "items": [
+        {
+          "itemId": "63",
+          "ean": "9726735263",
+          "name": "Rice Brown Haiga Rice 4.4lb(2kg)",
+          "sellers": [
+            {
+              "sellerId": "1",
+              "sellerName": "HMart - US",
+              "commertialOffer": {
+                "Price": 20.99,
+                "ListPrice": 20.99,
+                "IsAvailable": true,
+                "AvailableQuantity": 10,
+                "PriceValidUntil": "2027-10-07T00:00:00Z"
+              }
+            }
+          ]
+        }
+      ],
+      "Refrigerated": [
+        "Dry"
+      ]
+    },
+    {
+      "productId": "13422",
+      "productName": "Rice Poppop Original(Rice) 0.7 Oz (20g)",
+      "linkText": "rice-poppop-original-rice--0-7-oz--20g-",
+      "items": [
+        {
+          "itemId": "11307",
+          "ean": "880939708312",
+          "name": "Rice Poppop Original(Rice) 0.7 Oz (20g)",
+          "sellers": [
+            {
+              "sellerId": "1",
+              "sellerName": "HMart - US",
+              "commertialOffer": {
+                "Price": 3.99,
+                "ListPrice": 3.99,
+                "IsAvailable": true,
+                "AvailableQuantity": 100,
+                "PriceValidUntil": "2027-10-06T00:00:00Z"
+              }
+            }
+          ]
+        }
+      ],
+      "Refrigerated": [
+        "Dry"
+      ]
+    }
+  ]
+}
