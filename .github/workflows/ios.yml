@@ -1,0 +1,21 @@
+name: Native iPhone
+on:
+  push:
+    branches: [main, feature/native-iphone-app]
+  pull_request:
+    paths: ['iOS/**', '.github/workflows/ios.yml']
+jobs:
+  swift-core:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - run: swift test --package-path iOS/Packages/StapleScoutKit
+      - name: Select an available iPhone simulator
+        run: |
+          scout_simulator_id=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; devices=json.load(sys.stdin)["devices"]; print(next(d["udid"] for runtime,group in devices.items() if "iOS" in runtime for d in group if d["name"].startswith("iPhone")))')
+          echo "SCOUT_SIMULATOR_ID=$scout_simulator_id" >> "$GITHUB_ENV"
+      - name: Build and test iPhone application
+        run: >-
+          xcodebuild -project iOS/StapleScout.xcodeproj -scheme StapleScout
+          -destination "platform=iOS Simulator,id=$SCOUT_SIMULATOR_ID"
+          -parallel-testing-enabled NO ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO test
