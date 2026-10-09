@@ -1,0 +1,41 @@
+// !$*UTF8*$!
+{
+ archiveVersion = 1;
+ classes = {};
+ objectVersion = 77;
+ objects = {
+  A10000000000000000000001 = {isa = PBXProject; attributes = {BuildIndependentTargetsInParallel = YES; LastUpgradeCheck = 2600; TargetAttributes = {A10000000000000000000002 = {CreatedOnToolsVersion = 26.0; }; }; }; buildConfigurationList = A10000000000000000000003; compatibilityVersion = "Xcode 16.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base); mainGroup = A10000000000000000000004; minimizedProjectReferenceProxies = 1; packageReferences = (A10000000000000000000020); preferredProjectObjectVersion = 77; productRefGroup = A10000000000000000000005; projectDirPath = ""; projectRoot = ""; targets = (A10000000000000000000002,B10000000000000000000001); };
+  A10000000000000000000002 = {isa = PBXNativeTarget; buildConfigurationList = A10000000000000000000006; buildPhases = (A10000000000000000000007,A10000000000000000000008,A10000000000000000000009); buildRules = (); dependencies = (); fileSystemSynchronizedGroups = (A10000000000000000000010); name = StapleScout; packageProductDependencies = (A10000000000000000000021); productName = StapleScout; productReference = A10000000000000000000011; productType = "com.apple.product-type.application"; };
+  A10000000000000000000003 = {isa = XCConfigurationList; buildConfigurations = (A10000000000000000000012,A10000000000000000000013); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+  A10000000000000000000006 = {isa = XCConfigurationList; buildConfigurations = (A10000000000000000000014,A10000000000000000000015); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+  A10000000000000000000004 = {isa = PBXGroup; children = (A10000000000000000000010,B10000000000000000000002,A10000000000000000000005); sourceTree = "<group>"; };
+  A10000000000000000000005 = {isa = PBXGroup; children = (A10000000000000000000011,B10000000000000000000003); name = Products; sourceTree = "<group>"; };
+  A10000000000000000000010 = {isa = PBXFileSystemSynchronizedRootGroup; path = App; sourceTree = "<group>"; };
+  A10000000000000000000011 = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StapleScout.app; sourceTree = BUILT_PRODUCTS_DIR; };
+  A10000000000000000000007 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+  A10000000000000000000008 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000022); runOnlyForDeploymentPostprocessing = 0; };
+  A10000000000000000000009 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+  A10000000000000000000012 = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; ENABLE_TESTABILITY = YES; SDKROOT = iphoneos; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SWIFT_VERSION = 5.0; }; name = Debug; };
+  A10000000000000000000013 = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; ENABLE_TESTABILITY = YES; SDKROOT = iphoneos; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SWIFT_VERSION = 5.0; }; name = Release; };
+  A10000000000000000000014 = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = "Staple Scout"; INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.shopping"; INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES; INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES; INFOPLIST_KEY_UILaunchScreen_Generation = YES; INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"; MARKETING_VERSION = 0.1; PRODUCT_BUNDLE_IDENTIFIER = com.justinahn.staplescout; PRODUCT_NAME = "$(TARGET_NAME)"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; TARGETED_DEVICE_FAMILY = 1; }; name = Debug; };
+  A10000000000000000000015 = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = "Staple Scout"; INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.shopping"; INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES; INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES; INFOPLIST_KEY_UILaunchScreen_Generation = YES; INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"; MARKETING_VERSION = 0.1; PRODUCT_BUNDLE_IDENTIFIER = com.justinahn.staplescout; PRODUCT_NAME = "$(TARGET_NAME)"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_OPTIMIZATION_LEVEL = "-O"; TARGETED_DEVICE_FAMILY = 1; }; name = Release; };
+  A10000000000000000000020 = {isa = XCLocalSwiftPackageReference; relativePath = Packages/StapleScoutKit; };
+  A10000000000000000000021 = {isa = XCSwiftPackageProductDependency; package = A10000000000000000000020; productName = StapleScoutKit; };
+  A10000000000000000000022 = {isa = PBXBuildFile; productRef = A10000000000000000000021; };
+  B10000000000000000000001 = {isa = PBXNativeTarget; buildConfigurationList = B10000000000000000000004; buildPhases = (B10000000000000000000005,B10000000000000000000006,B10000000000000000000007); buildRules = (); dependencies = (B10000000000000000000008); fileSystemSynchronizedGroups = (B10000000000000000000002); name = StapleScoutTests; packageProductDependencies = (B10000000000000000000013); productName = StapleScoutTests; productReference = B10000000000000000000003; productType = "com.apple.product-type.bundle.unit-test"; };
+  B10000000000000000000002 = {isa = PBXFileSystemSynchronizedRootGroup; path = AppTests; sourceTree = "<group>"; };
+  B10000000000000000000003 = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StapleScoutTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+  B10000000000000000000004 = {isa = XCConfigurationList; buildConfigurations = (B10000000000000000000010,B10000000000000000000011); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+  B10000000000000000000005 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+  B10000000000000000000006 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (B10000000000000000000014); runOnlyForDeploymentPostprocessing = 0; };
+  B10000000000000000000007 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+  B10000000000000000000008 = {isa = PBXTargetDependency; target = A10000000000000000000002; targetProxy = B10000000000000000000009; };
+  B10000000000000000000009 = {isa = PBXContainerItemProxy; containerPortal = A10000000000000000000001; proxyType = 1; remoteGlobalIDString = A10000000000000000000002; remoteInfo = StapleScout; };
+  B10000000000000000000010 = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; PRODUCT_BUNDLE_IDENTIFIER = com.justinahn.staplescout.tests; PRODUCT_NAME = "$(TARGET_NAME)"; TARGETED_DEVICE_FAMILY = 1; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/StapleScout.app/StapleScout"; }; name = Debug; };
+  B10000000000000000000011 = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; PRODUCT_BUNDLE_IDENTIFIER = com.justinahn.staplescout.tests; PRODUCT_NAME = "$(TARGET_NAME)"; TARGETED_DEVICE_FAMILY = 1; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/StapleScout.app/StapleScout"; }; name = Release; };
+  B10000000000000000000013 = {isa = XCSwiftPackageProductDependency; package = A10000000000000000000020; productName = StapleScoutKit; };
+  B10000000000000000000014 = {isa = PBXBuildFile; productRef = B10000000000000000000013; };
+
+ };
+ rootObject = A10000000000000000000001;
+}

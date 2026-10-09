@@ -1,89 +1,49 @@
-# Staple Scout
+# Staple Scout for iPhone
 
-A personal grocery comparison app for Wegmans, Walmart, Target, H Mart, and Lidl
-around Chantilly and Centreville, Virginia.
+A native **Swift and SwiftUI iPhone app** for comparing grocery staples at Wegmans, Walmart, Target, H Mart and Lidl around Chantilly/Centreville. The user clarified iPhone as the target on October8,2026. The Python/web prototype remains reference material and is not the shipping app.
 
-**Status: working local API foundation.** Add your staples, record observed
-prices, and compare approved products by unit price. The shopper interface,
-automated store connections, scheduled refreshes, and weekly report are planned.
-No retailer is connected yet, and no prices or staples are preloaded. Costco and
-receipt importing are out of scope.
+## Open and run
 
-## Run locally
+1. Open `iOS/StapleScout.xcodeproj` in Xcode16 or newer (iOS17+ deployment target).
+2. Select the **StapleScout** scheme and an iPhone simulator, then Run.
+3. For your own iPhone, select your Apple development team in Signing & Capabilities and run on the device. No signing credentials are committed.
 
-Requires Python 3.11+ and [uv](https://docs.astral.sh/uv/getting-started/installation/).
+The app runs independently on iPhone. It does not call a Python service or require a Mac to stay online. Local SwiftData storage uses the app’s private Application Support directory. First launch has no sample staples or prices. The application has no account system, CloudKit sync or public service.
 
-```sh
-uv sync --locked
-uv run uvicorn staple_scout.main:app --host 127.0.0.1 --port 8000
-```
+## Shopper flow
 
-Open [the API explorer](http://127.0.0.1:8000/docs). Use **Try it out** on an
-endpoint to make a request. The root address redirects there. The API explorer
-uses Swagger UI assets from a CDN and needs internet access for those assets;
-the API and SQLite data remain local.
+- **Staples:** add what you buy, describe acceptable substitutes, choose weight/volume/count, and mark this week’s needs. Record actual package prices and approve acceptable products individually. Requirement edits reset product reviews; need/amount edits preserve them.
+- **Compare:** pick Shelf or Pickup and planned stores. Approved, available, unconditional prices under48hours old can win. Wrong-channel, unknown, estimated, unavailable and unapproved evidence stays excluded. Exact whole-package cost and excess quantity are shown separately from unit price.
+- **This week:** unit-price choices grouped by store plus explicit coverage gaps. Save and reopen a weekly report with frozen requirements, reviews, contexts and cutoff evidence. Price drops require comparable immediately preceding product evidence, including timestamp ties.
+- **Stores:** edit preferred immutable contexts without rewriting price history; inspect location/channel-aware source status and foreground refresh outcomes.
 
-Data persists in `data/staple-scout.sqlite3`. To use a separate database:
+## Sources and limits
 
-```sh
-STAPLE_SCOUT_DB=/absolute/path/to/another.sqlite3 uv run uvicorn staple_scout.main:app --host 127.0.0.1 --port 8000
-```
+| Source | Native support |
+|---|---|
+| Wegmans Chantilly133 | Public website JSON, exact numeric product IDs, shelf only |
+| H Mart | Verified composite product:SKU IDs, national online reference only |
+| Target Chantilly1827 | Disconnected until reliable local access is validated |
+| Walmart Chantilly5969 | Disconnected; local pickup access remains blocked |
+| Lidl ChantillyUS01112 | Disconnected; regional flyer evidence does not verify regular local prices/stock |
 
-There is no account system yet. Keep this server on localhost. Phone access and
-hosting need an explicit deployment and authentication design first.
+To track a known website product, enter its retailer product ID when recording the product; product discovery and barcode scanning are not implemented. Refresh is an explicit foreground action, at most50 distinct tracked product requests in one durable attempt per UTC day. Failed requests preserve historical observations and expose an error; they do not renew old observation timestamps. New package/product details need review and never inherit approval automatically. H Mart never becomes a shelf/pickup winner. iOS background schedules are not activated or promised.
 
-## First comparison
+No Costco, receipts, automated retail login, challenge bypass, fabricated production prices, automatic substitute approvals, notifications or deployment. The earlier plan’s Mac scheduling approach has been superseded for the iPhone app.
 
-1. Use `GET /api/stores` to see the configured stores and source status.
-2. Use `POST /api/staples` to add something you actually buy. Choose `oz` for
-   weight, `fl_oz` for liquid volume, or `each` for meaningful counts. Describe
-   acceptable substitutes in `rules`; these are instructions for your manual
-   review, not automatically interpreted rules.
-3. Use `POST /api/observations` to record a real product, package price, quantity,
-   store, shopping channel, and observation time. `quantity` is the amount in one
-   pack; `pack_count` is the number of those packs included in `price`.
-4. Set `approved` to true only after checking that this product satisfies your
-   staple's rules. Use `in_store` only for a price actually observed at that
-   location. A price from a pickup page stays `pickup`.
-5. Use `GET /api/comparisons` to inspect offers, unit prices, exclusions, and
-   `winner_id`. Filter by `needed_only=true` or `stores=wegmans,walmart`.
-
-Examples below define a staple, not a real price observation:
-
-```json
-{
-  "name": "Firm tofu",
-  "basis": "oz",
-  "rules": "Plain, refrigerated, firm. Approve brands individually. No silken tofu.",
-  "needed": true
-}
-```
-
-The first version chooses a **lowest observed shelf unit price**, not a cheapest
-basket. It ranks only approved, available, unconditional `in_store` observations
-less than 48 hours old. Other offers stay visible with reasons they cannot win.
-This 48-hour threshold is an initial conservative product choice, not a claim
-about how frequently any retailer changes prices. `winner_id: null` means there
-is no qualifying observation; it does not mean an item is free or unavailable
-everywhere. Store inventory is only as reliable as the recorded observation.
-Lidl remains ineligible until its location is configured in a later milestone.
-Changing a staple's name, unit basis, or rules clears its previous approvals;
-record a new approved observation after checking the revised requirements.
-
-## Development
+## Tests
 
 ```sh
-uv run pytest
+swift test --package-path iOS/Packages/StapleScoutKit
+xcodebuild -project iOS/StapleScout.xcodeproj -scheme StapleScout \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+  ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO test
 ```
 
-- [Build plan](docs/BUILD_PLAN.md): milestones, acceptance criteria, open decisions.
-- [Work queue](docs/WORK_QUEUE.md): actionable issues, prerequisites, and build order.
-- [Source validation](docs/SOURCES.md): evidence and integration requirements.
-- [API contract](API_CONTRACT.md): request and response shapes.
-- [Architecture](docs/ARCHITECTURE.md): data boundaries and planned evolution.
-- [Implementation tasks](https://github.com/justinahn711/staple-scout/issues) and
-  [first live comparison milestone](https://github.com/justinahn711/staple-scout/milestone/1).
+The Foundation-only Swift package tests comparison/report invariants and native URLSession extraction with offline fixtures. App tests use in-memory SwiftData containers. They never open a user database or call live retailers.
 
-There is deliberately no scheduler yet: it should run only after live adapters
-have passed source validation. The initial app doesn't call retailer websites,
-sign into retail accounts, invoke an LLM, or import receipts.
+Use an available iPhone simulator name from your Xcode installation in the command above. GitHub CI selects an installed iPhone simulator automatically.
+
+See [native implementation contract](iOS/CONTRACT.md), [migration record](iOS/MIGRATION.md) and the captured research on the earlier issue branches. Existing Python PRs have not been merged or deleted. Their original immutable issue snapshot remains preserved on the goal tracking branch; native parity and source blockers must not be confused with those earlier Python PR statuses.
+
+A cached source response that changes package identity but predates newer evidence is rejected atomically and recorded as a failed source run. It cannot replace the newer package or reset its approval.

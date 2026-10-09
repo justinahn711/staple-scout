@@ -1,0 +1,17 @@
+[
+  {
+    "objectId":"133-94427","storeNumber":"133","skuId":"94427","productID":"94427","productId":"94427",
+    "productName":"Wegmans Vitamin D Whole Milk","packSize":"1 gallon","upc":["00077890944271"],
+    "isSoldByWeight":false,"isSoldAtStore":true,"isAvailable":false,"soldByVendor":null,"bottleDeposit":0,
+    "price_inStore":{"unitPrice":"$3.39/gallon","amount":3.39,"channelKey":"133-Instore","fulfillmentPrice":3.39},
+    "price_inStoreLoyalty":{},"loyaltyInstoreDiscount":null,"digitalCouponsOfferIds":[],"digitalCouponsOffers":[],"discountType":null
+  },
+  {
+    "objectId":"133-57084","storeNumber":"133","skuId":"57084","productID":"57084","productId":"57084",
+    "productName":"Wegmans Boneless, Skinless Chicken Breasts","packSize":"1 lb.","upc":["02002867000009"],
+    "isSoldByWeight":true,"onlineApproxUnitWeight":4.8,"isSoldAtStore":true,"isAvailable":true,"soldByVendor":null,"bottleDeposit":0,
+    "price_inStore":{"unitPrice":"$2.29/lb.","amount":11,"channelKey":"133-Instore","fulfillmentPrice":2.29},
+    "price_inStoreLoyalty":{"unitPrice":"$1.99/lb.","amount":9.56,"channelKey":"133-Instore-Loyalty","fulfillmentPrice":1.99},
+    "loyaltyInstoreDiscount":[{"expiryDate":"2026-10-18","triggerQuantity":1}],"digitalCouponsOfferIds":[],"digitalCouponsOffers":[],"discountType":"loyalty"
+  }
+]
