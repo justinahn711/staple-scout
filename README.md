@@ -37,12 +37,14 @@ No Costco, receipts, automated retail login, challenge bypass, fabricated produc
 swift test --package-path iOS/Packages/StapleScoutKit
 xcodebuild -project iOS/StapleScout.xcodeproj -scheme StapleScout \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-  ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO test
+  CODE_SIGNING_ALLOWED=NO test
 ```
 
 The Foundation-only Swift package tests comparison/report invariants and native URLSession extraction with offline fixtures. App tests use in-memory SwiftData containers. They never open a user database or call live retailers.
 
 Use an available iPhone simulator name from your Xcode installation in the command above. GitHub CI selects an installed iPhone simulator automatically.
+
+Debug builds use the selected simulator's active architecture so the app and Swift package compile for the same target. CI uses this project setting without an architecture override.
 
 See [native implementation contract](iOS/CONTRACT.md), [migration record](iOS/MIGRATION.md) and the captured research on the earlier issue branches. Existing Python PRs have not been merged or deleted. Their original immutable issue snapshot remains preserved on the goal tracking branch; native parity and source blockers must not be confused with those earlier Python PR statuses.
 

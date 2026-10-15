@@ -18,4 +18,4 @@ jobs:
         run: >-
           xcodebuild -project iOS/StapleScout.xcodeproj -scheme StapleScout
           -destination "platform=iOS Simulator,id=$SCOUT_SIMULATOR_ID"
-          -parallel-testing-enabled NO ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO test
+          -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO test
