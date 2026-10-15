@@ -20,7 +20,7 @@ Native iPhone app in Swift and SwiftUI, iOS17+. Local SwiftData persistence. The
 
 ## Capabilities and Constraints
 
-Staples, individual product-match approval, manual observations, Shelf/Pickup comparisons, shopping groups and frozen weekly reports. Wegmans133 shelf and HMart online-only reference source research may be reused through native URLSession adapters. Target/Walmart remain blocked on verified local access; Lidl remains disconnected. Manual observed prices can qualify independently. No Costco, receipts, account logins, challenge bypass, fabricated production prices, automatic substitute approval, notifications or deployment. Refresh only explicit in foreground, at most50 tracked requests per UTC day; iOS background execution is not promised.
+Staples, automatic keyword discovery from connected store catalogs, fetched candidate prices, individual product-match approval, optional manual observations, Shelf/Pickup comparisons, shopping groups and frozen weekly reports. Wegmans133 shelf and HMart online-only reference have native keyword search and exact-product URLSession price clients. Adding a staple opens search; recording prices and entering retailer IDs are not required. Target/Walmart remain blocked on verified local access; Lidl remains disconnected. Manual observed prices can qualify independently. No Costco, receipts, account logins, challenge bypass, fabricated production prices, automatic substitute approval, notifications or deployment. Refresh only explicit in foreground, at most50 tracked requests per UTC day; iOS background execution is not promised.
 
 ## Product Principles
 

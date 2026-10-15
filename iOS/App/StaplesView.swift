@@ -5,12 +5,14 @@ struct StaplesView: View {
     @Bindable var store: LibraryStore
     @State private var adding = false
     @State private var deleting: Staple?
+    @State private var queuedSearchStapleID: UUID?
+    @State private var searchTarget: StapleSearchTarget?
     var body: some View {
         List {
             if store.state.staples.isEmpty {
                 ContentUnavailableView {
                     Label("Start with your staples", systemImage: "carrot")
-                } description: { Text("Add the groceries you actually buy. Approve acceptable products, then compare dated prices at your stores.") }
+                } description: { Text("Add a grocery to search your stores automatically. Track suitable products, review the matches, then compare fetched prices.") }
                 actions: { Button("Add your first staple") { adding = true }.buttonStyle(.borderedProminent).frame(minHeight: 44) }
                 .listRowBackground(Color.clear)
             } else {
@@ -32,12 +34,31 @@ struct StaplesView: View {
         }
         .navigationTitle("My staples")
         .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Add staple", systemImage: "plus") { adding = true } } }
-        .sheet(isPresented: $adding) { StapleEditor(store: store, original: nil) }
+        .sheet(isPresented: $adding, onDismiss: beginQueuedSearch) {
+            StapleEditor(store: store, original: nil) { stapleID in
+                queuedSearchStapleID = stapleID
+            }
+        }
+        .sheet(item: $searchTarget) { target in
+            if let staple = store.state.staples.first(where: { $0.id == target.id }) {
+                ProductSearchView(store: store, stapleID: staple.id, initialQuery: staple.name)
+            }
+        }
         .confirmationDialog("Delete \(deleting?.name ?? "staple")?", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }), titleVisibility: .visible) {
             Button("Delete staple", role: .destructive) { if let staple = deleting { do { try store.deleteStaple(staple.id) } catch { store.failure = describe(error) } }; deleting = nil }
             Button("Cancel", role: .cancel) { deleting = nil }
         } message: { Text("Its prices and product reviews will be removed. Saved reports keep their original snapshot.") }
     }
+
+    private func beginQueuedSearch() {
+        guard let stapleID = queuedSearchStapleID else { return }
+        queuedSearchStapleID = nil
+        searchTarget = StapleSearchTarget(id: stapleID)
+    }
+}
+
+private struct StapleSearchTarget: Identifiable {
+    let id: UUID
 }
 
 struct StapleDetailView: View {
@@ -45,6 +66,7 @@ struct StapleDetailView: View {
     let stapleID: UUID
     @State private var editing = false
     @State private var recording = false
+    @State private var findingPrices = false
     private var staple: Staple? { store.state.staples.first { $0.id == stapleID } }
     var body: some View {
         Group {
@@ -57,11 +79,19 @@ struct StapleDetailView: View {
                         if !staple.rules.isEmpty { Text(staple.rules) }
                     }
                     Section {
-                        Button("Record a price", systemImage: "plus.circle") { recording = true }.frame(minHeight: 44)
+                        Button("Find store prices", systemImage: "magnifyingglass") { findingPrices = true }
+                            .buttonStyle(.borderedProminent)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                    } footer: {
+                        Text("Search your saved stores, then track products you want to review.")
+                    }
+                    Section("Other options") {
+                        Button("Record a price manually", systemImage: "square.and.pencil") { recording = true }
+                            .frame(minHeight: 44)
                     }
                     Section {
                         let matches = store.state.matches.filter { $0.stapleID == stapleID }
-                        if matches.isEmpty { Text("Record a product price to begin reviewing matches.").foregroundStyle(.secondary) }
+                        if matches.isEmpty { Text("Find store prices and track products to begin reviewing matches.").foregroundStyle(.secondary) }
                         ForEach(matches) { match in
                             if let variant = store.state.variants.first(where: { $0.id == match.variantID }) {
                                 VStack(alignment: .leading, spacing: 8) {
@@ -85,6 +115,9 @@ struct StapleDetailView: View {
                 .toolbar { Button("Edit") { editing = true } }
                 .sheet(isPresented: $editing) { StapleEditor(store: store, original: staple) }
                 .sheet(isPresented: $recording) { PriceEditor(store: store, staple: staple) }
+                .sheet(isPresented: $findingPrices) {
+                    ProductSearchView(store: store, stapleID: staple.id, initialQuery: staple.name)
+                }
             } else { ContentUnavailableView("Staple removed", systemImage: "list.bullet") }
         }
     }
@@ -93,6 +126,7 @@ struct StapleDetailView: View {
 struct StapleEditor: View {
     @Bindable var store: LibraryStore
     let original: Staple?
+    let onSaved: ((UUID) -> Void)?
     @Environment(\.dismiss) private var dismiss
     @State private var name: String
     @State private var basis: MeasureUnit
@@ -101,8 +135,8 @@ struct StapleEditor: View {
     @State private var amount: String
     @State private var unit: MeasureUnit
     @State private var error: String?
-    init(store: LibraryStore, original: Staple?) {
-        self.store = store; self.original = original
+    init(store: LibraryStore, original: Staple?, onSaved: ((UUID) -> Void)? = nil) {
+        self.store = store; self.original = original; self.onSaved = onSaved
         _name = State(initialValue: original?.name ?? ""); _basis = State(initialValue: original?.basis ?? .oz)
         _rules = State(initialValue: original?.rules ?? ""); _needed = State(initialValue: original?.needed ?? true)
         _amount = State(initialValue: original?.desiredQuantity.map { NSDecimalNumber(decimal: $0).stringValue } ?? "")
@@ -137,7 +171,9 @@ struct StapleEditor: View {
         let parsed = value.isEmpty ? nil : entryDecimal(value)
         guard value.isEmpty || parsed != nil else { error = "Enter a valid requested amount, or leave it blank."; return }
         do {
-            try store.saveStaple(Staple(id: original?.id ?? UUID(), name: name, basis: basis, rules: rules, needed: needed, desiredQuantity: parsed, desiredUnit: parsed == nil ? nil : unit))
+            let stapleID = original?.id ?? UUID()
+            try store.saveStaple(Staple(id: stapleID, name: name, basis: basis, rules: rules, needed: needed, desiredQuantity: parsed, desiredUnit: parsed == nil ? nil : unit))
+            onSaved?(stapleID)
             dismiss()
         } catch { self.error = describe(error) }
     }

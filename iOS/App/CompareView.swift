@@ -37,7 +37,7 @@ struct CompareView: View {
                 ForEach(comparisons) { group in
                     Section {
                         if group.winner == nil { Label(group.offers.isEmpty ? "No recorded price at these locations" : "No eligible price; review the exclusions", systemImage: "exclamationmark.circle").foregroundStyle(.secondary) }
-                        if group.offers.isEmpty { Text("Record a price and approve an acceptable product to compare this staple.").foregroundStyle(.secondary) }
+                        if group.offers.isEmpty { Text("Use Find store prices on this staple, track a product, and approve the match to compare it.").foregroundStyle(.secondary) }
                         ForEach(group.offers) { offer in OfferRow(offer: offer, basis: group.staple.basis, winner: offer.id == group.winnerID, outlayWinner: offer.id == group.outlayWinnerID) }
                     } header: { Text(group.staple.name) } footer: {
                         if let amount = group.staple.desiredQuantity, let unit = group.staple.desiredUnit { Text("Requested \(quantity(amount)) \(unit.name). Lowest unit price and lowest whole-package cost can favor different products.") }
@@ -92,7 +92,7 @@ struct RefreshButton: View {
     @Bindable var store: LibraryStore
     var body: some View {
         Button { Task { await store.refresh() } } label: {
-            if store.refreshing { ProgressView().accessibilityLabel("Refreshing recorded products") }
+            if store.refreshing { ProgressView().accessibilityLabel("Refreshing tracked products") }
             else { Label("Refresh prices", systemImage: "arrow.clockwise") }
         }.disabled(store.refreshing)
     }

@@ -7,6 +7,7 @@ on:
 jobs:
   swift-core:
     runs-on: macos-15
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - run: swift test --package-path iOS/Packages/StapleScoutKit
@@ -18,4 +19,6 @@ jobs:
         run: >-
           xcodebuild -project iOS/StapleScout.xcodeproj -scheme StapleScout
           -destination "platform=iOS Simulator,id=$SCOUT_SIMULATOR_ID"
-          -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO test
+          -parallel-testing-enabled NO -test-timeouts-enabled YES
+          -default-test-execution-time-allowance 30 -maximum-test-execution-time-allowance 30
+          CODE_SIGNING_ALLOWED=NO test

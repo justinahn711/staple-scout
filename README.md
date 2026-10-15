@@ -12,7 +12,7 @@ The app runs independently on iPhone. It does not call a Python service or requi
 
 ## Shopper flow
 
-- **Staples:** add what you buy, describe acceptable substitutes, choose weight/volume/count, and mark this week’s needs. Record actual package prices and approve acceptable products individually. Requirement edits reset product reviews; need/amount edits preserve them.
+- **Staples:** add what you buy, describe acceptable substitutes, choose weight/volume/count, and mark this week’s needs. Search store catalogs automatically after adding a staple, track suitable products with fetched prices, and approve acceptable matches individually. Manual entry is an optional fallback. Requirement edits reset product reviews; need/amount edits preserve them.
 - **Compare:** pick Shelf or Pickup and planned stores. Approved, available, unconditional prices under48hours old can win. Wrong-channel, unknown, estimated, unavailable and unapproved evidence stays excluded. Exact whole-package cost and excess quantity are shown separately from unit price.
 - **This week:** unit-price choices grouped by store plus explicit coverage gaps. Save and reopen a weekly report with frozen requirements, reviews, contexts and cutoff evidence. Price drops require comparable immediately preceding product evidence, including timestamp ties.
 - **Stores:** edit preferred immutable contexts without rewriting price history; inspect location/channel-aware source status and foreground refresh outcomes.
@@ -21,13 +21,13 @@ The app runs independently on iPhone. It does not call a Python service or requi
 
 | Source | Native support |
 |---|---|
-| Wegmans Chantilly133 | Public website JSON, exact numeric product IDs, shelf only |
-| H Mart | Verified composite product:SKU IDs, national online reference only |
+| Wegmans Chantilly133 | Keyword discovery from the public storefront plus exact Chantilly JSON price checks; shelf only |
+| H Mart | Keyword search and exact product/SKU price checks; national online reference only |
 | Target Chantilly1827 | Disconnected until reliable local access is validated |
 | Walmart Chantilly5969 | Disconnected; local pickup access remains blocked |
 | Lidl ChantillyUS01112 | Disconnected; regional flyer evidence does not verify regular local prices/stock |
 
-To track a known website product, enter its retailer product ID when recording the product; product discovery and barcode scanning are not implemented. Refresh is an explicit foreground action, at most50 distinct tracked product requests in one durable attempt per UTC day. Failed requests preserve historical observations and expose an error; they do not renew old observation timestamps. New package/product details need review and never inherit approval automatically. H Mart never becomes a shelf/pickup winner. iOS background schedules are not activated or promised.
+Add a staple or choose **Find store prices** to search by name. Wegmans and H Mart return up to five checked products each; exact price requests validate the discovered identities. Track a result to save its fetched price and a pending match, then approve products that meet your requirements. You never need to type a price or retailer product ID. Unsupported sources and partial failures remain visible. Keyword results are cached for the session and UTC day; repeated identical searches do not refetch. Barcode scanning is deferred. Refresh is an explicit foreground action, at most50 distinct tracked product requests in one durable attempt per UTC day. Failed requests preserve historical observations and expose an error; they do not renew old observation timestamps. New package/product details need review and never inherit approval automatically. H Mart never becomes a shelf/pickup winner. iOS background schedules are not activated or promised.
 
 No Costco, receipts, automated retail login, challenge bypass, fabricated production prices, automatic substitute approvals, notifications or deployment. The earlier plan’s Mac scheduling approach has been superseded for the iPhone app.
 
@@ -49,3 +49,5 @@ Debug builds use the selected simulator's active architecture so the app and Swi
 See [native implementation contract](iOS/CONTRACT.md), [migration record](iOS/MIGRATION.md) and the captured research on the earlier issue branches. Existing Python PRs have not been merged or deleted. Their original immutable issue snapshot remains preserved on the goal tracking branch; native parity and source blockers must not be confused with those earlier Python PR statuses.
 
 A cached source response that changes package identity but predates newer evidence is rejected atomically and recorded as a failed source run. It cannot replace the newer package or reset its approval.
+
+Wegmans search reads the public storefront configuration into memory and uses its current browser search index. No retailer keys are committed or persisted, and no account login or challenge bypass is used. Storefront configuration changes can interrupt discovery; those failures remain visible rather than falling back to invented results. User-initiated keyword searches are bounded to five candidate price checks per connected store and are separate from the once-daily tracked-product refresh.

@@ -15,6 +15,14 @@ struct LibraryError: LocalizedError {
     var errorDescription: String? { message }
 }
 
+struct StoreSearchResult: Identifiable {
+    var id: StoreID { location.store }
+    var location: StoreLocation
+    var channel: Channel
+    var candidates: [FetchedPrice] = []
+    var message: String?
+}
+
 @MainActor @Observable final class LibraryStore {
     private(set) var state: LibraryState
     private(set) var refreshing = false
@@ -23,9 +31,11 @@ struct LibraryError: LocalizedError {
     private let context: ModelContext
     private var record: SavedLibrary
     private let client: RetailClient
+    private let searchClient: RetailSearchClient
+    private var searchedProducts: [StoreSearchResult] = []
 
-    init(context: ModelContext, client: RetailClient = RetailClient()) throws {
-        self.context = context; self.client = client
+    init(context: ModelContext, client: RetailClient = RetailClient(), searchClient: RetailSearchClient = RetailSearchClient()) throws {
+        self.context = context; self.client = client; self.searchClient = searchClient
         let records = try context.fetch(FetchDescriptor<SavedLibrary>())
         guard records.count <= 1 else { throw LibraryError(message: "More than one library was found. Your data has been preserved; reopen the app or restore a backup.") }
         if let saved = records.first {
@@ -126,6 +136,69 @@ struct LibraryError: LocalizedError {
         }
     }
 
+    func searchProducts(query: String) async -> [StoreSearchResult] {
+        var results: [StoreSearchResult] = []
+        let locations = StoreID.allCases.compactMap { state.location(for: $0) }
+        for location in locations {
+            if Task.isCancelled { return [] }
+            let channel: Channel = location.store == .hmart ? .online : .inStore
+            let capability = SourceCapability.forLocation(location, channel: channel)
+            guard capability.isConnected else {
+                results.append(StoreSearchResult(location: location, channel: channel, message: capability.message))
+                continue
+            }
+            do {
+                let page = try await searchClient.search(query: query, location: location, channel: channel)
+                results.append(StoreSearchResult(location: location, channel: channel, candidates: page.candidates, message: page.message))
+            } catch {
+                if Task.isCancelled { return [] }
+                results.append(StoreSearchResult(location: location, channel: channel, message: error.localizedDescription))
+            }
+        }
+        if !Task.isCancelled { searchedProducts = results }
+        return results
+    }
+
+    func trackProduct(_ candidate: FetchedPrice, location: StoreLocation, channel: Channel, stapleID: UUID) throws {
+        guard state.location(for: location.store)?.id == location.id,
+              SourceCapability.forLocation(location, channel: channel).isConnected,
+              let fetched = searchedProducts.first(where: { $0.location.id == location.id && $0.channel == channel })?.candidates.first(where: { $0.productID == candidate.productID }) else {
+            throw LibraryError(message: "These search results are no longer current. Search again for your selected store.")
+        }
+        guard let size = fetched.quantity, size > 0, !size.isNaN, let unit = fetched.unit else {
+            throw LibraryError(message: "The store did not supply a usable package size. Choose another product so unit prices stay accurate.")
+        }
+        guard fetched.retrievedAt <= Date(), fetched.observedAt <= fetched.retrievedAt else {
+            throw LibraryError(message: "The store returned an invalid price time. Search again later.")
+        }
+        try update { next in
+            guard next.staples.contains(where: { $0.id == stapleID }) else { throw LibraryError(message: "This staple was removed. Add it again before tracking products.") }
+            let sameProduct = next.variants.filter { $0.store == location.store && $0.productID == fetched.productID }
+            let variant = sameProduct.first { $0.name == fetched.productName && $0.barcode == fetched.barcode && $0.quantity == size && $0.unit == unit && $0.packCount == fetched.packCount && $0.quantityKind == fetched.quantityKind }
+                ?? ProductVariant(store: location.store, productID: fetched.productID, barcode: fetched.barcode, name: fetched.productName, quantity: size, unit: unit, packCount: fetched.packCount, quantityKind: fetched.quantityKind)
+            // Rejected matches still belong to package history. They must not revive an older approval.
+            let productIDs = Set(sameProduct.map(\.id))
+            let latest = next.observations.filter { $0.stapleID == stapleID && productIDs.contains($0.variantID) && $0.locationID == location.id && $0.channel == channel }
+                .max { ($0.observedAt, $0.sequence) < ($1.observedAt, $1.sequence) }
+            let oldIDs = Set([latest?.variantID].compactMap { $0 }.filter { $0 != variant.id })
+            let oldEvidence = next.observations.filter { $0.stapleID == stapleID && oldIDs.contains($0.variantID) && $0.locationID == location.id && $0.channel == channel }
+            guard !oldEvidence.contains(where: { $0.observedAt > fetched.observedAt }) else {
+                throw LibraryError(message: "The source returned older product details. Your newer recorded package and approval were preserved.")
+            }
+            let finished = Date()
+            if !next.variants.contains(where: { $0.id == variant.id }) { next.variants.append(variant) }
+            if let i = next.matches.firstIndex(where: { $0.stapleID == stapleID && $0.variantID == variant.id }) {
+                if !oldEvidence.isEmpty || next.matches[i].status == .rejected { next.matches[i].status = .pending }
+            } else { next.matches.append(ProductMatch(stapleID: stapleID, variantID: variant.id)) }
+            for oldID in Set(oldEvidence.map(\.variantID)) {
+                next.observations.append(PriceObservation(sequence: (next.observations.map(\.sequence).max() ?? 0) + 1, stapleID: stapleID, variantID: oldID, locationID: location.id, channel: channel, price: nil, available: nil, observedAt: fetched.observedAt, retrievedAt: fetched.retrievedAt, source: fetched.source, sourceURL: fetched.sourceURL, sourceExclusion: "Product details changed; review the new package.", ingestedAt: finished))
+            }
+            if !next.observations.contains(where: { $0.stapleID == stapleID && $0.variantID == variant.id && $0.locationID == location.id && $0.channel == channel && $0.retrievedAt == fetched.retrievedAt && $0.source == fetched.source }) {
+                next.observations.append(PriceObservation(sequence: (next.observations.map(\.sequence).max() ?? 0) + 1, stapleID: stapleID, variantID: variant.id, locationID: location.id, channel: channel, price: fetched.price, available: fetched.available, observedAt: fetched.observedAt, retrievedAt: fetched.retrievedAt, conditions: fetched.conditions, source: fetched.source, sourceURL: fetched.sourceURL, sourceExclusion: fetched.sourceExclusion, ingestedAt: finished))
+            }
+        }
+    }
+
     func report(_ request: ReportRequest) throws -> WeeklyReport {
         let report = try ReportEngine.build(state: state, request: request)
         if !state.reports.contains(where: { $0.id == report.id }) { try update { $0.reports.append(report) } }
@@ -166,7 +239,7 @@ struct LibraryError: LocalizedError {
             guard !activeLinks(in: state, store: variant.store, productID: variant.productID ?? "", locationID: location.id, channel: channel).isEmpty, seen.insert(key).inserted else { continue }
             requests.append(FetchRequest(variant: variant, location: location, channel: channel))
         }
-        guard !requests.isEmpty else { failure = "Add a tracked Wegmans product ID or H Mart product:SKU ID when recording a price. Only validated store and channel sources can refresh."; return }
+        guard !requests.isEmpty else { failure = "Choose Find store prices on a staple and track a product first. Connected stores can then refresh its price automatically."; return }
         guard requests.count <= 50 else { failure = "More than 50 tracked products are selected. Remove unused product tracking before refreshing."; return }
         do { try update { $0.lastRefreshDay = day } } catch { failure = error.localizedDescription; return }
         failure = nil

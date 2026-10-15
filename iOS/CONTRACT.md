@@ -36,3 +36,9 @@ All agents share this isolated branch. No one commits/pushes or changes files ou
 Refresh links use the latest active package per staple, retailer product, preferred location and channel. Superseded packages remain in history but cannot import duplicate observations or invalidate a newly approved package on later refreshes. A single product request updates all active staple links.
 
 A cached source response that changes package identity but predates newer evidence is rejected atomically and recorded as a failed source run. It cannot replace the newer package or reset its approval.
+
+## Keyword discovery (October 14)
+
+`RetailSearchClient(session:)` is an actor. `search(query:location:channel:) async throws -> RetailSearchPage` returns up to five exact-price-validated `FetchedPrice` candidates and a partial-failure message. Wegmans storefront search and H Mart VTEX full-text search only. Same-day successful queries are cached for the session; failed exact-price checks are retryable. No private access, committed keys, account login or challenge handling.
+
+The App target exposes `StoreSearchResult(location:channel:candidates:message:)`, `LibraryStore.searchProducts(query:) async -> [StoreSearchResult]` and `trackProduct(_:location:channel:stapleID:) throws`. Search is read-only; Track saves fetched evidence atomically and creates a pending match. Current-context validation, idempotency and rejected-package transition history protect prior evidence and approvals.
