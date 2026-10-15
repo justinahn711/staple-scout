@@ -198,9 +198,9 @@ struct ProductSearchView: View {
 
     private func availability(_ value: Bool?) -> String {
         switch value {
-        case true: return "Available"
-        case false: return "Unavailable"
-        case nil: return "Availability unknown"
+        case .some(true): return "Available"
+        case .some(false): return "Unavailable"
+        case .none: return "Availability unknown"
         }
     }
 
