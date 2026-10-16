@@ -1,0 +1,29 @@
+{
+  "reviewed_on": "2026-10-16",
+  "source_url": "https://www.walmart.com/store/5969-chantilly-va/shopping-services",
+  "store": {
+    "retailer": "walmart",
+    "code": "5969",
+    "name": "Chantilly Supercenter",
+    "address": "4368 Chantilly Shopping Center Dr, Chantilly VA 20151"
+  },
+  "retrieved_at": "2026-10-16T04:52:12.840627+00:00",
+  "http_status": 200,
+  "content_type": "text/html; charset=utf-8",
+  "title": "Robot or human?",
+  "human_verification_detected": true,
+  "source_sha256": "35ba06376bc2ead89ab20e31981c96ee6a4b04a13c705f2312fb50bf1ee76c9d",
+  "outcome": "blocked",
+  "validated_local_prices": 0,
+  "adapter_enabled": false,
+  "excluded_from_comparison": true,
+  "supported_access_lead": {
+    "service": "Walmart I/O Online Pickup & Delivery",
+    "documentation": "https://www.walmart.io/docs/opd/stores/grocery-introduction",
+    "store_locator_documentation": "https://walmart.io/docs/opd/quick-start-guide/catalog-store-service-locator",
+    "requires_developer_access": true,
+    "requires_client_credentials": true,
+    "api_called": false
+  },
+  "sanitization": "No challenge identifiers, redirect query values, cookies, tokens, keys or raw response included."
+}
