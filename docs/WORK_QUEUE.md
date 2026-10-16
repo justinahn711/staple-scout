@@ -4,6 +4,12 @@ The GitHub issues are the execution source of truth. This page records the initi
 build order; update readiness labels when prerequisites are completed. Dependencies
 are linked in issue bodies, not enforced by an automated GitHub workflow.
 
+## Native coverage focus — October 16, 2026
+
+Current priority: native Walmart (#7/#10), Target (#4), and Lidl (#14) price integrations. Investigations use isolated branches based on the native iPhone implementation. Enable only verified store/channel sources; blocked or reference-only outcomes remain explicit. The ordering below records the original Python build plan and does not redefine the initial fixed issue scope.
+
+Barcode scanning is deferred to [#34 — native barcode scanning for cross-store price lookup](https://github.com/justinahn711/staple-scout/issues/34). It is backlog work, outside the original #1–#16 snapshot, and is not part of the current integrations.
+
 ## Ready to start
 
 - [#6 — Configure store locations without rewriting price history](https://github.com/justinahn711/staple-scout/issues/6)
