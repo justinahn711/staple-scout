@@ -29,7 +29,7 @@ public enum MeasureUnit: String, CaseIterable, Codable, Sendable {
 }
 public enum QuantityKind: String, CaseIterable, Codable, Sendable { case fixed, estimated, variable }
 public enum MatchStatus: String, CaseIterable, Codable, Sendable { case pending, approved, rejected }
-public enum SourceID: String, CaseIterable, Codable, Sendable { case manual, wegmans, hmart }
+public enum SourceID: String, CaseIterable, Codable, Sendable { case manual, wegmans, hmart, walmart, target, lidl }
 
 public struct Staple: Identifiable, Codable, Sendable {
     public var id: UUID
