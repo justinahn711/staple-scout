@@ -16,6 +16,8 @@ The official [store-locator contract](https://walmart.io/docs/opd/quick-start-gu
 
 Store-locator documentation alone does not establish the exact authorized product/offer request or response, a currently valid OPD subscription, or a successful store5969 price. Shipping/catalog snapshots and Marketplace buy-box prices cannot substitute for pickup pricing. Secrets must never be embedded in the shipping iPhone binary or committed to this repository.
 
+The user confirmed on October 16 that they do not have approved OPD access. No authenticated integration work can proceed on that basis.
+
 ## Concrete unblock requirements
 
 1. Approved OPD developer access and its permitted read-only product-price contract. Do not send passwords or API keys in chat.
