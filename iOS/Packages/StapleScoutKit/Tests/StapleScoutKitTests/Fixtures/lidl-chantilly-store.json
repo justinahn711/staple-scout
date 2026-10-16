@@ -1,0 +1,21 @@
+{
+  "source": {
+    "url": "https://www.lidl.com/s/en-US/stores/chantilly/chantilly-crossing-lane-14445/_payload.json",
+    "capturedAt": "2026-10-16T00:00:00-04:00",
+    "siteBuild": "26_21_2"
+  },
+  "store": {
+    "objectNumber": "US01112",
+    "name": "Chantilly VA - Chantilly Crossing",
+    "address": {
+      "street": "14445 Chantilly Crossing Lane",
+      "city": "Chantilly",
+      "state": "VA",
+      "zipCode": "20151-2116"
+    },
+    "marketingData": {
+      "offerRegion": "1112",
+      "offerRegionName": "Region US1112"
+    }
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "type": "search",
+  "version": "v2.0.0",
+  "assortment": "US",
+  "locale": "en_US",
+  "q": "milk",
+  "numFound": 34,
+  "items": [
+    {
+      "resultClass": "product",
+      "type": "product",
+      "code": "11675058",
+      "gridbox": {
+        "country": "US",
+        "data": {
+          "canonicalUrl": "/p/whole-milk/p11675058",
+          "erpNumber": "11675058",
+          "fullTitle": "whole milk",
+          "itemId": 11675058,
+          "price": {
+            "currencyCode": "USD",
+            "packaging": { "text": "128 fl.oz." },
+            "price": 3.48,
+            "variantsHaveDifferentPrices": false
+          },
+          "productId": 11675058,
+          "productType": "RETAIL_HEAD",
+          "regionsV2": [
+            { "regionName": "Region US1469", "isDefault": false, "regionPriceId": "10", "status": "ONLINE", "hasVat": false, "priceHasZeroVat": false },
+            { "regionName": "Region US1112", "isDefault": false, "regionPriceId": "9", "status": "ONLINE", "hasVat": false, "priceHasZeroVat": false }
+          ],
+          "regionsPrices": {
+            "9": {
+              "currentPrice": {
+                "currencyCode": "USD",
+                "endDate": "2026-11-13T05:59:59Z",
+                "endDateExclusive": "2026-11-13T06:00:00Z",
+                "hasStar": true,
+                "hasVat": true,
+                "oldPrice": 3.55,
+                "packaging": { "text": "128 fl.oz." },
+                "price": 3.47,
+                "startDate": "2026-10-15T05:34:43.560Z",
+                "variantsHaveDifferentPrices": false
+              },
+              "futureLidlPlusPrices": []
+            },
+            "10": {
+              "currentPrice": {
+                "currencyCode": "USD",
+                "endDate": "2026-11-13T05:59:59Z",
+                "endDateExclusive": "2026-11-13T06:00:00Z",
+                "packaging": { "text": "128 fl.oz." },
+                "price": 8.88,
+                "startDate": "2026-10-15T05:34:43.560Z",
+                "variantsHaveDifferentPrices": false
+              }
+            }
+          },
+          "renderedTs": 1792042498,
+          "stockAvailability": {
+            "availabilityIndicator": 0,
+            "badgeInfo": { "badges": [{ "text": "", "type": "IN_STORE" }] },
+            "onlineAvailable": false
+          }
+        }
+      }
+    },
+    {
+      "resultClass": "product",
+      "type": "product",
+      "code": "11674828",
+      "gridbox": {
+        "country": "US",
+        "data": {
+          "canonicalUrl": "/p/2-reduced-fat-milk/p11674828",
+          "erpNumber": "11674828",
+          "fullTitle": "2% reduced fat milk",
+          "itemId": 11674828,
+          "productId": 11674828,
+          "productType": "RETAIL_HEAD",
+          "regionsV2": [
+            { "regionName": "Region US1469", "isDefault": false, "regionPriceId": "10", "status": "ONLINE", "hasVat": false, "priceHasZeroVat": false },
+            { "regionName": "Region US1112", "isDefault": false, "regionPriceId": "9", "status": "ONLINE", "hasVat": false, "priceHasZeroVat": false }
+          ],
+          "regionsPrices": {
+            "9": {
+              "currentPrice": {
+                "currencyCode": "USD",
+                "endDate": "2026-11-13T05:59:59Z",
+                "endDateExclusive": "2026-11-13T06:00:00Z",
+                "packaging": { "text": "128 fl.oz." },
+                "price": 3.30,
+                "startDate": "2026-10-15T05:34:35.076Z",
+                "variantsHaveDifferentPrices": false
+              }
+            },
+            "10": {
+              "currentPrice": {
+                "currencyCode": "USD",
+                "endDateExclusive": "2026-11-13T06:00:00Z",
+                "packaging": { "text": "128 fl.oz." },
+                "price": 8.30,
+                "startDate": "2026-10-15T05:34:35.076Z",
+                "variantsHaveDifferentPrices": false
+              }
+            }
+          },
+          "renderedTs": 1792042553
+        }
+      }
+    }
+  ]
+}
