@@ -31,6 +31,8 @@ public struct FetchedPrice: Codable, Sendable {
     public var source: SourceID
     public var sourceURL: String
     public var sourceExclusion: String?
+    public var validFrom: Date?
+    public var validUntil: Date?
 
     public init(
         productID: String,
@@ -47,7 +49,9 @@ public struct FetchedPrice: Codable, Sendable {
         conditions: String = "",
         source: SourceID,
         sourceURL: String,
-        sourceExclusion: String? = nil
+        sourceExclusion: String? = nil,
+        validFrom: Date? = nil,
+        validUntil: Date? = nil
     ) {
         self.productID = productID
         self.productName = productName
@@ -64,6 +68,8 @@ public struct FetchedPrice: Codable, Sendable {
         self.source = source
         self.sourceURL = sourceURL
         self.sourceExclusion = sourceExclusion
+        self.validFrom = validFrom
+        self.validUntil = validUntil
     }
 }
 
