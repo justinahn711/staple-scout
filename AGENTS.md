@@ -14,12 +14,13 @@ inside this checkout. Do not modify the neighboring workout app or its data.
 - Bind the development server to localhost; no public deployment is authorized.
 
 ## Engineering
-- Python, FastAPI, SQLite, httpx; a small browser interface rather than a JS framework.
+- The shipping target is a native iPhone app using Swift, SwiftUI, SwiftData and URLSession. The user clarified this on October 8, 2026. Python/web code is historical reference and is not required by the native app.
 - Use decimal arithmetic for money and quantity conversions.
 - Write meaningful tests for normalization, matching, freshness and persistence.
 - Do not commit databases, receipts, credentials, virtualenvs or raw private responses.
 - Workers own separate files. Do not overwrite another worker's changes.
 - Run `uv run pytest` before completing backend changes.
+- For native changes, run `swift test --package-path iOS/Packages/StapleScoutKit` and relevant Xcode app tests. Use isolated in-memory stores for app tests; never open a user database or call live retailers from tests.
 
 ## Delegation
 Use the workspace's cost-aware custom agents for substantial independent work;

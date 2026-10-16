@@ -16,3 +16,11 @@ data/
 dist/
 build/
 *.egg-info/
+
+# Native Apple build artifacts
+.DS_Store
+iOS/.build/
+iOS/Packages/*/.build/
+iOS/DerivedData/
+*.xcuserstate
+xcuserdata/
