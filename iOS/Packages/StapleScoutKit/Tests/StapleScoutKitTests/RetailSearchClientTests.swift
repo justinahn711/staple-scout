@@ -78,10 +78,16 @@ final class RetailSearchClientTests: XCTestCase {
     func testUnsupportedStoreOrChannelMakesNoRequest() async throws {
         SearchFixtureProtocol.handler = { _ in XCTFail("No network request permitted"); throw URLError(.badURL) }
         let client = RetailSearchClient(session: session())
-        for store in [StoreID.hmart, .walmart, .target, .lidl] {
+        for store in [StoreID.hmart, .walmart, .target] {
             do { _ = try await client.search(query: "milk", location: location(store), channel: .inStore); XCTFail("Expected unsupported source") }
             catch { XCTAssertNotNil(error as? RetailClientError) }
         }
+    }
+
+    func testLidlUnsupportedChannelMakesNoRequest() async throws {
+        SearchFixtureProtocol.handler = { _ in XCTFail("No network request permitted"); throw URLError(.badURL) }
+        do { _ = try await RetailSearchClient(session: session()).search(query: "milk", location: location(.lidl), channel: .pickup); XCTFail("Expected unsupported source") }
+        catch { XCTAssertNotNil(error as? RetailClientError) }
     }
 
     func testInvalidQueryMakesNoRequest() async throws {

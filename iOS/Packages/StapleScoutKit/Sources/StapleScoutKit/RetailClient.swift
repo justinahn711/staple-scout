@@ -94,10 +94,15 @@ public struct SourceCapability: Equatable, Codable, Sendable {
                 return SourceCapability(isConnected: false, message: "H Mart is connected only as an online catalog reference; local shelf and pickup prices are not available.")
             }
             return SourceCapability(isConnected: true, message: "Connected to the H Mart online catalog reference. Local stock and shipping are unverified.")
-        case .target, .walmart:
-            return SourceCapability(isConnected: false, message: "This store source is blocked until a public, validated price context is available.")
+        case .target:
+            return SourceCapability(isConnected: false, message: "Target price lookup is blocked by website human verification. No verified prices are available.")
+        case .walmart:
+            return SourceCapability(isConnected: false, message: "Walmart price lookup needs approved developer access; its public website requires human verification.")
         case .lidl:
-            return SourceCapability(isConnected: false, message: "Lidl price retrieval is not connected.")
+            guard location.code == "US01112", channel == .inStore else {
+                return SourceCapability(isConnected: false, message: "Lidl is connected only for Chantilly US01112 regional in-store catalog prices.")
+            }
+            return SourceCapability(isConnected: true, message: "Connected to Lidl Chantilly regional catalog prices. Local stock is unknown; these prices cannot win comparisons.")
         }
     }
 }
@@ -148,7 +153,9 @@ public final class RetailClient: @unchecked Sendable {
             return try await fetchWegmans(productID: identity)
         case .hmart:
             return try await fetchHMart(identity: identity)
-        case .target, .walmart, .lidl:
+        case .lidl:
+            return try await LidlClient(session: session, now: now).fetch(request)
+        case .target, .walmart:
             throw RetailClientError.unsupportedSource(capability.message)
         }
     }

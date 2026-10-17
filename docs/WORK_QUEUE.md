@@ -8,6 +8,10 @@ are linked in issue bodies, not enforced by an automated GitHub workflow.
 
 Current priority: native Walmart (#7/#10), Target (#4), and Lidl (#14) price integrations. Investigations use isolated branches based on the native iPhone implementation. Enable only verified store/channel sources; blocked or reference-only outcomes remain explicit. The ordering below records the original Python build plan and does not redefine the initial fixed issue scope.
 
+- Walmart #7/#10: blocked; public-site human verification and no approved OPD access (confirmed by user October 16). Research PR [#35](https://github.com/justinahn711/staple-scout/pull/35).
+- Target #4: blocked; public RedSky request returns HTTP 435 human verification; local offer context is incomplete. Research PR [#36](https://github.com/justinahn711/staple-scout/pull/36).
+- Lidl #14: native regional catalog search and exact-ID refresh implemented and tested; US01112/offer region US1112. Unknown stock stays excluded from recommendations. This source progress does not close the original full-coverage issue.
+
 Barcode scanning is deferred to [#34 — native barcode scanning for cross-store price lookup](https://github.com/justinahn711/staple-scout/issues/34). It is backlog work, outside the original #1–#16 snapshot, and is not part of the current integrations.
 
 ## Ready to start

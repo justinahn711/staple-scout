@@ -1,5 +1,11 @@
 # Retailer source evidence
 
+## Native iPhone update — October 16, 2026
+
+The evidence below is the historical October 5 prototype snapshot. Current native coverage is summarized in the [README](../README.md#sources-and-limits) and [native contract](../iOS/CONTRACT.md). Lidl Chantilly is selected as US01112 and its official offer region is US1112. Its public catalog supports regional price discovery and exact-ID refresh, with unknown local stock excluded from recommendations; see [native Lidl research](research/lidl-native.md). Walmart and Target remain blocked by the source-access gates documented in research PRs [#35](https://github.com/justinahn711/staple-scout/pull/35) and [#36](https://github.com/justinahn711/staple-scout/pull/36). No fabricated adapter or price was substituted.
+
+## Historical prototype evidence
+
 Reviewed October 5, 2026 (America/New_York). Public pages were inspected; no live
 price adapter has yet been validated or enabled in this repository. Earlier API
 successes supplied in the project brief are useful leads, not fresh test results.

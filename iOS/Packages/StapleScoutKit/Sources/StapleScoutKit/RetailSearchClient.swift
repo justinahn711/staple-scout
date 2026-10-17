@@ -33,8 +33,19 @@ public actor RetailSearchClient {
         guard capability.isConnected else { throw RetailClientError.unsupportedSource(capability.message) }
         let day = String(ISO8601DateFormatter().string(from: Date()).prefix(10))
         let cacheKey = "\(day):\(location.id):\(channel.rawValue):\(query.lowercased())"
-        if let saved = cache[cacheKey] { return saved }
+        let checkedAt = Date()
+        if let saved = cache[cacheKey], saved.candidates.allSatisfy({ candidate in
+            if let start = candidate.validFrom, checkedAt < start { return false }
+            if let end = candidate.validUntil, checkedAt >= end { return false }
+            return true
+        }) { return saved }
         try Task.checkCancellation()
+        if location.store == .lidl {
+            let page = try await LidlClient(session: session).search(query: query, location: location, channel: channel)
+            try Task.checkCancellation()
+            save(page, key: cacheKey, day: day, successful: page.message == nil)
+            return page
+        }
         let identities: [String]
         switch location.store {
         case .wegmans: identities = try await wegmansIdentities(query: query)
@@ -53,10 +64,14 @@ public actor RetailSearchClient {
         try Task.checkCancellation()
         let message = failures == 0 ? nil : "\(failures) product prices could not be checked. Only successfully checked products are shown."
         let page = RetailSearchPage(candidates: candidates, message: message)
+        save(page, key: cacheKey, day: day, successful: failures == 0)
+        return page
+    }
+
+    private func save(_ page: RetailSearchPage, key: String, day: String, successful: Bool) {
         cache = cache.filter { $0.key.hasPrefix(day + ":") }
         if cache.count >= 50 { cache.removeAll() }
-        if failures == 0 { cache[cacheKey] = page }
-        return page
+        if successful { cache[key] = page }
     }
 
     private func hmartIdentities(query: String) async throws -> [String] {
