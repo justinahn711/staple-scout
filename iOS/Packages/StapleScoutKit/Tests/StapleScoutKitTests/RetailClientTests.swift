@@ -20,7 +20,9 @@ final class RetailClientTests: XCTestCase {
         XCTAssertFalse(SourceCapability.forLocation(locations[.hmart]!, channel: .inStore).isConnected)
         XCTAssertFalse(SourceCapability.forLocation(locations[.target]!, channel: .inStore).isConnected)
         XCTAssertFalse(SourceCapability.forLocation(locations[.walmart]!, channel: .inStore).isConnected)
-        XCTAssertFalse(SourceCapability.forLocation(locations[.lidl]!, channel: .inStore).isConnected)
+        XCTAssertTrue(SourceCapability.forLocation(locations[.lidl]!, channel: .inStore).isConnected)
+        XCTAssertFalse(SourceCapability.forLocation(locations[.lidl]!, channel: .pickup).isConnected)
+        XCTAssertFalse(SourceCapability.forLocation(StoreLocation(store: .lidl, name: "Nearby Lidl", code: "US01469"), channel: .inStore).isConnected)
     }
 
     func testWegmansPreservesExactIdentityPackageStockAndCacheAge() async throws {

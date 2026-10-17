@@ -8,7 +8,7 @@ Core API (worker1 owns Models.swift, ComparisonEngine.swift, ReportEngine.swift 
 - StoreID: String CaseIterable Codable Sendable: wegmans,walmart,target,hmart,lidl; `name: String`.
 - Channel: String CaseIterable Codable Sendable: inStore="in_store",pickup,online; `name: String`.
 - MeasureUnit: String CaseIterable Codable Sendable: oz,lb,g,kg,flOz="fl_oz",ml,l,each. `name: String`, `basis: MeasureUnit` (.oz/.flOz/.each), `baseFactor: Decimal` exact grams/ml/count.
-- QuantityKind: fixed,estimated,variable. MatchStatus: pending,approved,rejected. SourceID: manual,wegmans,hmart.
+- QuantityKind: fixed,estimated,variable. MatchStatus: pending,approved,rejected. SourceID: manual,wegmans,hmart,walmart,target,lidl.
 - Staple: id:UUID, name:String, basis:MeasureUnit, rules:String="", needed:Bool=true, desiredQuantity:Decimal?=nil, desiredUnit:MeasureUnit?=nil.
 - StoreLocation: id:UUID, store:StoreID, name:String, code:String?; static `defaults: [StoreLocation]` with confirmedWegmans133, Target1827, Walmart5969(tentative), LidlUS01112, HMartonline code nil. Locations immutable in application history; preference changes append new context.
 - ProductVariant: id:UUID, store:StoreID, productID:String?=nil, barcode:String?=nil, name:String, quantity:Decimal, unit:MeasureUnit, packCount:Int=1, quantityKind:QuantityKind=.fixed.
@@ -27,9 +27,9 @@ Core API (worker1 owns Models.swift, ComparisonEngine.swift, ReportEngine.swift 
 
 Networking API (worker2 owns RetailClient.swift and networking tests/fixtures; imports the above models):
 - FetchRequest: variant:ProductVariant, location:StoreLocation, channel:Channel.
-- FetchedPrice: productID:String, productName:String, barcode:String?, price:Decimal?, quantity:Decimal?, unit:MeasureUnit?, packCount:Int, quantityKind:QuantityKind, available:Bool?, observedAt:Date, retrievedAt:Date, conditions:String, source:SourceID, sourceURL:String, sourceExclusion:String? optional. Public initializer.
-- SourceCapability: enum or struct exposing `isConnected: Bool`, `message:String`; static `forLocation(_ location:StoreLocation, channel:Channel)->SourceCapability`. Wegmans exact133 shelf only. HMart online reference only; for shelf/pickup notconnected. Other stores explicitlyblocked/disconnected.
-- RetailClient: actor or Sendable class; `init(session:URLSession=.shared)`; `fetch(_ request:FetchRequest) async throws ->FetchedPrice`. Exact IDs, validated context, safe numeric prices using Decimal, URLSession timeout≤10s; only normal supported Wegmans133 public product JSON and HMartVTEX online. No guessed endpoints/keys/challenge probing. Explicit sourceURL, conservative Date/Age, stockflags, condition/estimated handling. HMart never becomes Centreville shelf. Copy sanitized existing fixtures from research branches for offline tests.
+- FetchedPrice: productID:String, productName:String, barcode:String?, price:Decimal?, quantity:Decimal?, unit:MeasureUnit?, packCount:Int, quantityKind:QuantityKind, available:Bool?, observedAt:Date, retrievedAt:Date, conditions:String, source:SourceID, sourceURL:String, sourceExclusion:String?, validFrom:Date?=nil, validUntil:Date?=nil. Public initializer.
+- SourceCapability: enum or struct exposing `isConnected: Bool`, `message:String`; static `forLocation(_ location:StoreLocation, channel:Channel)->SourceCapability`. Wegmans exact133 shelf only. HMart online reference only; for shelf/pickup notconnected. Lidl US01112 regional shelf catalog connected with unknown stock excluded from winners. Walmart and Target explicitly blocked.
+- RetailClient: actor or Sendable class; `init(session:URLSession=.shared)`; `fetch(_ request:FetchRequest) async throws ->FetchedPrice`. Exact IDs, validated context, safe numeric prices using Decimal, URLSession timeout≤10s; normal public Wegmans133 product JSON, HMartVTEX online, and Lidl US01112 regional catalog/product pages. No guessed endpoints/keys/challenge probing. Explicit sourceURL, conservative Date/Age, stockflags, condition/estimated handling. HMart never becomes Centreville shelf. Copy sanitized existing fixtures from research branches for offline tests.
 
 All agents share this isolated branch. No one commits/pushes or changes files outside their ownership. Parent owns app, SwiftData persistence, Xcode project, Package.swift, docs and integration. Notify parent of any contract changes before editing others' files. Do not test real databases or call live retailers; no subagents.
 
@@ -39,6 +39,12 @@ A cached source response that changes package identity but predates newer eviden
 
 ## Keyword discovery (October 14)
 
-`RetailSearchClient(session:)` is an actor. `search(query:location:channel:) async throws -> RetailSearchPage` returns up to five exact-price-validated `FetchedPrice` candidates and a partial-failure message. Wegmans storefront search and H Mart VTEX full-text search only. Same-day successful queries are cached for the session; failed exact-price checks are retryable. No private access, committed keys, account login or challenge handling.
+`RetailSearchClient(session:)` is an actor. `search(query:location:channel:) async throws -> RetailSearchPage` returns up to five exact-price-validated `FetchedPrice` candidates and a partial-failure message. Wegmans storefront search, H Mart VTEX full-text search and Lidl US01112 public regional catalog search. Same-day successful queries are cached for the session; failed exact-price checks are retryable. No private access, committed keys, account login or challenge handling.
 
 The App target exposes `StoreSearchResult(location:channel:candidates:message:)`, `LibraryStore.searchProducts(query:) async -> [StoreSearchResult]` and `trackProduct(_:location:channel:stapleID:) throws`. Search is read-only; Track saves fetched evidence atomically and creates a pending match. Current-context validation, idempotency and rejected-package transition history protect prior evidence and approvals.
+
+## Lidl regional catalog (October 16)
+
+`LidlClient` supports keyword search and exact-ID product refresh for `.inStore` at `US01112` only. The official store's offer region is `Region US1112`; nearby store `US01469`/region US1469 is distinct. Regional current prices, known package dimensions, source render time and effective dates are retained. Local stock is always unknown and excluded from winners. Generic top-level prices, other regions and Lidl Plus prices are not fallbacks.
+
+`FetchedPrice` adds optional `validFrom` and exclusive `validUntil` dates with default-nil initializer arguments. Track and refresh preserve both in `PriceObservation`; older saved payloads remain decodable. Successful search cache entries with an expired or not-yet-started offer are rechecked rather than reused. Exact refresh does not use an indefinite client cache. Target and Walmart remain blocked with explicit source messages.

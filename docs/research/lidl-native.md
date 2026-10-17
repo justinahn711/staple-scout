@@ -93,8 +93,7 @@ is a real JSON boolean.
 The region's `ONLINE` status and generic `IN_STORE` badge do not establish
 stock at US01112. Every result has `available: nil` and a source exclusion
 for unknown local stock, preventing it from winning a cheapest-store
-comparison. The standalone client remains globally disabled until parent
-integration.
+comparison. The native shared search and exact-price clients route this verified context to `LidlClient`; all other Lidl locations and channels remain disconnected.
 
 ## Flyer boundary
 

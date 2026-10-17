@@ -5,7 +5,7 @@ import FoundationNetworking
 #endif
 
 /// Lidl's public US catalog exposes regional in-store prices but no local stock count.
-/// This client stays separate from `RetailClient` until its source behavior is reviewed.
+/// Shared retail clients route only the verified Chantilly in-store context here.
 public actor LidlClient {
     private static let chantillyStoreCode = "US01112"
     private static let chantillyOfferRegion = "1112"
