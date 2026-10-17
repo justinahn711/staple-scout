@@ -1,0 +1,239 @@
+{
+  "source": {
+    "url": "https://www.lidl.com/flyer/endpoints/v4/flyer?flyer_identifier=weekly-ad-10-7-2026-10-13-2026-3194fb&region_id=1112&region_code=1112",
+    "http_status": 200,
+    "capture_completed_at": "2026-10-08T11:49:02.754993+00:00",
+    "timestamp_basis": "downloaded response file modification time",
+    "discovery_script_url": "https://lidl.leaflets.schwarz/assets/index-f42dafaf.js",
+    "store_id": "US01112",
+    "viewer_region_code": "1112",
+    "selected_store_offer_region": "1469"
+  },
+  "response": {
+    "version": 4,
+    "success": true,
+    "dateTime": "2026-10-08T11:23:41+00:00",
+    "numberOfEntries": 1,
+    "warnings": [
+      "The request contains some unused filter attributes: region_code."
+    ],
+    "flyer": {
+      "id": "01a0f80b-674e-73e9-a40a-8aacf9a8f31e",
+      "name": "Weekly Ad",
+      "title": "10/7/2026 - 10/13/2026",
+      "locale": "en-US",
+      "apiCountryCode": "US",
+      "countryCode": "US",
+      "isActive": true,
+      "regions": [
+        {
+          "code": "1028"
+        },
+        {
+          "code": "1031"
+        },
+        {
+          "code": "1059"
+        },
+        {
+          "code": "1108"
+        },
+        {
+          "code": "1112"
+        },
+        {
+          "code": "1132"
+        },
+        {
+          "code": "1133"
+        },
+        {
+          "code": "1159"
+        },
+        {
+          "code": "1215"
+        },
+        {
+          "code": "1229"
+        },
+        {
+          "code": "1243"
+        },
+        {
+          "code": "1394"
+        },
+        {
+          "code": "1435"
+        },
+        {
+          "code": "1436"
+        },
+        {
+          "code": "1446"
+        },
+        {
+          "code": "1460"
+        },
+        {
+          "code": "1469"
+        },
+        {
+          "code": "1478"
+        },
+        {
+          "code": "1523"
+        },
+        {
+          "code": "1542"
+        },
+        {
+          "code": "1546"
+        },
+        {
+          "code": "1554"
+        },
+        {
+          "code": "1555"
+        },
+        {
+          "code": "1556"
+        },
+        {
+          "code": "1557"
+        },
+        {
+          "code": "1563"
+        },
+        {
+          "code": "1583"
+        },
+        {
+          "code": "1589"
+        },
+        {
+          "code": "1595"
+        },
+        {
+          "code": "8030"
+        },
+        {
+          "code": "8031"
+        },
+        {
+          "code": "8035"
+        }
+      ],
+      "startDate": "2026-10-02",
+      "endDate": "2026-10-13",
+      "offerStartDate": "2026-10-07",
+      "offerEndDate": "2026-10-13",
+      "status": "current",
+      "showProductDetails": true,
+      "products": {
+        "01a11809-d3d4-77ab-9aaa-df434c46b508": {
+          "productId": "11239527",
+          "title": "Café Bustelo® espresso ground coffee",
+          "brand": "CAFÉ BUSTELO®",
+          "currencyText": "USD",
+          "canonicalUrl": "/p/cafe-bustelo-espresso-ground-coffee/p11239527",
+          "price": "5.96",
+          "description": "10 oz."
+        },
+        "01a11809-d3d4-77ab-9aaa-df434bf550b2": {
+          "productId": "11238936",
+          "title": "Eridanous frozen gyro sandwich kit",
+          "brand": "ERIDANOUS",
+          "currencyText": "USD",
+          "canonicalUrl": "/p/eridanous-frozen-gyro-sandwich-kit/p11238936",
+          "price": "12.79",
+          "description": "no MSG added38 oz."
+        },
+        "01a11809-d3d4-77ab-9aaa-df434bba38a8": {
+          "productId": "11250812",
+          "title": "frozen sausage egg & cheese croissants",
+          "currencyText": "USD",
+          "canonicalUrl": "/p/frozen-sausage-egg-cheese-croissants/p11250812",
+          "price": "5.89",
+          "description": "no certified synthetic colorsfour count18 oz."
+        },
+        "01a11809-d3d4-77ab-9aaa-df434ae178af": {
+          "productId": "11671431",
+          "title": "Arm & Hammer™ plus Oxi Clean™ laundry detergent",
+          "brand": "ARM & HAMMER™",
+          "currencyText": "USD",
+          "canonicalUrl": "/p/arm-hammer-plus-oxi-clean-laundry-detergent/p11671431",
+          "price": "13.98",
+          "description": "122 loads158.6 fl. oz."
+        },
+        "01a11809-d3d4-77ab-9aaa-df434ced1812": {
+          "productId": "11245880",
+          "title": "frozen chicken fries",
+          "currencyText": "USD",
+          "canonicalUrl": "/p/frozen-chicken-fries/p11245880",
+          "price": "3.99",
+          "description": "24 oz."
+        },
+        "01a11809-d3d4-77ab-9aaa-df434e285170": {
+          "productId": "11245862",
+          "title": "LIDL frozen crispy chicken strips",
+          "brand": "LIDL",
+          "currencyText": "USD",
+          "canonicalUrl": "/p/lidl-frozen-crispy-chicken-strips/p11245862",
+          "price": "4.99",
+          "description": "no preservativesno artificial flavorsno certified synthetic colors25 oz."
+        },
+        "01a11809-d3d4-77ab-9aaa-df434d5bb6fa": {
+          "productId": "11249313",
+          "title": "frozen crispy breaded chicken nuggets, family size",
+          "currencyText": "USD",
+          "canonicalUrl": "/p/frozen-crispy-breaded-chicken-nuggets-family-size/p11249313",
+          "price": "7.99",
+          "description": "no preservativesno artificial flavorsno certified synthetic colors70 oz."
+        },
+        "01a11809-d3d4-77ab-9aaa-df434e393de3": {
+          "productId": "11246562",
+          "title": "Ocean Sea frozen beer battered haddock",
+          "brand": "OCEAN SEA",
+          "currencyText": "USD",
+          "canonicalUrl": "/p/ocean-sea-frozen-beer-battered-haddock/p11246562",
+          "price": "5.99",
+          "description": "MSC Certifiedwild caughtmade from whole filletsresponsibly sourced14.5 oz."
+        },
+        "01a11809-d3d4-77ab-9aaa-df434f00a968": {
+          "productId": "11238930",
+          "title": "purified water",
+          "currencyText": "USD",
+          "canonicalUrl": "/p/purified-water/p11238930",
+          "price": "3.09",
+          "description": "24 - 16.9 fl. oz. bottles"
+        },
+        "01a11809-d3d4-77ab-9aaa-df434f71741f": {
+          "productId": "11248902",
+          "title": "FURtrition™ grain free chicken pate",
+          "brand": "FURTRITION™",
+          "currencyText": "USD",
+          "canonicalUrl": "/p/furtrition-grain-free-chicken-pate/p11248902",
+          "price": "0.39",
+          "description": "3 oz."
+        },
+        "01a11809-d3dc-7aaf-9cf2-59ac88a086e6": {
+          "productId": "11249987",
+          "title": "Lysol® all purpose cleaner spray, lemon breeze",
+          "brand": "LYSOL®",
+          "currencyText": "USD",
+          "canonicalUrl": "/p/lysol-all-purpose-cleaner-spray-lemon-breeze/p11249987",
+          "price": "3.84",
+          "description": "32 fl. oz."
+        },
+        "01a11809-d3dc-7aaf-9cf2-59ac899e8908": {
+          "productId": "11239345",
+          "title": "all purpose cleaner, lemon scent",
+          "currencyText": "USD",
+          "canonicalUrl": "/p/all-purpose-cleaner-lemon-scent/p11239345",
+          "price": "2.65",
+          "description": "cuts through tough stainskills 99.9% of bacteria in 5 minutes32 fl. oz."
+        }
+      }
+    }
+  }
+}
