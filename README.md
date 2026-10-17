@@ -10,6 +10,8 @@ A native **Swift and SwiftUI iPhone app** for comparing grocery staples at Wegma
 
 The app runs independently on iPhone. It does not call a Python service or require a Mac to stay online. Local SwiftData storage uses the app’s private Application Support directory. First launch has no sample staples or prices. The application has no account system, CloudKit sync or public service.
 
+A new [local shared-price prototype](docs/SHARED_PRICE_PILOT.md) adds a Swift server with a durable cache and an optional simulator transport. It prepares for multiple users at the same stores while keeping their lists and approvals on device. It is not deployed; live sources are disabled by default and Walmart/Target access is still unresolved. The existing app works without this service.
+
 ## Shopper flow
 
 - **Staples:** add what you buy, describe acceptable substitutes, choose weight/volume/count, and mark this week’s needs. Search store catalogs automatically after adding a staple, track suitable products with fetched prices, and approve acceptable matches individually. Manual entry is an optional fallback. Requirement edits reset product reviews; need/amount edits preserve them.

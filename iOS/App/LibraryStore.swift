@@ -23,6 +23,14 @@ struct StoreSearchResult: Identifiable {
     var message: String?
 }
 
+private struct UnconfiguredSharedTransport: RetailPriceFetching, RetailProductSearching {
+    private func error() -> LibraryError {
+        LibraryError(message: "The shared service configuration is incomplete or invalid. Set its URL and access token in the Xcode Run environment.")
+    }
+    func fetch(_ request: FetchRequest) async throws -> FetchedPrice { throw error() }
+    func search(query: String, location: StoreLocation, channel: Channel) async throws -> RetailSearchPage { throw error() }
+}
+
 @MainActor @Observable final class LibraryStore {
     private(set) var state: LibraryState
     private(set) var refreshing = false
@@ -30,11 +38,11 @@ struct StoreSearchResult: Identifiable {
     var failure: String?
     private let context: ModelContext
     private var record: SavedLibrary
-    private let client: RetailClient
-    private let searchClient: RetailSearchClient
+    private let client: any RetailPriceFetching
+    private let searchClient: any RetailProductSearching
     private var searchedProducts: [StoreSearchResult] = []
 
-    init(context: ModelContext, client: RetailClient = RetailClient(), searchClient: RetailSearchClient = RetailSearchClient()) throws {
+    init(context: ModelContext, client: any RetailPriceFetching = RetailClient(), searchClient: any RetailProductSearching = RetailSearchClient()) throws {
         self.context = context; self.client = client; self.searchClient = searchClient
         let records = try context.fetch(FetchDescriptor<SavedLibrary>())
         guard records.count <= 1 else { throw LibraryError(message: "More than one library was found. Your data has been preserved; reopen the app or restore a backup.") }
@@ -50,6 +58,23 @@ struct StoreSearchResult: Identifiable {
             try context.save()
         }
         context.autosaveEnabled = false
+    }
+
+    /// The simulator can opt into the local prototype through Xcode Run environment variables.
+    /// Credentials stay outside the library payload and the project/scheme files.
+    static func configured(context: ModelContext, environment: [String: String]) throws -> LibraryStore {
+        if environment["THRIFTY_SERVICE_URL"] != nil || environment["THRIFTY_ACCESS_TOKEN"] != nil {
+            let transport: any RetailPriceFetching & RetailProductSearching
+            if let address = environment["THRIFTY_SERVICE_URL"], let url = URL(string: address),
+               let token = environment["THRIFTY_ACCESS_TOKEN"],
+               let remote = try? SharedMarketClient(baseURL: url, accessToken: token) {
+                transport = remote
+            } else {
+                transport = UnconfiguredSharedTransport()
+            }
+            return try LibraryStore(context: context, client: transport, searchClient: transport)
+        }
+        return try LibraryStore(context: context)
     }
 
     private func update(_ change: (inout LibraryState) throws -> Void) throws {

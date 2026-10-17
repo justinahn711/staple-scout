@@ -53,6 +53,46 @@ final class SharedPriceCacheTests: XCTestCase, @unchecked Sendable {
         XCTAssertTrue(results.allSatisfy { $0.value.observedAt == value.observedAt })
     }
 
+    func testLatePreviousDayFetchCannotOverwriteNewDayPriceOrSearch() async throws {
+        for isSearch in [false, true] {
+            let clock = TestClock(instant)
+            let cache = try SharedPriceCache(databasePath: ":memory:", now: { clock.read() })
+            let context = try wegmans()
+            let gate = Gate()
+            let yesterday = fixture(at: instant)
+            let previous = Task {
+                if isSearch {
+                    _ = try await cache.search(context: context, query: "milk") {
+                        await gate.enterAndWait(); return RetailSearchPage(candidates: [yesterday])
+                    }
+                } else {
+                    _ = try await cache.price(context: context, productID: "123") {
+                        await gate.enterAndWait(); return yesterday
+                    }
+                }
+            }
+            await gate.waitUntilEntered()
+            clock.advance(86_400)
+            let today = fixture(at: clock.read())
+            if isSearch {
+                _ = try await cache.search(context: context, query: "milk") { RetailSearchPage(candidates: [today]) }
+            } else {
+                _ = try await cache.price(context: context, productID: "123") { today }
+            }
+            await gate.open()
+            try await previous.value
+            if isSearch {
+                let result = try await cache.search(context: context, query: "milk") { XCTFail("Today's search must remain cached"); return RetailSearchPage(candidates: []) }
+                XCTAssertEqual(result.page.candidates.first?.observedAt, today.observedAt)
+                XCTAssertTrue(result.cacheHit)
+            } else {
+                let result = try await cache.price(context: context, productID: "123") { XCTFail("Today's price must remain cached"); return today }
+                XCTAssertEqual(result.value.observedAt, today.observedAt)
+                XCTAssertTrue(result.cacheHit)
+            }
+        }
+    }
+
     func testStoreChannelKeysAndSearchNormalizationDoNotShareEvidence() async throws {
         let cache = try SharedPriceCache(databasePath: ":memory:", now: { self.instant })
         let counter = Counter()

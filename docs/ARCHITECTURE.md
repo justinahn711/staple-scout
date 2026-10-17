@@ -1,5 +1,12 @@
 # Architecture
 
+The shipping application is now the native iPhone app described in
+[README](../README.md) and [the native contract](../iOS/CONTRACT.md).
+The new Swift server and opt-in native transport are documented in
+[Shared price pilot](SHARED_PRICE_PILOT.md). They reuse the native source clients
+and preserve private, on-device libraries. The Python design below is historical
+reference, not the current shipping architecture.
+
 ## Initial boundary
 
 A single local Python process serves a FastAPI API and stores data in SQLite.

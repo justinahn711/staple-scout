@@ -24,3 +24,5 @@ iOS/Packages/*/.build/
 iOS/DerivedData/
 *.xcuserstate
 xcuserdata/
+server/.build/
+server/.swiftpm/

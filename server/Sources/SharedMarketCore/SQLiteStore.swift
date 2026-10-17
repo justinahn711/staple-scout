@@ -95,7 +95,7 @@ final class SQLiteStore {
         try execute("BEGIN IMMEDIATE")
         var committed = false
         defer { if !committed { try? execute("ROLLBACK") } }
-        let statement = try prepare("INSERT INTO cache_entries (cache_key, utc_day, payload, inserted_at) VALUES (?, ?, ?, ?) ON CONFLICT(cache_key) DO UPDATE SET utc_day = excluded.utc_day, payload = excluded.payload, inserted_at = excluded.inserted_at")
+        let statement = try prepare("INSERT INTO cache_entries (cache_key, utc_day, payload, inserted_at) VALUES (?, ?, ?, ?) ON CONFLICT(cache_key) DO UPDATE SET utc_day = excluded.utc_day, payload = excluded.payload, inserted_at = excluded.inserted_at WHERE excluded.utc_day >= cache_entries.utc_day")
         defer { sqlite3_finalize(statement) }
         try bind(key, at: 1, to: statement)
         try bind(day, at: 2, to: statement)
