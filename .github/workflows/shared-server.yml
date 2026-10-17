@@ -1,0 +1,21 @@
+name: Shared Swift backend
+on:
+  pull_request:
+    paths: ['server/**', 'iOS/Packages/StapleScoutKit/**', '.github/workflows/shared-server.yml']
+  push:
+    branches: [main, feature/shared-price-pilot]
+    paths: ['server/**', 'iOS/Packages/StapleScoutKit/**', '.github/workflows/shared-server.yml']
+permissions:
+  contents: read
+jobs:
+  server:
+    runs-on: macos-26
+    timeout-minutes: 25
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check toolchain
+        run: swift --version
+      - name: Build and test local shared service
+        run: swift test --package-path server --jobs 4 --force-resolved-versions

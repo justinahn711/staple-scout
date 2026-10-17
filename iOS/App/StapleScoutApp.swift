@@ -10,7 +10,11 @@ import StapleScoutKit
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             let configuration = ModelConfiguration(url: directory.appending(path: "Library.store"), cloudKitDatabase: .none)
             let container = try ModelContainer(for: SavedLibrary.self, configurations: configuration)
+            #if targetEnvironment(simulator)
+            return try LibraryStore.configured(context: ModelContext(container), environment: ProcessInfo.processInfo.environment)
+            #else
             return try LibraryStore(context: ModelContext(container))
+            #endif
         }
     }
     var body: some Scene {
