@@ -53,8 +53,63 @@ final class LidlClientTests: XCTestCase {
         XCTAssertEqual(milk.sourceURL, "https://www.lidl.com/p/whole-milk/p11675058")
     }
 
+    func testKeywordSearchAcceptsCurrentRegionDictionaryAndSkipsMalformedSibling() async throws {
+        var object = try fixtureObject("lidl-search")
+        var items = object["items"] as! [[String: Any]]
+        var gridbox = items[0]["gridbox"] as! [String: Any]
+        var product = gridbox["data"] as! [String: Any]
+        var groups = product["regionsPrices"] as! [String: Any]
+        var group = groups["9"] as! [String: Any]
+        var currentPrice = group["currentPrice"] as! [String: Any]
+        currentPrice["endDateExclusive"] = "2026-11-13T06:00Z"
+        group["currentPrice"] = currentPrice
+        groups["9"] = group
+        product["regionsPrices"] = groups
+        let regions = product["regionsV2"] as! [[String: Any]]
+        var regionDictionary = Dictionary(uniqueKeysWithValues: regions.map { region in
+            let name = region["regionName"] as! String
+            return (String(name.suffix(4)), region)
+        })
+        regionDictionary["8018"] = ["regionName": "Region US8018", "status": "OFFLINE"]
+        product["regionsV2"] = regionDictionary
+        gridbox["data"] = product
+        items[0]["gridbox"] = gridbox
+        object["items"] = [items[0], ["type": "product", "resultClass": "product", "code": "broken"]]
+        LidlFixtureProtocol.handler = { Self.response($0, json: object) }
+
+        let page = try await client().search(query: "milk", location: chantilly(), channel: .inStore)
+
+        XCTAssertEqual(page.candidates.map(\.productID), ["11675058"])
+        let price = try XCTUnwrap(try XCTUnwrap(page.candidates.first).price)
+        XCTAssertEqual(NSDecimalNumber(decimal: price).doubleValue, 3.47, accuracy: 0.000_001)
+        XCTAssertTrue(page.message?.contains("1 Lidl catalog results") == true)
+    }
+
+    func testDuplicateSelectedRegionWithoutPriceStillMakesTheContextAmbiguous() async throws {
+        var object = try fixtureObject("lidl-search")
+        var items = object["items"] as! [[String: Any]]
+        var gridbox = items[0]["gridbox"] as! [String: Any]
+        var product = gridbox["data"] as! [String: Any]
+        var regions = product["regionsV2"] as! [[String: Any]]
+        regions.append(["regionName": "Region US1112", "status": "ONLINE"])
+        product["regionsV2"] = regions
+        gridbox["data"] = product
+        items[0]["gridbox"] = gridbox
+        object["items"] = [items[0]]
+        LidlFixtureProtocol.handler = { Self.response($0, json: object) }
+
+        let page = try await client().search(query: "milk", location: chantilly(), channel: .inStore)
+        XCTAssertTrue(page.candidates.isEmpty)
+        XCTAssertNotNil(page.message)
+    }
+
     func testExactFetchResolvesOfficialRedirectThenParsesPublicProductPayload() async throws {
-        let nuxt = String(decoding: try fixtureData("lidl-product-page"), as: UTF8.self)
+        var raw = try fixtureArray("lidl-product-page")
+        let missingPriceRegion = raw.count
+        raw.append(["regionName": missingPriceRegion + 1, "status": 14])
+        raw.append("Region US8018")
+        raw[6] = ["1469": 9, "1112": 10, "8018": missingPriceRegion]
+        let nuxt = String(decoding: try JSONSerialization.data(withJSONObject: raw), as: UTF8.self)
         var requests: [URLRequest] = []
         LidlFixtureProtocol.handler = { request in
             requests.append(request)

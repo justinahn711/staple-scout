@@ -37,6 +37,8 @@ No account, cookie, private credential, guessed key, challenge bypass, proxy,
 or browser fingerprint was required. The published media type returned HTTP
 200; omitting it returned 401.
 
+Search responses may encode regions as a dictionary and include unrelated regions without a price group. Both array and dictionary forms are decoded without dropping duplicate selected-region evidence. Malformed sibling products are counted as coverage gaps and prevent successful-page caching. Offer dates accept the source's second or minute precision.
+
 Products expose stable `code`, `erpNumber`, `itemId`, and `productId`
 values, a canonical `/p/.../p<productId>` path, `regionsV2`,
 `regionsPrices`, and `renderedTs`. The client requires all identities to
@@ -106,3 +108,7 @@ Official sources:
 - <https://www.lidl.com/s/en-US/stores/chantilly/chantilly-crossing-lane-14445/>
 - <https://www.lidl.com/q/search?q=milk>
 - <https://www.lidl.com/p/whole-milk/p11675058>
+
+## Native live smoke
+
+On October 16 a temporary standalone Swift executable called the implemented client for `milk`, returned five regional candidates, and then fetched product `11675058` by its exact ID on a fresh client. The exact request returned USD 3.47, unknown local stock, and structured offer validity dates. No app database was opened or written. The initial live run exposed dictionary-shaped regions and unrelated rows without price IDs; offline regressions now cover those shapes, malformed sibling products and ambiguous duplicate selected regions.

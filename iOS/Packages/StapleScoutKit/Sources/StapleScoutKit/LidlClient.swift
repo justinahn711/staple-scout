@@ -45,13 +45,13 @@ public actor LidlClient {
         do { decoded = try JSONDecoder().decode(LidlSearchResponse.self, from: data) }
         catch { throw RetailClientError.invalidResponse("Lidl returned unreadable product search data.") }
         guard decoded.type == "search", decoded.assortment == "US", decoded.locale == "en_US",
-              decoded.items.count <= 48 else {
+              decoded.items.totalCount <= 48 else {
             throw RetailClientError.invalidResponse("Lidl returned an unexpected product search context.")
         }
 
         var candidates: [FetchedPrice] = []
-        var failures = 0
-        for item in decoded.items.prefix(12) {
+        var failures = decoded.items.rejectedCount
+        for item in decoded.items.elements.prefix(12) {
             try Task.checkCancellation()
             do {
                 let candidate = try makeFetchedPrice(
@@ -156,9 +156,10 @@ private extension LidlClient {
             throw RetailClientError.invalidResponse("Lidl returned inconsistent product identity data.")
         }
         let regionName = "Region US" + Self.chantillyOfferRegion
-        let regions = product.regionsV2.filter { $0.regionName == regionName && $0.status == "ONLINE" }
+        let regions = product.regionsV2.values.filter { $0.regionName == regionName && $0.status == "ONLINE" }
         guard regions.count == 1, let region = regions.first,
-              let regional = product.regionsPrices[region.regionPriceId],
+              let priceID = region.regionPriceId,
+              let regional = product.regionsPrices[priceID],
               let current = regional.currentPrice else {
             throw RetailClientError.invalidResponse("Lidl does not list a unique current price for Chantilly offer region 1112.")
         }
@@ -244,7 +245,10 @@ private extension LidlClient {
         guard let text else { return nil }
         let fractional = ISO8601DateFormatter()
         fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return fractional.date(from: text) ?? ISO8601DateFormatter().date(from: text)
+        if let date = fractional.date(from: text) ?? ISO8601DateFormatter().date(from: text) { return date }
+        let minutePrecision = #"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})(Z|[+-]\d{2}:\d{2})$"#
+        guard let match = text.lidlFirstMatch(minutePrecision) else { return nil }
+        return ISO8601DateFormatter().date(from: match[1] + ":00" + match[2])
     }
 
     func lidlTimestamp(_ date: Date) -> String {
@@ -258,7 +262,22 @@ private struct LidlSearchResponse: Decodable {
     var type: String
     var assortment: String
     var locale: String
-    var items: [LidlSearchItem]
+    var items: LidlLossyArray<LidlSearchItem>
+}
+
+private struct LidlLossyArray<Element: Decodable>: Decodable {
+    var elements: [Element] = []
+    var rejectedCount = 0
+    var totalCount: Int { elements.count + rejectedCount }
+
+    init(from decoder: Decoder) throws {
+        var container = try decoder.unkeyedContainer()
+        while !container.isAtEnd {
+            let elementDecoder = try container.superDecoder()
+            do { elements.append(try Element(from: elementDecoder)) }
+            catch { rejectedCount += 1 }
+        }
+    }
 }
 
 private struct LidlRedirectResponse: Decodable {
@@ -288,7 +307,7 @@ private struct LidlProduct: Decodable {
     var itemId: Int64
     var productId: Int64
     var productType: String
-    var regionsV2: [LidlRegion]
+    var regionsV2: LidlRegions
     var regionsPrices: [String: LidlRegionalPrice]
     var renderedTs: Int64
 
@@ -298,9 +317,24 @@ private struct LidlProduct: Decodable {
     }
 }
 
+private struct LidlRegions: Decodable {
+    var values: [LidlRegion]
+
+    init(values: [LidlRegion]) { self.values = values }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let array = try? container.decode([LidlRegion].self) {
+            values = array
+            return
+        }
+        values = Array(try container.decode([String: LidlRegion].self).values)
+    }
+}
+
 private struct LidlRegion: Decodable {
     var regionName: String
-    var regionPriceId: String
+    var regionPriceId: String?
     var status: String
 }
 
@@ -341,7 +375,7 @@ private extension LidlClient {
               let canonicalURL = lidlDevalueString(object["canonicalUrl"] ?? object["canonicalPath"], raw),
               let productType = lidlDevalueString(object["productType"], raw),
               let renderedTs = lidlDevalueInt64(object["renderedTs"], raw),
-              let regionsRaw = lidlDevalueArray(object["regionsV2"], raw),
+              let regionsRaw = lidlDevalueCollection(object["regionsV2"], raw),
               let pricesRaw = lidlDevalueObject(object["regionsPrices"], raw) else {
             throw RetailClientError.invalidResponse("Lidl's product page omitted required product fields.")
         }
@@ -352,11 +386,10 @@ private extension LidlClient {
         let regions: [LidlRegion] = try regionsRaw.map { entry in
             guard let region = lidlDevalueObject(entry, raw),
                   let name = lidlDevalueString(region["regionName"], raw),
-                  let priceID = lidlDevalueString(region["regionPriceId"], raw),
                   let status = lidlDevalueString(region["status"], raw) else {
                 throw RetailClientError.invalidResponse("Lidl returned unreadable regional identity data.")
             }
-            return LidlRegion(regionName: name, regionPriceId: priceID, status: status)
+            return LidlRegion(regionName: name, regionPriceId: lidlDevalueString(region["regionPriceId"], raw), status: status)
         }
         var prices: [String: LidlRegionalPrice] = [:]
         for (key, value) in pricesRaw {
@@ -367,7 +400,7 @@ private extension LidlClient {
             } else { current = nil }
             prices[key] = LidlRegionalPrice(currentPrice: current)
         }
-        return LidlProduct(canonicalURL: canonicalURL, erpNumber: erpNumber, fullTitle: fullTitle, itemId: itemID, productId: productID, productType: productType, regionsV2: regions, regionsPrices: prices, renderedTs: renderedTs)
+        return LidlProduct(canonicalURL: canonicalURL, erpNumber: erpNumber, fullTitle: fullTitle, itemId: itemID, productId: productID, productType: productType, regionsV2: LidlRegions(values: regions), regionsPrices: prices, renderedTs: renderedTs)
     }
 
     func lidlPrice(_ object: [String: Any], _ raw: [Any]) throws -> LidlPrice {
@@ -411,6 +444,12 @@ private extension LidlClient {
 
     func lidlDevalueArray(_ reference: Any?, _ raw: [Any]) -> [Any]? {
         lidlDevalueEntry(reference, raw) as? [Any]
+    }
+
+    func lidlDevalueCollection(_ reference: Any?, _ raw: [Any]) -> [Any]? {
+        if let array = lidlDevalueArray(reference, raw) { return array }
+        if let object = lidlDevalueObject(reference, raw) { return Array(object.values) }
+        return nil
     }
 
     func lidlDevalueObject(_ reference: Any?, _ raw: [Any]) -> [String: Any]? {
