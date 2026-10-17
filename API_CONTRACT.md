@@ -97,8 +97,9 @@ Monetary amounts and input quantities are decimal strings. Persistent storage de
 - `GET /api/health`: `{status: "ok"}`.
 
 The service exposes `create_app(db_path=None)` and module `app` from
-`staple_scout.main`. `/` redirects to the generated API explorer at `/docs`.
-The shopper interface is a future milestone.
+`staple_scout.main`. `/` serves the local shopper setup interface; `/docs`
+remains available for the developer API explorer. The setup interface manages
+staples, saved store locations, manual price evidence and product-match reviews.
 
 No auth in this local-only initial version. JSON writes require same-origin when
 Origin is provided. CORS disabled. Docs at `/docs`.
@@ -197,6 +198,19 @@ atomic migration. Existing desired quantities start null and existing package
 quantities retain the original fixed-size interpretation. No stored prices or
 observation dates are changed.
 
+
+## Shopper setup interface
+
+`GET /` serves accessible setup screens; static assets are local and no frontend
+build step or third-party CDN is required. Staples include weekly need, product
+rules, comparison basis and optional paired desired quantity/unit. Location
+selection and manual prices use exact immutable context IDs. Reusing a product
+variant prefills/locks package fields and keeps review separate from price entry.
+A new manual product can be reviewed explicitly; existing products use match
+review endpoints. Forms preserve values after validation/network errors and show
+pending/success/error states. Requirement edits explain reapproval; deletion
+requires an in-page confirmation describing its history consequence. No sample
+prices, fabricated substitutes, source login or background fetch is introduced.
 ## Explicit source refreshes (schema v4)
 
 `create_app(db_path=None, adapters=None)` accepts a server-owned registry of
