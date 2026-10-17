@@ -96,3 +96,14 @@ reconciliation. All safe unblocked work found in this audit is complete. The
 remaining issue implementations need a demonstrated supported local source;
 later public-provider research stays outside the frozen issue scope. Keep the
 goal active until its completion or the fresh blocked-audit threshold is proven.
+
+
+### Second resumed audit — October 17
+
+Re-read the remaining issue requirements/comments and source checkpoint PRs.
+No new access evidence or owner input is present; all sixteen original PR heads
+are unchanged and their checks pass. The previous turn made documentation/status
+progress; this turn is **no progress**, not a verified wait. Only #4/#10 lack the
+required local price contracts, with no independent unblocked implementation left.
+The fresh resumed blocker count is **2**. The goal stays active and incomplete;
+the original snapshots and issue scope remain unchanged.
