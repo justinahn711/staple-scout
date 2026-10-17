@@ -21,6 +21,10 @@ add/edit, invalid price and desired amount recovery with preserved fields,
 repeated price entry and variant reuse, approved matches, needed-only edits,
 rule edits resetting review, and explicit previous-location entry. At 390px,
 there was no page overflow, every input had a label and no button was below44px.
-The original native deletion prompt blocked browser automation; the final
-in-page dialog replaced it. Its final interactive check is pending cancellation
-of the old browser prompt. No real staples or prices were added to user data.
+The original browser-native deletion prompt blocked automation; the final
+in-page dialog replaced it. The later October 8 verification recorded in the
+[fixed-scope ledger](https://github.com/justinahn711/staple-scout/blob/goal/open-issues-2026-10-08/docs/goals/2026-10-08-open-issues.md)
+completed Cancel, Escape, focus restoration, keyboard confirmation and 390px
+layout checks at implementation head `a88c90f`. This corrects the earlier pending
+note; it does not claim a new browser run or native iPhone visual review. No real
+staples or prices were added to user data.
