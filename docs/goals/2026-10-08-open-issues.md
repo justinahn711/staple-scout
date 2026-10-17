@@ -107,3 +107,24 @@ progress; this turn is **no progress**, not a verified wait. Only #4/#10 lack th
 required local price contracts, with no independent unblocked implementation left.
 The fresh resumed blocker count is **2**. The goal stays active and incomplete;
 the original snapshots and issue scope remain unchanged.
+
+
+### Third resumed audit — blocked threshold met
+
+The same Target #4 and Walmart #10 local-source gates remain after three
+consecutive resumed goal turns. Current issue comments provide no new input;
+all source checkpoint heads and all fourteen ready PR heads are unchanged, open
+and tested. The tracked CI run is terminal, not a verified wait. There are no
+pending/working implementation issues or independent safe tasks left. The
+previous and current turns are **no progress**; audit bookkeeping is not counted
+as implementation progress.
+
+The original goal is **blocked and incomplete**, not complete. Target needs a
+supported five-product Chantilly1827 contract; Walmart needs approved OPD or
+another demonstrated first-party local pickup source and its five-offer gate.
+The user has no approved OPD access. Research checkpoints, cached cards and
+passing baseline tests cannot substitute for those sources. Credentials must
+not be pasted in chat.
+
+The initial #1–#16 snapshots are unchanged. Fourteen tested PRs remain ready for
+review; none were merged. Later public-pilot issues remain outside this goal.

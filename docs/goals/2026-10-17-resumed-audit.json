@@ -321,6 +321,11 @@
     "No verified five-product Chantilly1827 source contract or implemented Target adapter. October16 native PR36 records HTTP435 verification and incomplete price/seller/fulfillment evidence; user has no previous working API request. Current research PRs cannot satisfy the integration gate. No new access evidence received; cached web product cards do not establish a current local offer contract.",
     "No validated first-party local pickup source for confirmed Chantilly store context. Native PR35 records verification barrier and missing offer evidence; user explicitly confirmed no approved OPD access. Store/shipping/Marketplace or other-location display prices cannot satisfy the five-product local pickup gate. No adapter is enabled."
   ],
-  "goal_status": "active",
-  "fresh_resumed_block_audit_turn": 1
+  "goal_status": "blocked",
+  "fresh_resumed_block_audit_turn": 3,
+  "last_revalidated_at": "2026-10-17T17:45:13.502679+00:00",
+  "remaining_input": {
+    "target": "Supported access returning five exact Chantilly1827 products with package, store/channel, price, seller, stock/conditions and original source times; the research checkpoint alone is insufficient.",
+    "walmart": "Approved OPD or another demonstrated permitted first-party Chantilly local pickup feed, with verified store context and five exact offers; user currently has no OPD access. Never paste credentials in chat."
+  }
 }
