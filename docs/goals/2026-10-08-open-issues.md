@@ -2,7 +2,7 @@
 
 Repository: **justinahn711/staple-scout**. Initial scope: **#1–#16 only**.
 
-Initial issue/PR snapshots are immutable; JSON status is the detailed source of truth. PR ready means tested, reviewed and open. No PR has been merged. Each issue uses its own branch/worktree; reviewed stacked dependencies are permitted. Runtime supports two workers plus coordinator.
+Initial issue/PR snapshots are immutable; JSON status is the detailed source of truth. PR ready means tested, reviewed and open. No PR has been merged. Each issue uses its own branch/worktree; reviewed stacked dependencies are permitted. The current runtime permits up to three workers plus coordinator; this audit used two independent workers.
 
 | Issue | State | Dependencies | PR / evidence |
 |---|---|---|---|
@@ -23,7 +23,7 @@ Initial issue/PR snapshots are immutable; JSON status is the detailed source of 
 | [#15](https://github.com/justinahn711/staple-scout/issues/15) Add reliable daily refresh and a Mac schedule | PR ready | #8 | https://github.com/justinahn711/staple-scout/pull/27 |
 | [#16](https://github.com/justinahn711/staple-scout/issues/16) Compare actual package costs for a requested quantity | PR ready | #11 | https://github.com/justinahn711/staple-scout/pull/23 |
 
-## Continuation checkpoint
+## Historical continuation checkpoint — October 8
 
 Fourteen issues are PR ready. Only #4 (Target integration) and #10 (Walmart adapter) remain blocked on verified local source access. All 16 issues have their own isolated branches/worktrees and linked PRs. No GitHub PR has been merged. Research PR22 does not close #4; draft PR32 is a blocker checkpoint and does not close #10.
 
@@ -42,3 +42,57 @@ User selected Chantilly Lidl US01112 (14445 Chantilly Crossing Lane) and has no 
 Test servers only: port8876 uses /private/tmp/staple-scout-ui-review-20261008.sqlite3; port8877 uses /private/tmp/staple-scout-final-ui-fixtures.sqlite3. Original port8765 contains user data and must not be used for tests. Review tabs and the Target verification page are preserved for continuation; the viewport override was reset.
 
 Old AGENTS.md instructions were explicitly revoked; Impeccable fallback completed with PRODUCT.md recorded. Scope remains unchanged.
+
+
+## Fresh resumed audit — October 17, 2026
+
+Current result: **14 PR ready, 2 blocked; goal incomplete and active**. This is
+the first audit of the resumed run, not a continuation of the old three-turn
+blocked count. The original sixteen issue numbers and both snapshot files are
+unchanged. The new public-pilot roadmap and its later issues are outside this goal.
+
+The current-head audit is recorded in `2026-10-17-resumed-audit.json`. Every
+original issue still has its own clean isolated branch/worktree matching its
+linked open PR. All current checks pass. No PR was merged. Original acceptance
+and implementation/test artifacts were reviewed independently; no missing
+unblocked implementation task was identified.
+
+Two bounded follow-ups were completed on the existing issue branches:
+
+- **#3 / PR28, `58a927c`:** DESIGN.md now records the later October 8 dialog
+  verification instead of falsely leaving it pending. Runtime files are unchanged
+  from the previously verified `a88c90f`; no new browser or native visual run is
+  claimed. Current-head CI passes.
+- **#14 / PR25, `e62a56e`:** corrected the historical regional association:
+  Chantilly US01112 uses Region US1112; US1469 is Falls Church US01469. Original
+  fixture bytes and dates are preserved and explicitly are not Chantilly price
+  proof. PR25 remains the original issue's permitted documented-gap outcome;
+  native PR37 is separate later progress, with unknown local stock excluded.
+  Current-head CI passes.
+
+GitHub status labels now agree with the original issue ledger: fourteen
+`status:in-review`, two `status:blocked`. Those labels describe the original
+tested PR deliverables, not public deployment or complete native product readiness.
+
+Remaining source gates:
+
+- **#4 Target:** five traceable local products for Chantilly1827 with exact
+  identity/package, price/channel, seller, availability/conditions and source
+  timing are still missing. Native PR36 records HTTP435 and incomplete evidence;
+  the user has no prior working request to share. A readable store/product card
+  or green baseline CI does not implement the adapter.
+- **#10 Walmart:** a verified first-party local pickup feed and its five-product
+  contract are still missing. The user explicitly has no approved OPD access;
+  native PR35 records that gate. Other-store, shipping and Marketplace prices
+  cannot be substituted. Draft PR32 remains a checkpoint, not a working adapter.
+
+A fresh anonymous store-page attempt for each retailer failed in local transport;
+no new HTTP/challenge conclusion is inferred. The available web-tool pages are
+cached and do not establish a fresh complete local offer contract. No challenge,
+retailer login, credential collection, paid account or real data write occurred.
+
+Current-turn classification: **progress**, from corrected evidence and status
+reconciliation. All safe unblocked work found in this audit is complete. The
+remaining issue implementations need a demonstrated supported local source;
+later public-provider research stays outside the frozen issue scope. Keep the
+goal active until its completion or the fresh blocked-audit threshold is proven.

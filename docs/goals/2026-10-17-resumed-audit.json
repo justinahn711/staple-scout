@@ -1,0 +1,326 @@
+{
+  "checked_at": "2026-10-17T17:41:06.837027+00:00",
+  "repository": "justinahn711/staple-scout",
+  "scope_numbers": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+  ],
+  "immutable_snapshot_sha256": {
+    "2026-10-08-initial-issues.json": "11da0f8c6731604cf8fbdf97e322efe64688f96b29f7085b157724b9e57315db",
+    "2026-10-08-initial-prs.json": "7e6746b84d4b0321a9680650e7a9dfcf3c6fcc406275f26e6d0e18658cd97066"
+  },
+  "issue_audit": [
+    {
+      "number": 1,
+      "status": "PR ready",
+      "branch": "issue-1-wegmans-research",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-1",
+      "head": "b182a73dfe8e27a71c96c2dfabe13854656fd6e9",
+      "pr": "https://github.com/justinahn711/staple-scout/pull/18",
+      "draft": false,
+      "all_current_head_checks_pass": true,
+      "check_urls": [
+        "https://github.com/justinahn711/staple-scout/actions/runs/37457733285/job/112249360812",
+        "https://github.com/justinahn711/staple-scout/actions/runs/37457722777/job/112249327312"
+      ],
+      "reviewed_artifacts": [
+        "docs/research/wegmans.md"
+      ]
+    },
+    {
+      "number": 2,
+      "status": "PR ready",
+      "branch": "issue-2-product-matches",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-2",
+      "head": "ac402b797d8c5297292a80dd7370e17114962b62",
+      "pr": "https://github.com/justinahn711/staple-scout/pull/20",
+      "draft": false,
+      "all_current_head_checks_pass": true,
+      "check_urls": [
+        "https://github.com/justinahn711/staple-scout/actions/runs/37726807735/job/113146737217",
+        "https://github.com/justinahn711/staple-scout/actions/runs/37726800457/job/113146713751"
+      ],
+      "reviewed_artifacts": [
+        "tests/test_product_matches.py",
+        "tests/test_store_contexts.py",
+        "API_CONTRACT.md"
+      ]
+    },
+    {
+      "number": 3,
+      "status": "PR ready",
+      "branch": "issue-3-setup-ui",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-3",
+      "head": "58a927c020b0ee4e88a1a3d1180514435a9708d2",
+      "pr": "https://github.com/justinahn711/staple-scout/pull/28",
+      "draft": false,
+      "all_current_head_checks_pass": true,
+      "check_urls": [
+        "https://github.com/justinahn711/staple-scout/actions/runs/39054600367/job/117459895123",
+        "https://github.com/justinahn711/staple-scout/actions/runs/39054597579/job/117459887454"
+      ],
+      "reviewed_artifacts": [
+        "DESIGN.md",
+        "staple_scout/static/app.js"
+      ]
+    },
+    {
+      "number": 4,
+      "status": "blocked",
+      "branch": "issue-4-target-integration",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-4",
+      "head": "0549c7d9ff6523b9426bd7098d35dc7c86943bf8",
+      "pr": "https://github.com/justinahn711/staple-scout/pull/22",
+      "draft": false,
+      "all_current_head_checks_pass": true,
+      "check_urls": [
+        "https://github.com/justinahn711/staple-scout/actions/runs/37845567257/job/113545447755",
+        "https://github.com/justinahn711/staple-scout/actions/runs/37845562816/job/113545432214"
+      ],
+      "reviewed_artifacts": [
+        "docs/research/target.md"
+      ]
+    },
+    {
+      "number": 5,
+      "status": "PR ready",
+      "branch": "issue-5-weekly-report",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-5",
+      "head": "7c529e9ccc309ea9e2b942a637bd0c0620039091",
+      "pr": "https://github.com/justinahn711/staple-scout/pull/30",
+      "draft": false,
+      "all_current_head_checks_pass": true,
+      "check_urls": [
+        "https://github.com/justinahn711/staple-scout/actions/runs/37781474673/job/113325367105",
+        "https://github.com/justinahn711/staple-scout/actions/runs/37781464978/job/113325332834"
+      ],
+      "reviewed_artifacts": [
+        "staple_scout/reports.py",
+        "tests/test_reports.py",
+        "tests/test_report_evidence.py",
+        "tests/test_report_migration.py",
+        "tests/frontend-reports.test.cjs"
+      ]
+    },
+    {
+      "number": 6,
+      "status": "PR ready",
+      "branch": "issue-6-store-contexts",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-6",
+      "head": "9b0d7adc9c132f143445bc206d255629331c4218",
+      "pr": "https://github.com/justinahn711/staple-scout/pull/17",
+      "draft": false,
+      "all_current_head_checks_pass": true,
+      "check_urls": [
+        "https://github.com/justinahn711/staple-scout/actions/runs/37457728660/job/112249347080",
+        "https://github.com/justinahn711/staple-scout/actions/runs/37457721356/job/112249322754"
+      ],
+      "reviewed_artifacts": [
+        "tests/test_store_contexts.py",
+        "API_CONTRACT.md"
+      ]
+    },
+    {
+      "number": 7,
+      "status": "PR ready",
+      "branch": "issue-7-walmart-research",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-7",
+      "head": "41b144b8d6a78522a0ef77077a5ccb3d0508528c",
+      "pr": "https://github.com/justinahn711/staple-scout/pull/19",
+      "draft": false,
+      "all_current_head_checks_pass": true,
+      "check_urls": [
+        "https://github.com/justinahn711/staple-scout/actions/runs/37458160103/job/112250774009",
+        "https://github.com/justinahn711/staple-scout/actions/runs/37458154968/job/112250757805"
+      ],
+      "reviewed_artifacts": [
+        "docs/research/walmart.md"
+      ]
+    },
+    {
+      "number": 8,
+      "status": "PR ready",
+      "branch": "issue-8-adapter-ingestion",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-8",
+      "head": "5c05ad5087ae2cc56bef9b0c602a27a6b3b6091f",
+      "pr": "https://github.com/justinahn711/staple-scout/pull/24",
+      "draft": false,
+      "all_current_head_checks_pass": true,
+      "check_urls": [
+        "https://github.com/justinahn711/staple-scout/actions/runs/37775427804/job/113304942637",
+        "https://github.com/justinahn711/staple-scout/actions/runs/37775395557/job/113304832291"
+      ],
+      "reviewed_artifacts": [
+        "staple_scout/adapters.py",
+        "staple_scout/ingestion.py",
+        "tests/test_ingestion.py",
+        "tests/test_ingestion_migration.py"
+      ]
+    },
+    {
+      "number": 9,
+      "status": "PR ready",
+      "branch": "issue-9-wegmans-adapter",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-9",
+      "head": "a907a4c22f91a6538d1302eda88fcdb2c7a0548b",
+      "pr": "https://github.com/justinahn711/staple-scout/pull/31",
+      "draft": false,
+      "all_current_head_checks_pass": true,
+      "check_urls": [
+        "https://github.com/justinahn711/staple-scout/actions/runs/37784362704/job/113335187986",
+        "https://github.com/justinahn711/staple-scout/actions/runs/37784353119/job/113335154229"
+      ],
+      "reviewed_artifacts": [
+        "tests/test_wegmans.py",
+        "tests/test_wegmans_ingestion.py"
+      ]
+    },
+    {
+      "number": 10,
+      "status": "blocked",
+      "branch": "issue-10-walmart-adapter",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-10",
+      "head": "11e264e2bcdc0ef39acb60dd501485ef8f79004c",
+      "pr": "https://github.com/justinahn711/staple-scout/pull/32",
+      "draft": true,
+      "all_current_head_checks_pass": true,
+      "check_urls": [
+        "https://github.com/justinahn711/staple-scout/actions/runs/37845576304/job/113545479246",
+        "https://github.com/justinahn711/staple-scout/actions/runs/37845570418/job/113545458104"
+      ],
+      "reviewed_artifacts": [
+        "docs/research/walmart.md"
+      ]
+    },
+    {
+      "number": 11,
+      "status": "PR ready",
+      "branch": "issue-11-comparison-modes",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-11",
+      "head": "f85229d602d8805f192fadb8c1fcdf87a34fd48f",
+      "pr": "https://github.com/justinahn711/staple-scout/pull/21",
+      "draft": false,
+      "all_current_head_checks_pass": true,
+      "check_urls": [
+        "https://github.com/justinahn711/staple-scout/actions/runs/37772551623/job/113295424411",
+        "https://github.com/justinahn711/staple-scout/actions/runs/37772522642/job/113295326293"
+      ],
+      "reviewed_artifacts": [
+        "tests/test_service.py",
+        "API_CONTRACT.md"
+      ]
+    },
+    {
+      "number": 12,
+      "status": "PR ready",
+      "branch": "issue-12-shopping-views",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-12",
+      "head": "2ab7be6863a217c48c8fab2fb6af81b80544562e",
+      "pr": "https://github.com/justinahn711/staple-scout/pull/29",
+      "draft": false,
+      "all_current_head_checks_pass": true,
+      "check_urls": [
+        "https://github.com/justinahn711/staple-scout/actions/runs/37781313193/job/113324820704",
+        "https://github.com/justinahn711/staple-scout/actions/runs/37781299785/job/113324776571"
+      ],
+      "reviewed_artifacts": [
+        "staple_scout/static/comparisons.js",
+        "tests/frontend-comparisons.test.cjs"
+      ]
+    },
+    {
+      "number": 13,
+      "status": "PR ready",
+      "branch": "issue-13-hmart-reference",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-13",
+      "head": "82d78446371fff24679a771df7f973b077450f19",
+      "pr": "https://github.com/justinahn711/staple-scout/pull/26",
+      "draft": false,
+      "all_current_head_checks_pass": true,
+      "check_urls": [
+        "https://github.com/justinahn711/staple-scout/actions/runs/37777473214/job/113311847827",
+        "https://github.com/justinahn711/staple-scout/actions/runs/37777466959/job/113311827150"
+      ],
+      "reviewed_artifacts": [
+        "tests/test_hmart.py"
+      ]
+    },
+    {
+      "number": 14,
+      "status": "PR ready",
+      "branch": "issue-14-lidl-integration",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-14",
+      "head": "e62a56e9cf5dcfc10a42556c67b6ce517d56f84f",
+      "pr": "https://github.com/justinahn711/staple-scout/pull/25",
+      "draft": false,
+      "all_current_head_checks_pass": true,
+      "check_urls": [
+        "https://github.com/justinahn711/staple-scout/actions/runs/39054648720/job/117460034523",
+        "https://github.com/justinahn711/staple-scout/actions/runs/39054646249/job/117460026797"
+      ],
+      "reviewed_artifacts": [
+        "docs/research/lidl.md"
+      ]
+    },
+    {
+      "number": 15,
+      "status": "PR ready",
+      "branch": "issue-15-daily-refresh",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-15",
+      "head": "d893a58ce024b13afebf6250502dad173aa75831",
+      "pr": "https://github.com/justinahn711/staple-scout/pull/27",
+      "draft": false,
+      "all_current_head_checks_pass": true,
+      "check_urls": [
+        "https://github.com/justinahn711/staple-scout/actions/runs/37778333717/job/113314788788",
+        "https://github.com/justinahn711/staple-scout/actions/runs/37778328049/job/113314770360"
+      ],
+      "reviewed_artifacts": [
+        "staple_scout/scheduler.py",
+        "tests/test_scheduler.py",
+        "tests/test_scheduler_status.py",
+        "tests/test_scheduler_migration.py",
+        "docs/scheduling.md"
+      ]
+    },
+    {
+      "number": 16,
+      "status": "PR ready",
+      "branch": "issue-16-package-outlay",
+      "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-16",
+      "head": "123c52c9b0b71fe37d752553a61c26dd7ba3b0a9",
+      "pr": "https://github.com/justinahn711/staple-scout/pull/23",
+      "draft": false,
+      "all_current_head_checks_pass": true,
+      "check_urls": [
+        "https://github.com/justinahn711/staple-scout/actions/runs/37773288126/job/113297862312",
+        "https://github.com/justinahn711/staple-scout/actions/runs/37773278455/job/113297831703"
+      ],
+      "reviewed_artifacts": [
+        "tests/test_package_outlay.py",
+        "API_CONTRACT.md"
+      ]
+    }
+  ],
+  "requirement_review": "Two independent read-only audits mapped original acceptance to implementation/tests/review evidence. No missing unblocked implementation requirement was found. Two documentation discrepancies were corrected on the existing issue branches.",
+  "blockers": [
+    "No verified five-product Chantilly1827 source contract or implemented Target adapter. October16 native PR36 records HTTP435 verification and incomplete price/seller/fulfillment evidence; user has no previous working API request. Current research PRs cannot satisfy the integration gate. No new access evidence received; cached web product cards do not establish a current local offer contract.",
+    "No validated first-party local pickup source for confirmed Chantilly store context. Native PR35 records verification barrier and missing offer evidence; user explicitly confirmed no approved OPD access. Store/shipping/Marketplace or other-location display prices cannot satisfy the five-product local pickup gate. No adapter is enabled."
+  ],
+  "goal_status": "active",
+  "fresh_resumed_block_audit_turn": 1
+}

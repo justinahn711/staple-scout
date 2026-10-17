@@ -20,7 +20,7 @@
     16
   ],
   "scope_snapshot": "2026-10-08-initial-issues.json",
-  "goal_status": "blocked",
+  "goal_status": "active",
   "states": [
     "pending",
     "working",
@@ -28,7 +28,7 @@
     "merged",
     "blocked"
   ],
-  "runtime_worker_limit": 2,
+  "runtime_worker_limit": 3,
   "issues": [
     {
       "number": 1,
@@ -40,7 +40,9 @@
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-1",
       "pr": "https://github.com/justinahn711/staple-scout/pull/18",
       "validation": "Original 54-test baseline research PR remains ready. Earlier HTML-only price-access blocker is superseded by public website JSON evidence, 262 tests and five-product live gate in PR31 (#9).",
-      "blocker": null
+      "blocker": null,
+      "head": "b182a73dfe8e27a71c96c2dfabe13854656fd6e9",
+      "ci": "passed"
     },
     {
       "number": 2,
@@ -54,7 +56,9 @@
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-2",
       "pr": "https://github.com/justinahn711/staple-scout/pull/20",
       "validation": "108 tests pass; reviewed authoritative match state, identity/version migration, rollback, approvals and renamed price refreshes. PR CI passes.",
-      "blocker": null
+      "blocker": null,
+      "head": "ac402b797d8c5297292a80dd7370e17114962b62",
+      "ci": "passed"
     },
     {
       "number": 3,
@@ -67,11 +71,11 @@
       "branch": "issue-3-setup-ui",
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-3",
       "pr": "https://github.com/justinahn711/staple-scout/pull/28",
-      "validation": "200 Python tests and current-head PR CI pass. Final interactive disposable-DB validation passed: add/edit/manual price/review/context/error flows, HTML delete dialog Cancel and Escape retain data and return focus, Tab/Enter confirms fixture-only deletion, autofocus and 390px fit/44px controls. PR28 promoted ready at unchanged tested head a88c90f.",
+      "validation": "200 Python tests and current-head PR CI pass. Final interactive disposable-DB validation passed: add/edit/manual price/review/context/error flows, HTML delete dialog Cancel and Escape retain data and return focus, Tab/Enter confirms fixture-only deletion, autofocus and 390px fit/44px controls. PR28 promoted ready at unchanged tested head a88c90f. October 17 documentation-only follow-up 58a927c removes a stale pending note in DESIGN.md; runtime files remain at the previously verified a88c90f implementation. Both current-head CI checks pass; no new browser run claimed.",
       "blocker": null,
       "integration_base": "issue-15-daily-refresh",
       "ci": "passed",
-      "head": "a88c90f"
+      "head": "58a927c020b0ee4e88a1a3d1180514435a9708d2"
     },
     {
       "number": 4,
@@ -85,8 +89,8 @@
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-4",
       "pr": "https://github.com/justinahn711/staple-scout/pull/22",
       "validation": "Evening normal website recheck: catalog cards render with Fair Lakes selected, while a press-and-hold verification frame is present. These do not validate Chantilly1827 prices. Sanitized DOM evidence committed as 0549c7d; current-head baseline CI passes. PR22 remains research only and does not close #4.",
-      "blocker": "Target normal public grocery page selects Fair Lakes and presents human verification. Need verified Chantilly1827 context and five traceable local products before an adapter can be implemented; no prior request exists to reuse.",
-      "head": "0549c7d",
+      "blocker": "No verified five-product Chantilly1827 source contract or implemented Target adapter. October16 native PR36 records HTTP435 verification and incomplete price/seller/fulfillment evidence; user has no previous working API request. Current research PRs cannot satisfy the integration gate. No new access evidence received; cached web product cards do not establish a current local offer contract.",
+      "head": "0549c7d9ff6523b9426bd7098d35dc7c86943bf8",
       "ci": "passed"
     },
     {
@@ -106,7 +110,7 @@
       "blocker": null,
       "integration_base": "issue-12-shopping-views",
       "ci": "passed",
-      "head": "7c529e9"
+      "head": "7c529e9ccc309ea9e2b942a637bd0c0620039091"
     },
     {
       "number": 6,
@@ -118,7 +122,9 @@
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-6",
       "pr": "https://github.com/justinahn711/staple-scout/pull/17",
       "validation": "90 tests pass; migration/context review complete; current PR CI passes.",
-      "blocker": null
+      "blocker": null,
+      "head": "9b0d7adc9c132f143445bc206d255629331c4218",
+      "ci": "passed"
     },
     {
       "number": 7,
@@ -130,7 +136,9 @@
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-7",
       "pr": "https://github.com/justinahn711/staple-scout/pull/19",
       "validation": "Source evidence verified; 54-test baseline CI passes. Local price access remains blocked separately in #10.",
-      "blocker": null
+      "blocker": null,
+      "head": "41b144b8d6a78522a0ef77077a5ccb3d0508528c",
+      "ci": "passed"
     },
     {
       "number": 8,
@@ -145,7 +153,9 @@
       "pr": "https://github.com/justinahn711/staple-scout/pull/24",
       "validation": "172 offline tests pass; reviewed strict evidence/context/seller identity, v4 atomic migration, duplicate delivery, package/unknown/unavailable suppression, timeout and independent source failures. PR CI passes.",
       "blocker": null,
-      "integration_base": "issue-16-package-outlay"
+      "integration_base": "issue-16-package-outlay",
+      "head": "5c05ad5087ae2cc56bef9b0c602a27a6b3b6091f",
+      "ci": "passed"
     },
     {
       "number": 9,
@@ -163,7 +173,7 @@
       "blocker": null,
       "integration_base": "issue-15-daily-refresh",
       "ci": "passed",
-      "head": "a907a4c"
+      "head": "a907a4c22f91a6538d1302eda88fcdb2c7a0548b"
     },
     {
       "number": 10,
@@ -178,9 +188,9 @@
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-10",
       "pr": "https://github.com/justinahn711/staple-scout/pull/32",
       "validation": "Normal public Chantilly5969 store-page request at 2026-10-08T21:07:04Z again redirected to human verification. Checkpoint documentation committed as 11e264e; current-head baseline CI passes. Draft PR32 records missing five-product local pickup gate and contains no implemented adapter.",
-      "blocker": "Current public Chantilly5969 request still reaches human verification. Indexed prices are other-store/location-unknown and cannot validate pickup stock/price/seller. Need supported local source access; no challenge was solved or bypassed. See draft PR32 and source research PR19.",
+      "blocker": "No validated first-party local pickup source for confirmed Chantilly store context. Native PR35 records verification barrier and missing offer evidence; user explicitly confirmed no approved OPD access. Store/shipping/Marketplace or other-location display prices cannot satisfy the five-product local pickup gate. No adapter is enabled.",
       "integration_base": "issue-15-daily-refresh",
-      "head": "11e264e",
+      "head": "11e264e2bcdc0ef39acb60dd501485ef8f79004c",
       "ci": "passed"
     },
     {
@@ -195,7 +205,9 @@
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-11",
       "pr": "https://github.com/justinahn711/staple-scout/pull/21",
       "validation": "117 tests pass; reviewed separate shelf/pickup channels, explicit gaps, latest-unavailable suppression and eligibility/location rules. PR CI passes.",
-      "blocker": null
+      "blocker": null,
+      "head": "f85229d602d8805f192fadb8c1fcdf87a34fd48f",
+      "ci": "passed"
     },
     {
       "number": 12,
@@ -214,7 +226,7 @@
       "blocker": null,
       "integration_base": "issue-3-setup-ui",
       "ci": "passed",
-      "head": "2ab7be6"
+      "head": "2ab7be6863a217c48c8fab2fb6af81b80544562e"
     },
     {
       "number": 13,
@@ -229,7 +241,9 @@
       "pr": "https://github.com/justinahn711/staple-scout/pull/26",
       "validation": "189 tests and PR CI pass; independent review and final live five-product exact composite-ID ingestion smoke in disposable DB. Online-only reference prices, never local shelf/pickup winners.",
       "blocker": null,
-      "integration_base": "issue-8-adapter-ingestion"
+      "integration_base": "issue-8-adapter-ingestion",
+      "head": "82d78446371fff24679a771df7f973b077450f19",
+      "ci": "passed"
     },
     {
       "number": 14,
@@ -242,8 +256,10 @@
       "branch": "issue-14-lidl-integration",
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-14",
       "pr": "https://github.com/justinahn711/staple-scout/pull/25",
-      "validation": "Verified selected Chantilly US01112 store/flyer flow and 12 real regional product references including five groceries; 54 baseline tests pass. Reviewed documented-gap fallback: unknown stock/conditions/regular-price semantics keep Lidl disconnected.",
-      "blocker": null
+      "validation": "Original documented-gap fallback remains ready; no adapter enabled by PR25. October 17 correction e62a56e uses verified native PR37 evidence: Chantilly US01112 uses Region US1112; US1469 belongs to Falls Church US01469. Original fixtures retain their dated incorrect association and are not valid Chantilly price evidence; both fixture bytes unchanged. Current-head CI passes. Native PR37 separately supplies regional catalog integration with unknown stock excluded.",
+      "blocker": null,
+      "head": "e62a56e9cf5dcfc10a42556c67b6ce517d56f84f",
+      "ci": "passed"
     },
     {
       "number": 15,
@@ -258,7 +274,9 @@
       "pr": "https://github.com/justinahn711/staple-scout/pull/27",
       "validation": "200 tests and PR CI pass; independent review, temporary-DB live runner and daily replay cache smoke. Migration, locking, bounded retries, source health and launchd instructions verified. No job activated.",
       "blocker": null,
-      "integration_base": "issue-13-hmart-reference"
+      "integration_base": "issue-13-hmart-reference",
+      "head": "d893a58ce024b13afebf6250502dad173aa75831",
+      "ci": "passed"
     },
     {
       "number": 16,
@@ -272,7 +290,9 @@
       "worktree": "/Users/justinahn/Desktop/ChickenBreast/worktrees/staple-scout-issue-16",
       "pr": "https://github.com/justinahn711/staple-scout/pull/23",
       "validation": "136 tests pass; independent code review and migration rollback, exact conversions, package-cost/unit-price distinction, labeled excess and uncertain weight checks. CI passes.",
-      "blocker": null
+      "blocker": null,
+      "head": "123c52c9b0b71fe37d752553a61c26dd7ba3b0a9",
+      "ci": "passed"
     }
   ],
   "continuation_requires_input": true,
@@ -287,26 +307,45 @@
       "independent_work": "Completed while blockers persisted: Wegmans adapter/full historical fixtures and isolated Walmart checkpoint. No pending/working issues remain.",
       "outcome": "11 issues PR ready; 5 blocked; fixed scope unchanged; no PR merged; goal not complete.",
       "resumed_browser_input_recovered": true
+    },
+    {
+      "checked_at": "2026-10-08T21:20:47.151917+00:00",
+      "consecutive_turns_with_same_blocking_conditions": 3,
+      "browser_input_recovered": true,
+      "progress": "Completed final interactive gates and promoted PR28/29/30; 14 of 16 issues now PR ready. Updated source evidence in PR22/32 and verified current-head CI.",
+      "remaining_blocked_issues": [
+        4,
+        10
+      ],
+      "conditions": [
+        "Target needs verified Chantilly1827 local source access; normal page shows Fair Lakes and human verification.",
+        "Walmart Chantilly5969 still redirects to human verification; validated local pickup source gate is missing."
+      ],
+      "outcome": "Persistent goal set blocked after three consecutive resumed turns with the same local-source barriers. 14 issues PR ready, 2 blocked, none merged; original objective and fixed scope remain incomplete.",
+      "previous_turn_classification": "no implementation progress: source gates unavailable; user handoff requested and recorded",
+      "current_turn_classification": "no implementation progress: same source barriers revalidated, threshold met",
+      "latest_verification": "Current PR22/32 remain open at unchanged checkpoint heads, with no closing issue references or validated adapters. Preserved Target page still shows Fair Lakes and verification iframe. Current issue4/10 requirements and source checkpoints still require five traceable local products; no user-provided access change received. Ledger has zero pending/working issues.",
+      "input_requested": "User asked to complete human verification in normal browser and confirm Target Chantilly and Walmart Chantilly pickup product prices are accessible; no passwords, cookies or tokens requested."
     }
   ],
-  "updated_at": "2026-10-08T21:20:47.151917+00:00",
+  "updated_at": "2026-10-17T17:41:06.837027+00:00",
   "resumed_audit": {
-    "checked_at": "2026-10-08T21:20:47.151917+00:00",
-    "consecutive_turns_with_same_blocking_conditions": 3,
-    "browser_input_recovered": true,
-    "progress": "Completed final interactive gates and promoted PR28/29/30; 14 of 16 issues now PR ready. Updated source evidence in PR22/32 and verified current-head CI.",
+    "checked_at": "2026-10-17T17:41:06.837027+00:00",
+    "fresh_resume": true,
+    "consecutive_turns_with_same_blocking_conditions": 1,
+    "previous_goal_turn_classification": "No progress for this fixed scope: the preceding user turn planned later public-pilot issues. Those issues are not added to this goal.",
+    "current_turn_classification": "Progress: independently audited original requirement evidence, corrected two stale/incorrect reports on their own branches, verified their new-head CI, and synchronized stale issue labels with tested PR readiness.",
     "remaining_blocked_issues": [
       4,
       10
     ],
     "conditions": [
-      "Target needs verified Chantilly1827 local source access; normal page shows Fair Lakes and human verification.",
-      "Walmart Chantilly5969 still redirects to human verification; validated local pickup source gate is missing."
+      "No verified five-product Chantilly1827 source contract or implemented Target adapter. October16 native PR36 records HTTP435 verification and incomplete price/seller/fulfillment evidence; user has no previous working API request. Current research PRs cannot satisfy the integration gate. No new access evidence received; cached web product cards do not establish a current local offer contract.",
+      "No validated first-party local pickup source for confirmed Chantilly store context. Native PR35 records verification barrier and missing offer evidence; user explicitly confirmed no approved OPD access. Store/shipping/Marketplace or other-location display prices cannot satisfy the five-product local pickup gate. No adapter is enabled."
     ],
-    "outcome": "Persistent goal set blocked after three consecutive resumed turns with the same local-source barriers. 14 issues PR ready, 2 blocked, none merged; original objective and fixed scope remain incomplete.",
-    "previous_turn_classification": "no implementation progress: source gates unavailable; user handoff requested and recorded",
-    "current_turn_classification": "no implementation progress: same source barriers revalidated, threshold met",
-    "latest_verification": "Current PR22/32 remain open at unchanged checkpoint heads, with no closing issue references or validated adapters. Preserved Target page still shows Fair Lakes and verification iframe. Current issue4/10 requirements and source checkpoints still require five traceable local products; no user-provided access change received. Ledger has zero pending/working issues.",
-    "input_requested": "User asked to complete human verification in normal browser and confirm Target Chantilly and Walmart Chantilly pickup product prices are accessible; no passwords, cookies or tokens requested."
+    "scope_preserved": "Exactly the original 16 issue numbers and immutable initial snapshots. No later issue or native/public-pilot deliverable substitutes for an original requirement.",
+    "latest_verification": "All sixteen original isolated worktrees exist, are clean, and match their linked open PR heads. Fourteen implementation/research-fallback PRs are non-draft with all current checks passing; #4 and #10 remain source-blocked checkpoints. No PR merged.",
+    "source_recheck_limit": "A fresh ordinary GET attempt for each known store page failed in local transport before a usable HTTP response; no new retailer challenge/price claim is inferred. Web-tool results are cached (Target three weeks, Walmart one month), not fresh five-product source evidence. Existing native evidence and the user-confirmed lack of OPD access remain the relevant source gates.",
+    "outcome": "14 PR ready, 2 source blocked. Goal incomplete and active on first resumed audit; do not reuse the old three-turn blocked count."
   }
 }
