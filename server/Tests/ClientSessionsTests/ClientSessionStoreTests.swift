@@ -236,6 +236,47 @@ final class ClientSessionStoreTests: XCTestCase, @unchecked Sendable {
         _ = try await recovered.authenticate(accessToken: tokens.accessToken)
     }
 
+    func testAdminSubprocessRevocationIsVisibleToAnAlreadyOpenStore() async throws {
+        let path = try temporaryDatabase(); defer { removeDatabase(path) }
+        let running = try ClientSessionStore(databasePath: path)
+        let original = try await running.enroll(invitation: running.issueInvitation().invitation)
+        _ = try await running.authenticate(accessToken: original.accessToken)
+        let invitationPath = path + ".invitation.json"
+        try runAdmin(["invite", invitationPath], databasePath: path)
+        let decoder = JSONDecoder(); decoder.dateDecodingStrategy = .millisecondsSince1970
+        let invitation = try decoder.decode(IssuedInvitation.self, from: Data(contentsOf: URL(fileURLWithPath: invitationPath)))
+        let tokens = try await running.enroll(invitation: invitation.invitation)
+        _ = try await running.authenticate(accessToken: tokens.accessToken)
+        try runAdmin(["revoke", tokens.clientID], databasePath: path)
+        // Opening/checking/closing raw DB or SHM descriptors in the admin
+        // process must not invalidate SQLite locks and leave this store stale.
+        await expect(.revokedCredential) { _ = try await running.authenticate(accessToken: tokens.accessToken) }
+        await expect(.revokedCredential) { _ = try await running.rotate(refreshToken: tokens.refreshToken) }
+        _ = try await running.authenticate(accessToken: original.accessToken)
+        let reopened = try ClientSessionStore(databasePath: path)
+        await expect(.revokedCredential) { _ = try await reopened.authenticate(accessToken: tokens.accessToken) }
+    }
+
+    private func runAdmin(_ arguments: [String], databasePath: String) throws {
+        var directory = Bundle(for: ClientSessionStoreTests.self).bundleURL
+        var executable: URL?
+        for _ in 0..<6 {
+            let candidate = directory.appendingPathComponent("ThriftyMarketSessionAdmin")
+            if FileManager.default.isExecutableFile(atPath: candidate.path) { executable = candidate; break }
+            directory.deleteLastPathComponent()
+        }
+        let process = Process()
+        process.executableURL = try XCTUnwrap(executable, "swift test must build the session admin product")
+        process.arguments = arguments
+        var environment = ProcessInfo.processInfo.environment
+        environment["THRIFTY_AUTH_DATABASE_PATH"] = databasePath
+        environment["THRIFTY_DATABASE_PATH"] = databasePath + ".cache"
+        process.environment = environment
+        process.standardOutput = Pipe(); process.standardError = Pipe()
+        try process.run(); process.waitUntilExit()
+        XCTAssertEqual(process.terminationStatus, 0, "The local admin fixture failed; credential output is intentionally suppressed")
+    }
+
     private func expect(_ expected: SessionError, file: StaticString = #filePath, line: UInt = #line, action: () async throws -> Void) async {
         do { try await action(); XCTFail("Expected \(expected)", file: file, line: line) }
         catch let error as SessionError { XCTAssertEqual(error, expected, file: file, line: line) }

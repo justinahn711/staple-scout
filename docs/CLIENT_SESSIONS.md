@@ -99,6 +99,10 @@ interrupted bootstrap can reopen safely. Keep the containing directory private;
 the executable creates missing directories with `0700` and uses umask `077`.
 The prototype assumes a trusted local filesystem and operator, not hostile
 concurrent filesystem replacement or a shared network filesystem.
+Permission checks use `lstat` without opening/closing existing SQLite, WAL or SHM
+files: [SQLite documents that an unrelated POSIX close can release database locks](https://sqlite.org/howtocorrupt.html#_posix_advisory_locks_canceled_by_a_separate_thread_doing_close_).
+Preserving those locks is necessary for an admin process's revocation to become
+visible immediately to a server that already has the database open.
 
 ## Version 1 HTTP contract
 
@@ -227,9 +231,10 @@ token generation and hashes with temporary/in-memory databases, no provider or
 Apple calls. Storage tests cover restart, exact expiry, revocation, single-use
 enrollment, concurrent two-connection redemption/rotation, replay family
 revocation, durable quotas, pruning, file permissions, alias/unrelated-database
-rejection and interrupted bootstrap recovery. HTTP tests cover all protected
-routes, the safe health response, strict/oversized bodies, malformed/replayed
-credentials, typed failures and legacy-token rejection. Existing cache freshness,
+rejection and interrupted bootstrap recovery. An actual admin-subprocess
+regression also checks revocation against an already open store. HTTP tests cover
+all protected routes, the safe health response, strict/oversized bodies,
+malformed/replayed credentials, typed failures and legacy-token rejection. Existing cache freshness,
 unknown-stock, durable provider budgets and midnight-overwrite tests still pass.
 
 No app UI, Xcode project or shared native package source changes are required by

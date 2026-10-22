@@ -102,13 +102,20 @@ final class SessionSQLite {
     deinit { if let database { sqlite3_close(database) } }
 
     private static func secureFile(_ path: String) throws {
-        let descriptor = open(path, O_RDWR | O_CREAT | O_NOFOLLOW | O_CLOEXEC, S_IRUSR | S_IWUSR)
-        guard descriptor >= 0 else { throw SessionError.storageUnavailable }
-        defer { close(descriptor) }
         var info = stat()
+        if lstat(path, &info) != 0 {
+            guard errno == ENOENT else { throw SessionError.storageUnavailable }
+            // Only create a genuinely new file. Never open/close an existing
+            // SQLite file merely to check permissions: POSIX close releases
+            // the process's advisory locks, including SQLite's WAL/SHM locks.
+            let descriptor = open(path, O_RDWR | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, S_IRUSR | S_IWUSR)
+            if descriptor >= 0 { close(descriptor) }
+            else if errno != EEXIST { throw SessionError.storageUnavailable }
+            guard lstat(path, &info) == 0 else { throw SessionError.storageUnavailable }
+        }
         // Reject permissive existing files rather than chmod a potentially
         // unrelated operator-supplied file before its identity is established.
-        guard fstat(descriptor, &info) == 0, info.st_uid == getuid(), (info.st_mode & S_IFMT) == S_IFREG,
+        guard info.st_uid == getuid(), (info.st_mode & S_IFMT) == S_IFREG,
               (info.st_mode & 0o777) == (S_IRUSR | S_IWUSR) else { throw SessionError.storageUnavailable }
     }
 
