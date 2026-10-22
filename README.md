@@ -10,7 +10,7 @@ A native **Swift and SwiftUI iPhone app** for comparing grocery staples at Wegma
 
 The app runs independently on iPhone. It does not call a Python service or require a Mac to stay online. Local SwiftData storage uses the app’s private Application Support directory. First launch has no sample staples or prices. The application has no account system, CloudKit sync or public service.
 
-A new [local shared-price prototype](docs/SHARED_PRICE_PILOT.md) adds a Swift server with a durable cache and an optional simulator transport. It prepares for multiple users at the same stores while keeping their lists and approvals on device. It is not deployed; live sources are disabled by default and Walmart/Target access is still unresolved. The existing app works without this service.
+A new [local shared-price prototype](docs/SHARED_PRICE_PILOT.md) adds a Swift server with a durable cache and an optional simulator transport. Individual clients enroll with single-use invitations and receive expiring, revocable sessions; the server no longer accepts a shared developer token. The [session contract](docs/CLIENT_SESSIONS.md) describes enrollment, rotation and local administration. The simulator can use an issued access token for its 15-minute lifetime; native enrollment, secure storage and automatic refresh remain issue #48. The service is not deployed; live sources are disabled by default and Walmart/Target access is still unresolved. Lists and approvals remain on device, and the existing personal app works without this service.
 
 ## Shopper flow
 
