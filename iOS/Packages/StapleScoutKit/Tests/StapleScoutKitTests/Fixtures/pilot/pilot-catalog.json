@@ -1,0 +1,1134 @@
+{
+  "schemaVersion": 1,
+  "catalogID": "chantilly-40-v1",
+  "fixtureKind": "provisional_benchmark_definition",
+  "personalPreferences": false,
+  "sampleOnly": true,
+  "retailerFetchesAllowed": false,
+  "contexts": [
+    {
+      "store": "wegmans",
+      "storeCode": "133",
+      "region": null,
+      "requestedChannels": [
+        "in_store",
+        "pickup"
+      ],
+      "nativeSupportedChannels": [
+        "in_store"
+      ],
+      "localComparisonCandidate": true,
+      "publicAccessStatus": "unapproved",
+      "evidenceLimit": "Chantilly source; pickup unsupported; public reuse unapproved"
+    },
+    {
+      "store": "walmart",
+      "storeCode": "5969",
+      "region": null,
+      "requestedChannels": [
+        "in_store",
+        "pickup"
+      ],
+      "nativeSupportedChannels": [],
+      "localComparisonCandidate": true,
+      "publicAccessStatus": "unapproved",
+      "evidenceLimit": "Tentative store ID; source, seller, fulfillment and response location unverified"
+    },
+    {
+      "store": "target",
+      "storeCode": "1827",
+      "region": null,
+      "requestedChannels": [
+        "in_store",
+        "pickup"
+      ],
+      "nativeSupportedChannels": [],
+      "localComparisonCandidate": true,
+      "publicAccessStatus": "unapproved",
+      "evidenceLimit": "Proposed Chantilly context; response location and price type unverified"
+    },
+    {
+      "store": "lidl",
+      "storeCode": "US01112",
+      "region": "US1112",
+      "requestedChannels": [
+        "in_store",
+        "pickup"
+      ],
+      "nativeSupportedChannels": [
+        "in_store"
+      ],
+      "localComparisonCandidate": true,
+      "publicAccessStatus": "unapproved",
+      "evidenceLimit": "Regional offers only; stock unknown; pickup unsupported; cannot currently win"
+    },
+    {
+      "store": "hmart",
+      "storeCode": null,
+      "region": null,
+      "requestedChannels": [
+        "online"
+      ],
+      "nativeSupportedChannels": [
+        "online"
+      ],
+      "localComparisonCandidate": false,
+      "publicAccessStatus": "unapproved",
+      "evidenceLimit": "National online reference; no Centreville shelf or pickup claim"
+    }
+  ],
+  "coverage": {
+    "localModes": [
+      "in_store",
+      "pickup"
+    ],
+    "localStores": [
+      "wegmans",
+      "walmart",
+      "target",
+      "lidl"
+    ],
+    "mandatoryStores": [
+      "walmart",
+      "target"
+    ],
+    "itemsPerStore": 40,
+    "localCellsPerMode": 160,
+    "localCellsTotal": 320,
+    "referenceCells": 40,
+    "minimumComparableStores": 2,
+    "minimumEligibleItemsPerMandatoryStore": 32,
+    "minimumJointlyComparableItems": 28,
+    "minimumEligibleLocalCellsInPrimaryMode": 64,
+    "criticalEvidenceAccuracyPercent": 100,
+    "packagePriceAccuracyPercent": 100,
+    "minimumIndependentSpotChecksPerMandatoryStore": 10,
+    "liveRunsRequired": 2
+  },
+  "items": [
+    {
+      "id": "P001",
+      "category": "dairy",
+      "name": "Whole milk",
+      "basis": "fl_oz",
+      "package": {
+        "quantity": "128",
+        "unit": "fl_oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "refrigerated vitamin-D whole milk; no flavored, lactose-free or plant milk"
+      },
+      "desiredAmount": {
+        "quantity": "128",
+        "unit": "fl_oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "refrigerated vitamin-D whole milk; no flavored, lactose-free or plant milk",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": [
+        {
+          "store": "wegmans",
+          "productID": "94427",
+          "barcode": "00077890944271",
+          "evidenceFile": "wegmans-products.json",
+          "status": "historical_committed_fixture_not_current_validation"
+        }
+      ]
+    },
+    {
+      "id": "P002",
+      "category": "dairy",
+      "name": "2% milk",
+      "basis": "fl_oz",
+      "package": {
+        "quantity": "128",
+        "unit": "fl_oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "refrigerated 2% dairy milk; no whole, skim or plant milk"
+      },
+      "desiredAmount": {
+        "quantity": "128",
+        "unit": "fl_oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "refrigerated 2% dairy milk; no whole, skim or plant milk",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P003",
+      "category": "dairy",
+      "name": "Large eggs",
+      "basis": "each",
+      "package": {
+        "quantity": "12",
+        "unit": "each",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "large chicken eggs, shell-on; no liquid eggs or medium eggs"
+      },
+      "desiredAmount": {
+        "quantity": "12",
+        "unit": "each"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "large chicken eggs, shell-on; no liquid eggs or medium eggs",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P004",
+      "category": "dairy",
+      "name": "Salted butter",
+      "basis": "oz",
+      "package": {
+        "quantity": "16",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "salted dairy butter in sticks; no spread, margarine or unsalted butter"
+      },
+      "desiredAmount": {
+        "quantity": "16",
+        "unit": "oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "salted dairy butter in sticks; no spread, margarine or unsalted butter",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P005",
+      "category": "dairy",
+      "name": "Plain Greek yogurt",
+      "basis": "oz",
+      "package": {
+        "quantity": "32",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "plain whole-milk Greek yogurt; no flavored, sweetened or regular yogurt"
+      },
+      "desiredAmount": {
+        "quantity": "32",
+        "unit": "oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "plain whole-milk Greek yogurt; no flavored, sweetened or regular yogurt",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P006",
+      "category": "dairy",
+      "name": "Cheddar block",
+      "basis": "oz",
+      "package": {
+        "quantity": "8",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "mild cheddar block; no shredded cheese, slices or cheese product"
+      },
+      "desiredAmount": {
+        "quantity": "8",
+        "unit": "oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "mild cheddar block; no shredded cheese, slices or cheese product",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P007",
+      "category": "dairy",
+      "name": "Shredded mozzarella",
+      "basis": "oz",
+      "package": {
+        "quantity": "8",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "low-moisture part-skim shredded mozzarella; no fresh mozzarella"
+      },
+      "desiredAmount": {
+        "quantity": "8",
+        "unit": "oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "low-moisture part-skim shredded mozzarella; no fresh mozzarella",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P008",
+      "category": "bakery",
+      "name": "White sandwich bread",
+      "basis": "oz",
+      "package": {
+        "quantity": "20",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "sliced white sandwich loaf; no whole wheat, buns or gluten-free bread"
+      },
+      "desiredAmount": {
+        "quantity": "20",
+        "unit": "oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "sliced white sandwich loaf; no whole wheat, buns or gluten-free bread",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P009",
+      "category": "bakery",
+      "name": "Flour tortillas",
+      "basis": "each",
+      "package": {
+        "quantity": "10",
+        "unit": "each",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "8-inch flour tortillas; no corn tortillas or low-carbohydrate wraps"
+      },
+      "desiredAmount": {
+        "quantity": "10",
+        "unit": "each"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "8-inch flour tortillas; no corn tortillas or low-carbohydrate wraps",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P010",
+      "category": "pantry",
+      "name": "Long-grain white rice",
+      "basis": "oz",
+      "package": {
+        "quantity": "32",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "dry long-grain white rice; no instant, brown, jasmine or prepared rice"
+      },
+      "desiredAmount": {
+        "quantity": "32",
+        "unit": "oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "dry long-grain white rice; no instant, brown, jasmine or prepared rice",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P011",
+      "category": "pantry",
+      "name": "Long-grain brown rice",
+      "basis": "oz",
+      "package": {
+        "quantity": "32",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "dry long-grain brown rice; no white, instant or prepared rice"
+      },
+      "desiredAmount": {
+        "quantity": "32",
+        "unit": "oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "dry long-grain brown rice; no white, instant or prepared rice",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P012",
+      "category": "pantry",
+      "name": "Dry spaghetti",
+      "basis": "oz",
+      "package": {
+        "quantity": "16",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "dry wheat spaghetti; no fresh pasta, alternate shapes or gluten-free pasta"
+      },
+      "desiredAmount": {
+        "quantity": "16",
+        "unit": "oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "dry wheat spaghetti; no fresh pasta, alternate shapes or gluten-free pasta",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P013",
+      "category": "pantry",
+      "name": "Old-fashioned oats",
+      "basis": "oz",
+      "package": {
+        "quantity": "18",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "plain rolled old-fashioned oats; no instant, steel-cut or flavored oats"
+      },
+      "desiredAmount": {
+        "quantity": "18",
+        "unit": "oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "plain rolled old-fashioned oats; no instant, steel-cut or flavored oats",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P014",
+      "category": "pantry",
+      "name": "All-purpose flour",
+      "basis": "oz",
+      "package": {
+        "quantity": "80",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "unbleached wheat all-purpose flour; no self-rising or alternate-grain flour"
+      },
+      "desiredAmount": {
+        "quantity": "80",
+        "unit": "oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "unbleached wheat all-purpose flour; no self-rising or alternate-grain flour",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P015",
+      "category": "pantry",
+      "name": "Granulated sugar",
+      "basis": "oz",
+      "package": {
+        "quantity": "64",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "white granulated cane or beet sugar; no powdered, brown or substitute sweetener"
+      },
+      "desiredAmount": {
+        "quantity": "64",
+        "unit": "oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "white granulated cane or beet sugar; no powdered, brown or substitute sweetener",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P016",
+      "category": "pantry",
+      "name": "Canola oil",
+      "basis": "fl_oz",
+      "package": {
+        "quantity": "48",
+        "unit": "fl_oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "plain canola oil; no blended oil, spray or other cooking oil"
+      },
+      "desiredAmount": {
+        "quantity": "48",
+        "unit": "fl_oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "plain canola oil; no blended oil, spray or other cooking oil",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P017",
+      "category": "pantry",
+      "name": "Extra-virgin olive oil",
+      "basis": "fl_oz",
+      "package": {
+        "quantity": "500",
+        "unit": "ml",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "extra-virgin olive oil; no light, refined or blended oil"
+      },
+      "desiredAmount": {
+        "quantity": "500",
+        "unit": "ml"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "extra-virgin olive oil; no light, refined or blended oil",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P018",
+      "category": "pantry",
+      "name": "Canned black beans",
+      "basis": "oz",
+      "package": {
+        "quantity": "15",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "canned black beans with liquid, regular sodium; no dry or refried beans"
+      },
+      "desiredAmount": {
+        "quantity": "15",
+        "unit": "oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "canned black beans with liquid, regular sodium; no dry or refried beans",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P019",
+      "category": "pantry",
+      "name": "Canned chickpeas",
+      "basis": "oz",
+      "package": {
+        "quantity": "15",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "canned chickpeas with liquid, regular sodium; no dry chickpeas or hummus"
+      },
+      "desiredAmount": {
+        "quantity": "15",
+        "unit": "oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "canned chickpeas with liquid, regular sodium; no dry chickpeas or hummus",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P020",
+      "category": "pantry",
+      "name": "Canned diced tomatoes",
+      "basis": "oz",
+      "package": {
+        "quantity": "14.5",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "plain canned diced tomatoes; no added chilies, crushed tomatoes or sauce"
+      },
+      "desiredAmount": {
+        "quantity": "14.5",
+        "unit": "oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "plain canned diced tomatoes; no added chilies, crushed tomatoes or sauce",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P021",
+      "category": "pantry",
+      "name": "Creamy peanut butter",
+      "basis": "oz",
+      "package": {
+        "quantity": "16",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "shelf-stable sweetened creamy peanut butter; no crunchy or other nut butter"
+      },
+      "desiredAmount": {
+        "quantity": "16",
+        "unit": "oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "shelf-stable sweetened creamy peanut butter; no crunchy or other nut butter",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P022",
+      "category": "pantry",
+      "name": "Strawberry preserves",
+      "basis": "oz",
+      "package": {
+        "quantity": "18",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "regular strawberry preserves; no jelly, reduced-sugar spread or alternate fruit"
+      },
+      "desiredAmount": {
+        "quantity": "18",
+        "unit": "oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "regular strawberry preserves; no jelly, reduced-sugar spread or alternate fruit",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P023",
+      "category": "pantry",
+      "name": "Ground coffee",
+      "basis": "oz",
+      "package": {
+        "quantity": "12",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "medium-roast caffeinated ground coffee; no whole bean, instant or capsules"
+      },
+      "desiredAmount": {
+        "quantity": "12",
+        "unit": "oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "medium-roast caffeinated ground coffee; no whole bean, instant or capsules",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P024",
+      "category": "pantry",
+      "name": "Black tea bags",
+      "basis": "each",
+      "package": {
+        "quantity": "20",
+        "unit": "each",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "individually bagged unflavored caffeinated black tea; no herbal tea or loose leaf"
+      },
+      "desiredAmount": {
+        "quantity": "20",
+        "unit": "each"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "individually bagged unflavored caffeinated black tea; no herbal tea or loose leaf",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P025",
+      "category": "frozen",
+      "name": "Frozen broccoli florets",
+      "basis": "oz",
+      "package": {
+        "quantity": "12",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "plain frozen broccoli florets; no sauce, cuts or fresh broccoli"
+      },
+      "desiredAmount": {
+        "quantity": "12",
+        "unit": "oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "plain frozen broccoli florets; no sauce, cuts or fresh broccoli",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P026",
+      "category": "frozen",
+      "name": "Frozen green peas",
+      "basis": "oz",
+      "package": {
+        "quantity": "12",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "plain frozen green peas; no sauce, mixed vegetables or canned peas"
+      },
+      "desiredAmount": {
+        "quantity": "12",
+        "unit": "oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "plain frozen green peas; no sauce, mixed vegetables or canned peas",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P027",
+      "category": "frozen",
+      "name": "Frozen blueberries",
+      "basis": "oz",
+      "package": {
+        "quantity": "12",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "unsweetened frozen blueberries; no mixed berries, fresh or sweetened berries"
+      },
+      "desiredAmount": {
+        "quantity": "12",
+        "unit": "oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "unsweetened frozen blueberries; no mixed berries, fresh or sweetened berries",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P028",
+      "category": "refrigerated",
+      "name": "Firm tofu",
+      "basis": "oz",
+      "package": {
+        "quantity": "14",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "refrigerated water-packed firm plain tofu; no soft, silken, fried or flavored tofu"
+      },
+      "desiredAmount": {
+        "quantity": "14",
+        "unit": "oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "refrigerated water-packed firm plain tofu; no soft, silken, fried or flavored tofu",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P029",
+      "category": "refrigerated",
+      "name": "Soft tofu",
+      "basis": "oz",
+      "package": {
+        "quantity": "16",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "refrigerated soft plain tofu; no firm, fried or flavored tofu"
+      },
+      "desiredAmount": {
+        "quantity": "16",
+        "unit": "oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "refrigerated soft plain tofu; no firm, fried or flavored tofu",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P030",
+      "category": "pantry",
+      "name": "Instant ramen multipack",
+      "basis": "oz",
+      "package": {
+        "quantity": "3",
+        "unit": "oz",
+        "packCount": 6,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "six individually packed 3-oz chicken-flavored instant ramen blocks; no cups or alternate flavors"
+      },
+      "desiredAmount": {
+        "quantity": "3",
+        "unit": "oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "six individually packed 3-oz chicken-flavored instant ramen blocks; no cups or alternate flavors",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P031",
+      "category": "pantry",
+      "name": "Brown-rice rice paper",
+      "basis": "oz",
+      "package": {
+        "quantity": "200",
+        "unit": "g",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "dry brown-rice rice-paper wrappers; no noodles, white-rice wrappers or prepared rolls"
+      },
+      "desiredAmount": {
+        "quantity": "200",
+        "unit": "g"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "dry brown-rice rice-paper wrappers; no noodles, white-rice wrappers or prepared rolls",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": [
+        {
+          "store": "hmart",
+          "productID": "332:332",
+          "barcode": null,
+          "evidenceFile": "hmart-catalog.json",
+          "status": "historical_committed_fixture_not_current_validation"
+        }
+      ]
+    },
+    {
+      "id": "P032",
+      "category": "meat",
+      "name": "Fresh chicken breast",
+      "basis": "oz",
+      "package": {
+        "quantity": "1",
+        "unit": "lb",
+        "packCount": 1,
+        "quantityKind": "variable",
+        "quantityMeaning": "nominal_weight_reference_not_exact_package",
+        "specification": "fresh boneless skinless chicken breast, unseasoned; no frozen, bone-in or cooked chicken"
+      },
+      "desiredAmount": {
+        "quantity": "2",
+        "unit": "lb"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "fresh boneless skinless chicken breast, unseasoned; no frozen, bone-in or cooked chicken",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": [
+        {
+          "store": "wegmans",
+          "productID": "57084",
+          "barcode": "02002867000009",
+          "evidenceFile": "wegmans-products.json",
+          "status": "historical_committed_fixture_not_current_validation"
+        }
+      ]
+    },
+    {
+      "id": "P033",
+      "category": "meat",
+      "name": "90% lean ground beef",
+      "basis": "oz",
+      "package": {
+        "quantity": "16",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "sealed fixed-weight 90/10 fresh ground beef; no variable-weight pack, seasoned beef or other fat ratio"
+      },
+      "desiredAmount": {
+        "quantity": "16",
+        "unit": "oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "sealed fixed-weight 90/10 fresh ground beef; no variable-weight pack, seasoned beef or other fat ratio",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P034",
+      "category": "meat",
+      "name": "Frozen sliced pork belly",
+      "basis": "oz",
+      "package": {
+        "quantity": "16",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "raw unseasoned frozen sliced pork belly; no bacon, fresh belly, bulk slab or cooked pork"
+      },
+      "desiredAmount": {
+        "quantity": "16",
+        "unit": "oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "raw unseasoned frozen sliced pork belly; no bacon, fresh belly, bulk slab or cooked pork",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P035",
+      "category": "produce",
+      "name": "Loose bananas",
+      "basis": "oz",
+      "package": {
+        "quantity": "1",
+        "unit": "lb",
+        "packCount": 1,
+        "quantityKind": "variable",
+        "quantityMeaning": "nominal_weight_reference_not_exact_package",
+        "specification": "loose conventional yellow bananas; no organic, plantains, count-priced or prepared fruit"
+      },
+      "desiredAmount": {
+        "quantity": "2",
+        "unit": "lb"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "loose conventional yellow bananas; no organic, plantains, count-priced or prepared fruit",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P036",
+      "category": "produce",
+      "name": "Bagged Gala apples",
+      "basis": "oz",
+      "package": {
+        "quantity": "3",
+        "unit": "lb",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "fixed-net-weight bag of conventional Gala apples; no mixed varieties, loose or organic apples"
+      },
+      "desiredAmount": {
+        "quantity": "3",
+        "unit": "lb"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "fixed-net-weight bag of conventional Gala apples; no mixed varieties, loose or organic apples",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P037",
+      "category": "produce",
+      "name": "Bagged russet potatoes",
+      "basis": "oz",
+      "package": {
+        "quantity": "5",
+        "unit": "lb",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "fixed-net-weight bag of conventional russet potatoes; no loose, baby or prepared potatoes"
+      },
+      "desiredAmount": {
+        "quantity": "5",
+        "unit": "lb"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "fixed-net-weight bag of conventional russet potatoes; no loose, baby or prepared potatoes",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P038",
+      "category": "produce",
+      "name": "Loose yellow onions",
+      "basis": "oz",
+      "package": {
+        "quantity": "1",
+        "unit": "lb",
+        "packCount": 1,
+        "quantityKind": "estimated",
+        "quantityMeaning": "nominal_weight_reference_not_exact_package",
+        "specification": "loose conventional whole yellow onions; no sweet, red, bagged or prepared onions"
+      },
+      "desiredAmount": {
+        "quantity": "2",
+        "unit": "lb"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "loose conventional whole yellow onions; no sweet, red, bagged or prepared onions",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P039",
+      "category": "produce",
+      "name": "Bagged carrots",
+      "basis": "oz",
+      "package": {
+        "quantity": "16",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "fixed-net-weight bag of conventional whole carrots; no baby, shredded or loose carrots"
+      },
+      "desiredAmount": {
+        "quantity": "16",
+        "unit": "oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "fixed-net-weight bag of conventional whole carrots; no baby, shredded or loose carrots",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    },
+    {
+      "id": "P040",
+      "category": "frozen",
+      "name": "Frozen pork-and-vegetable dumplings",
+      "basis": "oz",
+      "package": {
+        "quantity": "24",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "quantityMeaning": "exact_net_per_pack",
+        "specification": "uncooked frozen pork-and-vegetable dumplings; no seafood, chicken, vegetarian or cooked dumplings"
+      },
+      "desiredAmount": {
+        "quantity": "24",
+        "unit": "oz"
+      },
+      "substitutionRule": {
+        "brandPolicy": "store_or_name_brand_after_explicit_review",
+        "requiredSpecification": "uncooked frozen pork-and-vegetable dumplings; no seafood, chicken, vegetarian or cooked dumplings",
+        "packageSizeChangeAllowed": false,
+        "automaticApproval": false
+      },
+      "identityReferences": []
+    }
+  ]
+}
