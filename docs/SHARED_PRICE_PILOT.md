@@ -18,7 +18,9 @@ flowchart LR
 
 The diagram describes the intended shared architecture. The current executable
 binds only to `127.0.0.1`; a Mac and its iPhone simulator can exercise it locally.
-Other devices cannot connect to it. Public networking and accounts are future work.
+Other devices cannot connect to it. Individual sessions now use real, operator-issued
+single-use invitations. Public networking and native session enrollment remain
+future work; see the [session design and contract](CLIENT_SESSIONS.md).
 
 ## Run locally
 
@@ -29,12 +31,10 @@ From the repository root:
 ```sh
 swift test --package-path server --jobs 4 --force-resolved-versions
 cd server
-export THRIFTY_ACCESS_TOKEN="$(openssl rand -hex 32)"
+unset THRIFTY_ACCESS_TOKEN
 swift run ThriftyMarketServer
 ```
 
-Keep the token private and reuse it in the simulator's Xcode Run environment.
-Do not put credentials in a scheme, project file, URL, issue or source control.
 The service starts with an empty cache and **live fetching disabled**. In a
 second terminal, this endpoint requires no credential:
 
@@ -42,20 +42,65 @@ second terminal, this endpoint requires no credential:
 curl http://127.0.0.1:8878/health
 ```
 
-`/v1/sources`, `/v1/search` and `/v1/price` require the access token in the
-`Authorization: Bearer …` header. They reject browser Origin headers, unexpected
-hosts, bodies, unknown query parameters and duplicate parameters. There is no
-CORS allowance or request logger. The token is a single developer credential,
-not production user authentication. Stop with Control-C.
+`/v1/sources`, `/v1/search` and `/v1/price` require an individual session's access
+token in the `Authorization: Bearer …` header. They reject browser Origin headers,
+unexpected hosts, bodies, unknown query parameters and duplicate parameters.
+There is no CORS allowance or request logger. The server rejects the old
+`THRIFTY_ACCESS_TOKEN` environment variable instead of using it as a fallback.
+Stop with Control-C.
 
 | Environment variable | Default / allowed values |
 |---|---|
-| `THRIFTY_ACCESS_TOKEN` | Required, 32–256 printable ASCII characters; generate randomly |
+| `THRIFTY_AUTH_DATABASE_PATH` | `data/client-sessions.sqlite`, separate persistent, private session database |
 | `THRIFTY_SOURCE_MODE` | `disabled`; `local-research` explicitly enables existing anonymous web adapters |
 | `THRIFTY_DATABASE_PATH` | `data/shared-prices.sqlite`, relative to the launch directory |
 | `THRIFTY_PORT` | `8878`, range 1024–65535; hostname stays loopback |
 | `THRIFTY_DAILY_LIMIT` | 50 logical upstream attempts, configurable down to 0 |
 | `THRIFTY_MONTHLY_LIMIT` | 250 logical upstream attempts, configurable down to 0 |
+
+Relative paths are resolved from the launch directory. Start the server and admin
+CLI from the same directory with the same path settings. Auth and cache paths must
+be different files, including symlink/hardlink aliases. Auth files must be owned
+by the operator with mode `0600`; permissive or unrelated existing databases are
+rejected. Do not point either path at a private app library.
+
+### Create and enroll a local client
+
+From another terminal, change into the same `server` directory. The local admin
+executable creates a new private invitation file and never prints its credential:
+
+```sh
+umask 077
+THRIFTY_OPERATOR_DIR="$(mktemp -d "${TMPDIR:-/tmp}/thrifty-session.XXXXXX")"
+swift run ThriftyMarketSessionAdmin invite "$THRIFTY_OPERATOR_DIR/invitation.json"
+```
+
+The invitation expires after 24 hours and can be redeemed once. In that private
+directory, create `enroll-request.json` with exactly `schemaVersion: 1` and
+`invitation` copied from the invitation file. Do not send the entire invitation
+file: `clientID` and `expiresAt` are not request fields. Send the request from a
+local HTTP client, keeping the credential out of command arguments and URLs:
+
+```sh
+curl --silent --show-error --fail-with-body \
+  --header 'Content-Type: application/json' \
+  --data-binary "@$THRIFTY_OPERATOR_DIR/enroll-request.json" \
+  --output "$THRIFTY_OPERATOR_DIR/session.json" \
+  http://127.0.0.1:8878/v1/session/enroll
+```
+
+A successful response contains an access token valid for 15 minutes, a refresh
+token valid for 30 days, the stable `clientID` and expiration times in Unix
+milliseconds. Each refresh rotates both tokens. Serialize refreshes and replace
+both tokens together: replaying a spent refresh token revokes the session family,
+including a concurrent successful rotation. Keep credential files private and
+delete them when no longer needed. Do not commit them or share them in logs/issues.
+
+Revoke a client locally with `swift run ThriftyMarketSessionAdmin revoke CLIENT_ID`,
+using its nonsecret server-issued ID. Revocation persists across server restarts.
+There is no remote admin endpoint, shared fallback secret or test enrollment
+bypass. Native Keychain storage and automatic enrollment/refresh are separate
+work in issue #48; these commands prepare and test the server contract.
 
 `local-research` is a personal, bounded testing option. It is **not** approval to
 redistribute any retailer's prices publicly. Real fetching was not needed for
@@ -68,8 +113,14 @@ Duplicate the StapleScout scheme as a local, unshared scheme in Xcode's
 
 ```text
 THRIFTY_SERVICE_URL = http://127.0.0.1:8878
-THRIFTY_ACCESS_TOKEN = the same private token used by the server
+THRIFTY_ACCESS_TOKEN = accessToken from the enrolled individual session
 ```
+
+This variable is still the simulator's transport input; it is no longer a server
+configuration variable. Keep it only in an unshared local scheme. The current
+transport does not refresh sessions: after 15 minutes, obtain a rotated access
+token through the documented refresh endpoint and restart the simulator app with
+the new value. Do not embed access or refresh tokens in project files or a binary.
 
 Run the simulator app. Its existing search and refresh actions now use the shared
 service. A disabled source returns an explicit error; it does not fall back to
@@ -92,9 +143,11 @@ strings; dates are Unix milliseconds. `servedAt` records delivery, **not** a new
 price observation. Original observation/retrieval dates, currency, package,
 availability, conditions, exclusions and promotion start/end dates are retained.
 
-| Endpoint | Required query parameters |
+| Endpoint | Request |
 |---|---|
 | `GET /health` | None; minimal service status, no prices or paths |
+| `POST /v1/session/enroll` | Strict JSON `schemaVersion: 1` plus single-use `invitation`; no query or Authorization header |
+| `POST /v1/session/refresh` | Strict JSON `schemaVersion: 1` plus `refreshToken`; no query or Authorization header |
 | `GET /v1/sources` | None; fetching status and unapproved public access for all five stores |
 | `GET /v1/search` | `store`, `channel`, `q`, plus `storeCode` for location-specific stores |
 | `GET /v1/price` | `store`, `channel`, `productID`, plus `storeCode` for location-specific stores |
@@ -104,6 +157,8 @@ Example request path:
 Wegmans/Lidl product IDs are numeric; H Mart uses `productID:skuID`.
 Responses contain public product evidence only. Error bodies expose a stable
 code and safe message, never upstream response text or database paths.
+Session endpoints instead return private credentials with `Cache-Control: no-store`;
+their bounded request/response and error contract is in [CLIENT_SESSIONS.md](CLIENT_SESSIONS.md).
 
 Only the native clients' currently supported contexts are accepted:
 
@@ -155,6 +210,15 @@ receipt. **Search terms are stored as cache keys**, so they must be included in 
 future privacy/retention policy. Keep this database separate from the iPhone's
 private SwiftData library. Database files and local credentials are ignored by git.
 
+The separate auth database retains server-generated client/session IDs, credential
+hashes, creation/enrollment/expiry/revocation times, refresh replay tombstones and
+minimal quota counters. It does not retain the plaintext credentials, email,
+device identifiers, IP address or local library UUIDs. Access requests, including
+cache hits, use a persistent 1,000/day client limit; enrollment, refresh and invalid
+authentication have additional bounded counters. These are pilot abuse controls;
+actual provider-credit accounting remains issue #44. Full identity deletion and
+retention policy remain issue #46.
+
 ## Next milestones before inviting the public
 
 1. Obtain and verify store-specific data access and permission for public display,
@@ -165,10 +229,11 @@ private SwiftData library. Database files and local credentials are ignored by g
 2. Validate exact local product identity, channel, price type, freshness, stock and
    offer conditions against a small Chantilly beta catalog. Unknown coverage must
    stay visible. Do not present national online prices as a physical store's shelf price.
-3. Replace the developer token with per-user/session authentication, rate limits
-   and abuse controls; add HTTPS hosting, secrets management, monitoring and
-   source failure controls. Review search-term privacy, retention/deletion and
-   provider-specific credit limits. Deployment needs separate authorization.
+3. Connect physical iPhones to the invitation/session contract, with Keychain
+   storage and serialized refresh. Add HTTPS hosting, secrets management,
+   monitoring and source failure controls. Review search-term privacy,
+   retention/deletion and provider-specific credit limits. Public self-service
+   enrollment needs a separate design; deployment needs separate authorization.
 4. Select a shared production database and a worker/lease design if multiple
    service processes are needed. Load-test cache hit rates, source quotas,
    failure/recovery and actual operating cost before committing to a free tier.
@@ -177,7 +242,7 @@ private SwiftData library. Database files and local credentials are ignored by g
 
 The current code proves request sharing, persistence and native transport. It does
 not establish public-source agreements, public capacity, provider economics,
-production authentication or App Store readiness.
+public self-service enrollment or App Store readiness.
 
 ## Validation
 
