@@ -4,18 +4,26 @@ import Vapor
 import VaporTesting
 import MarketHTTP
 import SharedMarketCore
+import ClientSessions
 import StapleScoutKit
 
 @Suite(.serialized)
 struct MarketHTTPTests {
-    private let token = String(repeating: "t", count: 40)
+    private let token: String
+    private let sessions: ClientSessionStore
+    init() async throws {
+        let store = try ClientSessionStore(databasePath: ":memory:", now: { Date(timeIntervalSince1970: 1_792_190_000) })
+        let invitation = try await store.issueInvitation()
+        self.token = try await store.enroll(invitation: invitation.invitation).accessToken
+        self.sessions = store
+    }
     private let instant = Date(timeIntervalSince1970: 1_792_190_000)
     private var headers: HTTPHeaders { ["Host": "127.0.0.1:8878", "Authorization": "Bearer " + token] }
     private let pricePath = "/v1/price?store=wegmans&storeCode=133&channel=in_store&productID=94427"
 
     @Test func defaultDisabledRequiresAuthenticationAndNeverCreatesEvidence() async throws {
         let cache = try SharedPriceCache(databasePath: ":memory:")
-        let service = try MarketService(cache: cache, accessToken: token)
+        let service = MarketService(cache: cache, sessions: sessions)
         try await withApp(configure: { service.configure($0) }) { app in
             try await app.testing().test(.GET, "/health", headers: ["Host": "localhost"]) { response in
                 #expect(response.status == .ok)
@@ -42,11 +50,17 @@ struct MarketHTTPTests {
     @Test func twoAuthenticatedClientsShareOriginalEvidenceAndDecimalWireValues() async throws {
         let upstream = FakeUpstream(value: evidence())
         let cache = try SharedPriceCache(databasePath: ":memory:", now: { instant })
-        let service = try MarketService(cache: cache, accessToken: token, upstream: upstream, now: { instant })
+        let secondInvitation = try await sessions.issueInvitation()
+        let secondTokens = try await sessions.enroll(invitation: secondInvitation.invitation)
+        let firstPrincipal = try await sessions.authenticate(accessToken: token)
+        #expect(firstPrincipal.clientID != secondTokens.clientID)
+        var secondHeaders = headers
+        secondHeaders.replaceOrAdd(name: "Authorization", value: "Bearer " + secondTokens.accessToken)
+        let service = MarketService(cache: cache, sessions: sessions, upstream: upstream, now: { instant })
         try await withApp(configure: { service.configure($0) }) { app in
             let tester = try app.testing()
             async let first = tester.sendRequest(.GET, pricePath, headers: headers)
-            async let second = tester.sendRequest(.GET, pricePath, headers: headers)
+            async let second = tester.sendRequest(.GET, pricePath, headers: secondHeaders)
             let responses = try await [first, second]
             let payloads = try responses.map { response -> SharedPriceResponse in
                 #expect(response.status == .ok)
@@ -70,7 +84,7 @@ struct MarketHTTPTests {
 
     @Test func invalidContextOriginHostDuplicateQueryAndBodyNeverFetch() async throws {
         let upstream = FakeUpstream(value: evidence())
-        let service = try MarketService(cache: SharedPriceCache(databasePath: ":memory:"), accessToken: token, upstream: upstream)
+        let service = MarketService(cache: try SharedPriceCache(databasePath: ":memory:"), sessions: sessions, upstream: upstream)
         try await withApp(configure: { service.configure($0) }) { app in
             for path in [pricePath + "&productID=94427", pricePath + "&token=hidden",
                          pricePath.replacingOccurrences(of: "133", with: "132"),
@@ -92,7 +106,7 @@ struct MarketHTTPTests {
     @Test func failedAttemptIsNotRetriedOrReportedAsFreshAndBudgetIsShared() async throws {
         let upstream = FakeUpstream(value: evidence(), failure: true)
         let cache = try SharedPriceCache(databasePath: ":memory:", dailyLimit: 1, monthlyLimit: 1, now: { instant })
-        let service = try MarketService(cache: cache, accessToken: token, upstream: upstream, now: { instant })
+        let service = MarketService(cache: cache, sessions: sessions, upstream: upstream, now: { instant })
         try await withApp(configure: { service.configure($0) }) { app in
             try await app.testing().test(.GET, pricePath, headers: headers) { response in
                 #expect(response.status == .badGateway)
@@ -113,7 +127,7 @@ struct MarketHTTPTests {
 
     @Test func searchNormalizationSharesCache() async throws {
         let upstream = FakeUpstream(value: evidence())
-        let service = try MarketService(cache: SharedPriceCache(databasePath: ":memory:", now: { instant }), accessToken: token, upstream: upstream, now: { instant })
+        let service = MarketService(cache: try SharedPriceCache(databasePath: ":memory:", now: { instant }), sessions: sessions, upstream: upstream, now: { instant })
         try await withApp(configure: { service.configure($0) }) { app in
             for (query, hit) in [("Milk", false), ("%20milk%20", true)] {
                 try await app.testing().test(.GET, "/v1/search?store=wegmans&storeCode=133&channel=in_store&q=" + query, headers: headers) { response in
