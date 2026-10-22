@@ -1,0 +1,983 @@
+{
+  "schemaVersion": 1,
+  "fixtureKind": "synthetic_offline_comparison",
+  "sampleOnly": true,
+  "retailerFetchesAllowed": false,
+  "asOf": "2026-10-20T12:00:00Z",
+  "cases": [
+    {
+      "id": "fixed_weight_package",
+      "stapleBasis": "oz",
+      "desiredQuantity": "20",
+      "desiredUnit": "oz",
+      "comparisonChannel": "in_store",
+      "plannedStores": [
+        "wegmans"
+      ],
+      "offer": {
+        "id": "fixture-offer",
+        "store": "wegmans",
+        "locationCode": "133",
+        "productID": "fixture-only-product",
+        "barcode": "00000000000000",
+        "quantity": "16",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "channel": "in_store",
+        "price": "4.00",
+        "available": true,
+        "observedOffsetSeconds": -60,
+        "retrievedOffsetSeconds": 0,
+        "validFromOffsetSeconds": null,
+        "validUntilOffsetSeconds": null,
+        "conditions": "",
+        "source": "wegmans",
+        "sourceURL": "https://fixtures.invalid/grocery/fixture-only-product",
+        "matchStatus": "approved"
+      },
+      "expected": {
+        "offerCount": 1,
+        "eligible": true,
+        "exclusionReasons": [],
+        "winner": true,
+        "unitPrice": "0.25",
+        "packagesNeeded": 2,
+        "purchaseCost": "8.00",
+        "excessQuantity": "12",
+        "excessUnit": "oz"
+      }
+    },
+    {
+      "id": "wrong_store_outside_planned_stores",
+      "stapleBasis": "oz",
+      "desiredQuantity": "20",
+      "desiredUnit": "oz",
+      "comparisonChannel": "in_store",
+      "plannedStores": [
+        "wegmans"
+      ],
+      "offer": {
+        "id": "fixture-offer",
+        "store": "target",
+        "locationCode": "1827",
+        "productID": "fixture-only-product",
+        "barcode": "00000000000000",
+        "quantity": "16",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "channel": "in_store",
+        "price": "4.00",
+        "available": true,
+        "observedOffsetSeconds": -60,
+        "retrievedOffsetSeconds": 0,
+        "validFromOffsetSeconds": null,
+        "validUntilOffsetSeconds": null,
+        "conditions": "",
+        "source": "target",
+        "sourceURL": "https://fixtures.invalid/grocery/fixture-only-product",
+        "matchStatus": "approved"
+      },
+      "expected": {
+        "offerCount": 0,
+        "eligible": false,
+        "exclusionReasons": [],
+        "winner": false
+      }
+    },
+    {
+      "id": "wrong_location_history",
+      "stapleBasis": "oz",
+      "desiredQuantity": "20",
+      "desiredUnit": "oz",
+      "comparisonChannel": "in_store",
+      "plannedStores": [
+        "wegmans"
+      ],
+      "offer": {
+        "id": "fixture-offer",
+        "store": "wegmans",
+        "locationCode": "999",
+        "productID": "fixture-only-product",
+        "barcode": "00000000000000",
+        "quantity": "16",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "channel": "in_store",
+        "price": "4.00",
+        "available": true,
+        "observedOffsetSeconds": -60,
+        "retrievedOffsetSeconds": 0,
+        "validFromOffsetSeconds": null,
+        "validUntilOffsetSeconds": null,
+        "conditions": "",
+        "source": "wegmans",
+        "sourceURL": "https://fixtures.invalid/grocery/fixture-only-product",
+        "matchStatus": "approved"
+      },
+      "expected": {
+        "offerCount": 0,
+        "eligible": false,
+        "exclusionReasons": [],
+        "winner": false
+      }
+    },
+    {
+      "id": "wrong_channel",
+      "stapleBasis": "oz",
+      "desiredQuantity": "20",
+      "desiredUnit": "oz",
+      "comparisonChannel": "in_store",
+      "plannedStores": [
+        "wegmans"
+      ],
+      "offer": {
+        "id": "fixture-offer",
+        "store": "wegmans",
+        "locationCode": "133",
+        "productID": "fixture-only-product",
+        "barcode": "00000000000000",
+        "quantity": "16",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "channel": "pickup",
+        "price": "4.00",
+        "available": true,
+        "observedOffsetSeconds": -60,
+        "retrievedOffsetSeconds": 0,
+        "validFromOffsetSeconds": null,
+        "validUntilOffsetSeconds": null,
+        "conditions": "",
+        "source": "wegmans",
+        "sourceURL": "https://fixtures.invalid/grocery/fixture-only-product",
+        "matchStatus": "approved"
+      },
+      "expected": {
+        "offerCount": 1,
+        "eligible": false,
+        "exclusionReasons": [
+          "not_in_store"
+        ],
+        "winner": false
+      }
+    },
+    {
+      "id": "missing_price",
+      "stapleBasis": "oz",
+      "desiredQuantity": "20",
+      "desiredUnit": "oz",
+      "comparisonChannel": "in_store",
+      "plannedStores": [
+        "wegmans"
+      ],
+      "offer": {
+        "id": "fixture-offer",
+        "store": "wegmans",
+        "locationCode": "133",
+        "productID": "fixture-only-product",
+        "barcode": "00000000000000",
+        "quantity": "16",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "channel": "in_store",
+        "price": null,
+        "available": true,
+        "observedOffsetSeconds": -60,
+        "retrievedOffsetSeconds": 0,
+        "validFromOffsetSeconds": null,
+        "validUntilOffsetSeconds": null,
+        "conditions": "",
+        "source": "wegmans",
+        "sourceURL": "https://fixtures.invalid/grocery/fixture-only-product",
+        "matchStatus": "approved"
+      },
+      "expected": {
+        "offerCount": 1,
+        "eligible": false,
+        "exclusionReasons": [
+          "price_unknown",
+          "invalid_price_or_quantity"
+        ],
+        "winner": false
+      }
+    },
+    {
+      "id": "unknown_stock",
+      "stapleBasis": "oz",
+      "desiredQuantity": "20",
+      "desiredUnit": "oz",
+      "comparisonChannel": "in_store",
+      "plannedStores": [
+        "wegmans"
+      ],
+      "offer": {
+        "id": "fixture-offer",
+        "store": "wegmans",
+        "locationCode": "133",
+        "productID": "fixture-only-product",
+        "barcode": "00000000000000",
+        "quantity": "16",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "channel": "in_store",
+        "price": "4.00",
+        "available": null,
+        "observedOffsetSeconds": -60,
+        "retrievedOffsetSeconds": 0,
+        "validFromOffsetSeconds": null,
+        "validUntilOffsetSeconds": null,
+        "conditions": "",
+        "source": "wegmans",
+        "sourceURL": "https://fixtures.invalid/grocery/fixture-only-product",
+        "matchStatus": "approved"
+      },
+      "expected": {
+        "offerCount": 1,
+        "eligible": false,
+        "exclusionReasons": [
+          "availability_unknown"
+        ],
+        "winner": false
+      }
+    },
+    {
+      "id": "unavailable_stock",
+      "stapleBasis": "oz",
+      "desiredQuantity": "20",
+      "desiredUnit": "oz",
+      "comparisonChannel": "in_store",
+      "plannedStores": [
+        "wegmans"
+      ],
+      "offer": {
+        "id": "fixture-offer",
+        "store": "wegmans",
+        "locationCode": "133",
+        "productID": "fixture-only-product",
+        "barcode": "00000000000000",
+        "quantity": "16",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "channel": "in_store",
+        "price": "4.00",
+        "available": false,
+        "observedOffsetSeconds": -60,
+        "retrievedOffsetSeconds": 0,
+        "validFromOffsetSeconds": null,
+        "validUntilOffsetSeconds": null,
+        "conditions": "",
+        "source": "wegmans",
+        "sourceURL": "https://fixtures.invalid/grocery/fixture-only-product",
+        "matchStatus": "approved"
+      },
+      "expected": {
+        "offerCount": 1,
+        "eligible": false,
+        "exclusionReasons": [
+          "unavailable"
+        ],
+        "winner": false
+      }
+    },
+    {
+      "id": "conditional_member_offer",
+      "stapleBasis": "oz",
+      "desiredQuantity": "20",
+      "desiredUnit": "oz",
+      "comparisonChannel": "in_store",
+      "plannedStores": [
+        "wegmans"
+      ],
+      "offer": {
+        "id": "fixture-offer",
+        "store": "wegmans",
+        "locationCode": "133",
+        "productID": "fixture-only-product",
+        "barcode": "00000000000000",
+        "quantity": "16",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "channel": "in_store",
+        "price": "4.00",
+        "available": true,
+        "observedOffsetSeconds": -60,
+        "retrievedOffsetSeconds": 0,
+        "validFromOffsetSeconds": null,
+        "validUntilOffsetSeconds": null,
+        "conditions": "Synthetic members-only price; buy two",
+        "source": "wegmans",
+        "sourceURL": "https://fixtures.invalid/grocery/fixture-only-product",
+        "matchStatus": "approved"
+      },
+      "expected": {
+        "offerCount": 1,
+        "eligible": false,
+        "exclusionReasons": [
+          "conditional_price"
+        ],
+        "winner": false
+      }
+    },
+    {
+      "id": "expired_offer_at_exclusive_end",
+      "stapleBasis": "oz",
+      "desiredQuantity": "20",
+      "desiredUnit": "oz",
+      "comparisonChannel": "in_store",
+      "plannedStores": [
+        "wegmans"
+      ],
+      "offer": {
+        "id": "fixture-offer",
+        "store": "wegmans",
+        "locationCode": "133",
+        "productID": "fixture-only-product",
+        "barcode": "00000000000000",
+        "quantity": "16",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "channel": "in_store",
+        "price": "4.00",
+        "available": true,
+        "observedOffsetSeconds": -60,
+        "retrievedOffsetSeconds": 0,
+        "validFromOffsetSeconds": null,
+        "validUntilOffsetSeconds": 0,
+        "conditions": "",
+        "source": "wegmans",
+        "sourceURL": "https://fixtures.invalid/grocery/fixture-only-product",
+        "matchStatus": "approved"
+      },
+      "expected": {
+        "offerCount": 1,
+        "eligible": false,
+        "exclusionReasons": [
+          "offer_expired"
+        ],
+        "winner": false
+      }
+    },
+    {
+      "id": "offer_not_started",
+      "stapleBasis": "oz",
+      "desiredQuantity": "20",
+      "desiredUnit": "oz",
+      "comparisonChannel": "in_store",
+      "plannedStores": [
+        "wegmans"
+      ],
+      "offer": {
+        "id": "fixture-offer",
+        "store": "wegmans",
+        "locationCode": "133",
+        "productID": "fixture-only-product",
+        "barcode": "00000000000000",
+        "quantity": "16",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "channel": "in_store",
+        "price": "4.00",
+        "available": true,
+        "observedOffsetSeconds": -60,
+        "retrievedOffsetSeconds": 0,
+        "validFromOffsetSeconds": 1,
+        "validUntilOffsetSeconds": null,
+        "conditions": "",
+        "source": "wegmans",
+        "sourceURL": "https://fixtures.invalid/grocery/fixture-only-product",
+        "matchStatus": "approved"
+      },
+      "expected": {
+        "offerCount": 1,
+        "eligible": false,
+        "exclusionReasons": [
+          "offer_not_started"
+        ],
+        "winner": false
+      }
+    },
+    {
+      "id": "future_observation_and_retrieval",
+      "stapleBasis": "oz",
+      "desiredQuantity": "20",
+      "desiredUnit": "oz",
+      "comparisonChannel": "in_store",
+      "plannedStores": [
+        "wegmans"
+      ],
+      "offer": {
+        "id": "fixture-offer",
+        "store": "wegmans",
+        "locationCode": "133",
+        "productID": "fixture-only-product",
+        "barcode": "00000000000000",
+        "quantity": "16",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "channel": "in_store",
+        "price": "4.00",
+        "available": true,
+        "observedOffsetSeconds": 1,
+        "retrievedOffsetSeconds": 1,
+        "validFromOffsetSeconds": null,
+        "validUntilOffsetSeconds": null,
+        "conditions": "",
+        "source": "wegmans",
+        "sourceURL": "https://fixtures.invalid/grocery/fixture-only-product",
+        "matchStatus": "approved"
+      },
+      "expected": {
+        "offerCount": 1,
+        "eligible": false,
+        "exclusionReasons": [
+          "future_observation",
+          "future_retrieval"
+        ],
+        "winner": false
+      }
+    },
+    {
+      "id": "stale_at_48_hours",
+      "stapleBasis": "oz",
+      "desiredQuantity": "20",
+      "desiredUnit": "oz",
+      "comparisonChannel": "in_store",
+      "plannedStores": [
+        "wegmans"
+      ],
+      "offer": {
+        "id": "fixture-offer",
+        "store": "wegmans",
+        "locationCode": "133",
+        "productID": "fixture-only-product",
+        "barcode": "00000000000000",
+        "quantity": "16",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "channel": "in_store",
+        "price": "4.00",
+        "available": true,
+        "observedOffsetSeconds": -172800,
+        "retrievedOffsetSeconds": 0,
+        "validFromOffsetSeconds": null,
+        "validUntilOffsetSeconds": null,
+        "conditions": "",
+        "source": "wegmans",
+        "sourceURL": "https://fixtures.invalid/grocery/fixture-only-product",
+        "matchStatus": "approved"
+      },
+      "expected": {
+        "offerCount": 1,
+        "eligible": false,
+        "exclusionReasons": [
+          "stale"
+        ],
+        "winner": false
+      }
+    },
+    {
+      "id": "multipack_whole_package_cost",
+      "stapleBasis": "oz",
+      "desiredQuantity": "45",
+      "desiredUnit": "oz",
+      "comparisonChannel": "in_store",
+      "plannedStores": [
+        "wegmans"
+      ],
+      "offer": {
+        "id": "fixture-offer",
+        "store": "wegmans",
+        "locationCode": "133",
+        "productID": "fixture-only-product",
+        "barcode": "00000000000000",
+        "quantity": "10",
+        "unit": "oz",
+        "packCount": 2,
+        "quantityKind": "fixed",
+        "channel": "in_store",
+        "price": "5",
+        "available": true,
+        "observedOffsetSeconds": -60,
+        "retrievedOffsetSeconds": 0,
+        "validFromOffsetSeconds": null,
+        "validUntilOffsetSeconds": null,
+        "conditions": "",
+        "source": "wegmans",
+        "sourceURL": "https://fixtures.invalid/grocery/fixture-only-product",
+        "matchStatus": "approved"
+      },
+      "expected": {
+        "offerCount": 1,
+        "eligible": true,
+        "exclusionReasons": [],
+        "winner": true,
+        "unitPrice": "0.25",
+        "packagesNeeded": 3,
+        "purchaseCost": "15",
+        "excessQuantity": "15",
+        "excessUnit": "oz"
+      }
+    },
+    {
+      "id": "volume_never_becomes_weight",
+      "stapleBasis": "oz",
+      "desiredQuantity": "20",
+      "desiredUnit": "oz",
+      "comparisonChannel": "in_store",
+      "plannedStores": [
+        "wegmans"
+      ],
+      "offer": {
+        "id": "fixture-offer",
+        "store": "wegmans",
+        "locationCode": "133",
+        "productID": "fixture-only-product",
+        "barcode": "00000000000000",
+        "quantity": "1",
+        "unit": "l",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "channel": "in_store",
+        "price": "4.00",
+        "available": true,
+        "observedOffsetSeconds": -60,
+        "retrievedOffsetSeconds": 0,
+        "validFromOffsetSeconds": null,
+        "validUntilOffsetSeconds": null,
+        "conditions": "",
+        "source": "wegmans",
+        "sourceURL": "https://fixtures.invalid/grocery/fixture-only-product",
+        "matchStatus": "approved"
+      },
+      "expected": {
+        "offerCount": 1,
+        "eligible": false,
+        "exclusionReasons": [
+          "incompatible_dimension"
+        ],
+        "winner": false
+      }
+    },
+    {
+      "id": "count_never_becomes_weight",
+      "stapleBasis": "oz",
+      "desiredQuantity": "20",
+      "desiredUnit": "oz",
+      "comparisonChannel": "in_store",
+      "plannedStores": [
+        "wegmans"
+      ],
+      "offer": {
+        "id": "fixture-offer",
+        "store": "wegmans",
+        "locationCode": "133",
+        "productID": "fixture-only-product",
+        "barcode": "00000000000000",
+        "quantity": "12",
+        "unit": "each",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "channel": "in_store",
+        "price": "4.00",
+        "available": true,
+        "observedOffsetSeconds": -60,
+        "retrievedOffsetSeconds": 0,
+        "validFromOffsetSeconds": null,
+        "validUntilOffsetSeconds": null,
+        "conditions": "",
+        "source": "wegmans",
+        "sourceURL": "https://fixtures.invalid/grocery/fixture-only-product",
+        "matchStatus": "approved"
+      },
+      "expected": {
+        "offerCount": 1,
+        "eligible": false,
+        "exclusionReasons": [
+          "incompatible_dimension"
+        ],
+        "winner": false
+      }
+    },
+    {
+      "id": "variable_weight_has_no_exact_outlay",
+      "stapleBasis": "oz",
+      "desiredQuantity": "20",
+      "desiredUnit": "oz",
+      "comparisonChannel": "in_store",
+      "plannedStores": [
+        "wegmans"
+      ],
+      "offer": {
+        "id": "fixture-offer",
+        "store": "wegmans",
+        "locationCode": "133",
+        "productID": "fixture-only-product",
+        "barcode": "00000000000000",
+        "quantity": "1",
+        "unit": "lb",
+        "packCount": 1,
+        "quantityKind": "variable",
+        "channel": "in_store",
+        "price": "4.00",
+        "available": true,
+        "observedOffsetSeconds": -60,
+        "retrievedOffsetSeconds": 0,
+        "validFromOffsetSeconds": null,
+        "validUntilOffsetSeconds": null,
+        "conditions": "",
+        "source": "wegmans",
+        "sourceURL": "https://fixtures.invalid/grocery/fixture-only-product",
+        "matchStatus": "approved"
+      },
+      "expected": {
+        "offerCount": 1,
+        "eligible": false,
+        "exclusionReasons": [
+          "uncertain_quantity"
+        ],
+        "winner": false
+      }
+    },
+    {
+      "id": "estimated_weight_has_no_exact_outlay",
+      "stapleBasis": "oz",
+      "desiredQuantity": "20",
+      "desiredUnit": "oz",
+      "comparisonChannel": "in_store",
+      "plannedStores": [
+        "wegmans"
+      ],
+      "offer": {
+        "id": "fixture-offer",
+        "store": "wegmans",
+        "locationCode": "133",
+        "productID": "fixture-only-product",
+        "barcode": "00000000000000",
+        "quantity": "1",
+        "unit": "lb",
+        "packCount": 1,
+        "quantityKind": "estimated",
+        "channel": "in_store",
+        "price": "4.00",
+        "available": true,
+        "observedOffsetSeconds": -60,
+        "retrievedOffsetSeconds": 0,
+        "validFromOffsetSeconds": null,
+        "validUntilOffsetSeconds": null,
+        "conditions": "",
+        "source": "wegmans",
+        "sourceURL": "https://fixtures.invalid/grocery/fixture-only-product",
+        "matchStatus": "approved"
+      },
+      "expected": {
+        "offerCount": 1,
+        "eligible": false,
+        "exclusionReasons": [
+          "uncertain_quantity"
+        ],
+        "winner": false
+      }
+    },
+    {
+      "id": "hmart_online_never_becomes_shelf",
+      "stapleBasis": "oz",
+      "desiredQuantity": "20",
+      "desiredUnit": "oz",
+      "comparisonChannel": "in_store",
+      "plannedStores": [
+        "hmart"
+      ],
+      "offer": {
+        "id": "fixture-offer",
+        "store": "hmart",
+        "locationCode": null,
+        "productID": "fixture-only-product",
+        "barcode": "00000000000000",
+        "quantity": "16",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "channel": "online",
+        "price": "4.00",
+        "available": true,
+        "observedOffsetSeconds": -60,
+        "retrievedOffsetSeconds": 0,
+        "validFromOffsetSeconds": null,
+        "validUntilOffsetSeconds": null,
+        "conditions": "",
+        "source": "hmart",
+        "sourceURL": "https://fixtures.invalid/grocery/fixture-only-product",
+        "matchStatus": "approved"
+      },
+      "expected": {
+        "offerCount": 1,
+        "eligible": false,
+        "exclusionReasons": [
+          "online_reference_only",
+          "not_in_store"
+        ],
+        "winner": false
+      }
+    },
+    {
+      "id": "lidl_regional_stock_unknown",
+      "stapleBasis": "oz",
+      "desiredQuantity": "20",
+      "desiredUnit": "oz",
+      "comparisonChannel": "in_store",
+      "plannedStores": [
+        "lidl"
+      ],
+      "offer": {
+        "id": "fixture-offer",
+        "store": "lidl",
+        "locationCode": "US01112",
+        "productID": "fixture-only-product",
+        "barcode": "00000000000000",
+        "quantity": "16",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "channel": "in_store",
+        "price": "4.00",
+        "available": null,
+        "observedOffsetSeconds": -60,
+        "retrievedOffsetSeconds": 0,
+        "validFromOffsetSeconds": null,
+        "validUntilOffsetSeconds": null,
+        "conditions": "",
+        "source": "lidl",
+        "sourceURL": "https://fixtures.invalid/grocery/fixture-only-product",
+        "matchStatus": "approved"
+      },
+      "expected": {
+        "offerCount": 1,
+        "eligible": false,
+        "exclusionReasons": [
+          "availability_unknown"
+        ],
+        "winner": false
+      }
+    },
+    {
+      "id": "substitute_needs_explicit_approval",
+      "stapleBasis": "oz",
+      "desiredQuantity": "20",
+      "desiredUnit": "oz",
+      "comparisonChannel": "in_store",
+      "plannedStores": [
+        "wegmans"
+      ],
+      "offer": {
+        "id": "fixture-offer",
+        "store": "wegmans",
+        "locationCode": "133",
+        "productID": "fixture-only-product",
+        "barcode": "00000000000000",
+        "quantity": "16",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "channel": "in_store",
+        "price": "4.00",
+        "available": true,
+        "observedOffsetSeconds": -60,
+        "retrievedOffsetSeconds": 0,
+        "validFromOffsetSeconds": null,
+        "validUntilOffsetSeconds": null,
+        "conditions": "",
+        "source": "wegmans",
+        "sourceURL": "https://fixtures.invalid/grocery/fixture-only-product",
+        "matchStatus": "pending"
+      },
+      "expected": {
+        "offerCount": 1,
+        "eligible": false,
+        "exclusionReasons": [
+          "not_approved"
+        ],
+        "winner": false
+      }
+    },
+    {
+      "id": "rejected_substitute_cannot_win",
+      "stapleBasis": "oz",
+      "desiredQuantity": "20",
+      "desiredUnit": "oz",
+      "comparisonChannel": "in_store",
+      "plannedStores": [
+        "wegmans"
+      ],
+      "offer": {
+        "id": "fixture-offer",
+        "store": "wegmans",
+        "locationCode": "133",
+        "productID": "fixture-only-product",
+        "barcode": "00000000000000",
+        "quantity": "16",
+        "unit": "oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "channel": "in_store",
+        "price": "4.00",
+        "available": true,
+        "observedOffsetSeconds": -60,
+        "retrievedOffsetSeconds": 0,
+        "validFromOffsetSeconds": null,
+        "validUntilOffsetSeconds": null,
+        "conditions": "",
+        "source": "wegmans",
+        "sourceURL": "https://fixtures.invalid/grocery/fixture-only-product",
+        "matchStatus": "rejected"
+      },
+      "expected": {
+        "offerCount": 1,
+        "eligible": false,
+        "exclusionReasons": [
+          "match_rejected"
+        ],
+        "winner": false
+      }
+    },
+    {
+      "id": "count_package_outlay",
+      "stapleBasis": "each",
+      "desiredQuantity": "18",
+      "desiredUnit": "each",
+      "comparisonChannel": "in_store",
+      "plannedStores": [
+        "wegmans"
+      ],
+      "offer": {
+        "id": "fixture-offer",
+        "store": "wegmans",
+        "locationCode": "133",
+        "productID": "fixture-only-product",
+        "barcode": "00000000000000",
+        "quantity": "12",
+        "unit": "each",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "channel": "in_store",
+        "price": "3",
+        "available": true,
+        "observedOffsetSeconds": -60,
+        "retrievedOffsetSeconds": 0,
+        "validFromOffsetSeconds": null,
+        "validUntilOffsetSeconds": null,
+        "conditions": "",
+        "source": "wegmans",
+        "sourceURL": "https://fixtures.invalid/grocery/fixture-only-product",
+        "matchStatus": "approved"
+      },
+      "expected": {
+        "offerCount": 1,
+        "eligible": true,
+        "exclusionReasons": [],
+        "winner": true,
+        "unitPrice": "0.25",
+        "packagesNeeded": 2,
+        "purchaseCost": "6",
+        "excessQuantity": "6",
+        "excessUnit": "each"
+      }
+    },
+    {
+      "id": "volume_package_outlay",
+      "stapleBasis": "fl_oz",
+      "desiredQuantity": "200",
+      "desiredUnit": "fl_oz",
+      "comparisonChannel": "in_store",
+      "plannedStores": [
+        "wegmans"
+      ],
+      "offer": {
+        "id": "fixture-offer",
+        "store": "wegmans",
+        "locationCode": "133",
+        "productID": "fixture-only-product",
+        "barcode": "00000000000000",
+        "quantity": "128",
+        "unit": "fl_oz",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "channel": "in_store",
+        "price": "4",
+        "available": true,
+        "observedOffsetSeconds": -60,
+        "retrievedOffsetSeconds": 0,
+        "validFromOffsetSeconds": null,
+        "validUntilOffsetSeconds": null,
+        "conditions": "",
+        "source": "wegmans",
+        "sourceURL": "https://fixtures.invalid/grocery/fixture-only-product",
+        "matchStatus": "approved"
+      },
+      "expected": {
+        "offerCount": 1,
+        "eligible": true,
+        "exclusionReasons": [],
+        "winner": true,
+        "unitPrice": "0.03125",
+        "packagesNeeded": 2,
+        "purchaseCost": "8",
+        "excessQuantity": "56",
+        "excessUnit": "fl_oz"
+      }
+    },
+    {
+      "id": "metric_weight_package_outlay",
+      "stapleBasis": "oz",
+      "desiredQuantity": "1",
+      "desiredUnit": "kg",
+      "comparisonChannel": "in_store",
+      "plannedStores": [
+        "wegmans"
+      ],
+      "offer": {
+        "id": "fixture-offer",
+        "store": "wegmans",
+        "locationCode": "133",
+        "productID": "fixture-only-product",
+        "barcode": "00000000000000",
+        "quantity": "500",
+        "unit": "g",
+        "packCount": 1,
+        "quantityKind": "fixed",
+        "channel": "in_store",
+        "price": "5",
+        "available": true,
+        "observedOffsetSeconds": -60,
+        "retrievedOffsetSeconds": 0,
+        "validFromOffsetSeconds": null,
+        "validUntilOffsetSeconds": null,
+        "conditions": "",
+        "source": "wegmans",
+        "sourceURL": "https://fixtures.invalid/grocery/fixture-only-product",
+        "matchStatus": "approved"
+      },
+      "expected": {
+        "offerCount": 1,
+        "eligible": true,
+        "exclusionReasons": [],
+        "winner": true,
+        "unitPrice": "0.28349523125",
+        "packagesNeeded": 2,
+        "purchaseCost": "10",
+        "excessQuantity": "0",
+        "excessUnit": "kg"
+      }
+    }
+  ]
+}
