@@ -1,0 +1,347 @@
+{
+  "schema_version": 1,
+  "record_kind": "source_research_decisions_and_estimates_not_retailer_response_fixtures",
+  "reviewed_on": "2026-10-21",
+  "issue": 41,
+  "public_pilot_ready": false,
+  "new_authenticated_provider_calls": 0,
+  "new_retailer_price_queries": 0,
+  "retailers": [
+    {
+      "retailer": "wegmans",
+      "intended_store_code": "133",
+      "intended_channel": "in_store",
+      "candidate": "public website JSON / permissioned retailer agreement",
+      "prior_native_success_date": "2026-10-14",
+      "public_fetch_enabled": false,
+      "public_display_enabled": false,
+      "permission_established": false,
+      "approved_attribution": null,
+      "permitted_cache_ttl_seconds": null,
+      "permitted_history_retention_days": null,
+      "published_retailer_request_quota": null,
+      "blocker": "Public redistribution/cache/history permission and quota not established."
+    },
+    {
+      "retailer": "walmart",
+      "intended_store_code": "5969",
+      "intended_channel": "pickup",
+      "candidate": "Walmart OPD or conditionally evaluated SerpApi Walmart Product",
+      "prior_native_success_date": null,
+      "public_fetch_enabled": false,
+      "public_display_enabled": false,
+      "permission_established": false,
+      "approved_attribution": null,
+      "permitted_cache_ttl_seconds": null,
+      "permitted_history_retention_days": null,
+      "published_retailer_request_quota": null,
+      "blocker": "No OPD approval or provider key; no accepted five-product local offer set or public-use agreement."
+    },
+    {
+      "retailer": "target",
+      "intended_store_code": "1827",
+      "intended_channel": "unverified_price_channel",
+      "candidate": "Conditionally evaluated SerpApi Target Search",
+      "prior_native_success_date": null,
+      "public_fetch_enabled": false,
+      "public_display_enabled": false,
+      "permission_established": false,
+      "approved_attribution": null,
+      "permitted_cache_ttl_seconds": null,
+      "permitted_history_retention_days": null,
+      "published_retailer_request_quota": null,
+      "blocker": "No provider key or accepted five-product store/seller/channel offer set; public-use agreement unresolved."
+    },
+    {
+      "retailer": "hmart",
+      "intended_store_code": null,
+      "intended_channel": "online",
+      "candidate": "VTEX online reference / permissioned merchant agreement",
+      "prior_native_success_date": "2026-10-14",
+      "public_fetch_enabled": false,
+      "public_display_enabled": false,
+      "permission_established": false,
+      "approved_attribution": null,
+      "permitted_cache_ttl_seconds": null,
+      "permitted_history_retention_days": null,
+      "published_retailer_request_quota": null,
+      "blocker": "Online reference only; Centreville shelf/produce coverage and public redistribution rights unverified."
+    },
+    {
+      "retailer": "lidl",
+      "intended_store_code": "US01112",
+      "intended_channel": "in_store_regional_catalog",
+      "candidate": "Regional catalog US1112 / permissioned retailer agreement",
+      "prior_native_success_date": "2026-10-16",
+      "public_fetch_enabled": false,
+      "public_display_enabled": false,
+      "permission_established": false,
+      "approved_attribution": null,
+      "permitted_cache_ttl_seconds": null,
+      "permitted_history_retention_days": null,
+      "published_retailer_request_quota": null,
+      "blocker": "Local stock unknown; public catalog redistribution/cache/history permission and quota not established."
+    }
+  ],
+  "five_product_gate": {
+    "walmart": {
+      "accepted_products_this_review": 0,
+      "status": "unavailable_without_approved_access_or_provider_key",
+      "requested_store_code": "5969",
+      "requested_channel": "pickup"
+    },
+    "target": {
+      "accepted_products_this_review": 0,
+      "status": "unavailable_without_provider_key_and_complete_seller_channel_evidence",
+      "requested_store_code": "1827",
+      "requested_channel": "not_yet_bound_to_price"
+    }
+  },
+  "provider_quotas": {
+    "serpapi": {
+      "unit": "successful_search",
+      "free_monthly": 250,
+      "free_hourly": 50,
+      "cached_error_failed_searches_counted": false,
+      "successful_empty_searches_counted": true,
+      "measured_usage": null,
+      "plans_monthly_usd": [
+        {
+          "name": "Starter",
+          "price": "25",
+          "searches": 1000
+        },
+        {
+          "name": "Developer",
+          "price": "75",
+          "searches": 5000
+        },
+        {
+          "name": "Production",
+          "price": "150",
+          "searches": 15000
+        }
+      ]
+    },
+    "zenrows": {
+      "unit": "credit",
+      "free_monthly": 5000,
+      "successful_page_credit_rates": {
+        "standard": 1,
+        "javascript": 5,
+        "premium": 10,
+        "javascript_and_premium": 25
+      },
+      "free_capacity_at_25_credits": 200,
+      "entry_paid_monthly_usd": "19",
+      "entry_paid_monthly_credits": 45000,
+      "entry_annual_monthly_equivalent_usd": "16",
+      "retailer_request_mode_measured": false
+    },
+    "apify": {
+      "unit": "USD_usage_credit",
+      "free_monthly_usd": "5",
+      "entry_paid_monthly_usd": "19",
+      "free_compute_unit_usd": "0.20",
+      "actor_evaluated": false,
+      "product_capacity_measured": null
+    }
+  },
+  "estimate_assumptions": {
+    "period_days": 30,
+    "formula": "unique_contexts * refresh_cycles * billable_calls_per_context + discovery_calls",
+    "provider_success_and_source_eligibility_are_distinct": true,
+    "provider_account_shared_across_retailers": true,
+    "five_retailer_rows_are_not_a_provider_coverage_claim": true,
+    "hosting_taxes_and_extra_calls_excluded": true
+  },
+  "scenarios": [
+    {
+      "name": "30_total_offers",
+      "unique_product_store_channel_contexts": 30,
+      "billable_calls_per_context_assumed": 1,
+      "discovery_calls_assumed": 0,
+      "daily_refreshes_in_30_day_period": 30,
+      "daily_refresh_context_operations": 900,
+      "four_refresh_context_operations": 120,
+      "is_measured": false
+    },
+    {
+      "name": "50_total_offers",
+      "unique_product_store_channel_contexts": 50,
+      "billable_calls_per_context_assumed": 1,
+      "discovery_calls_assumed": 0,
+      "daily_refreshes_in_30_day_period": 30,
+      "daily_refresh_context_operations": 1500,
+      "four_refresh_context_operations": 200,
+      "is_measured": false
+    },
+    {
+      "name": "30_products_two_retailers",
+      "unique_product_store_channel_contexts": 60,
+      "billable_calls_per_context_assumed": 1,
+      "discovery_calls_assumed": 0,
+      "daily_refreshes_in_30_day_period": 30,
+      "daily_refresh_context_operations": 1800,
+      "four_refresh_context_operations": 240,
+      "is_measured": false
+    },
+    {
+      "name": "50_products_two_retailers",
+      "unique_product_store_channel_contexts": 100,
+      "billable_calls_per_context_assumed": 1,
+      "discovery_calls_assumed": 0,
+      "daily_refreshes_in_30_day_period": 30,
+      "daily_refresh_context_operations": 3000,
+      "four_refresh_context_operations": 400,
+      "is_measured": false
+    },
+    {
+      "name": "30_products_five_retailers",
+      "unique_product_store_channel_contexts": 150,
+      "billable_calls_per_context_assumed": 1,
+      "discovery_calls_assumed": 0,
+      "daily_refreshes_in_30_day_period": 30,
+      "daily_refresh_context_operations": 4500,
+      "four_refresh_context_operations": 600,
+      "is_measured": false
+    },
+    {
+      "name": "50_products_five_retailers",
+      "unique_product_store_channel_contexts": 250,
+      "billable_calls_per_context_assumed": 1,
+      "discovery_calls_assumed": 0,
+      "daily_refreshes_in_30_day_period": 30,
+      "daily_refresh_context_operations": 7500,
+      "four_refresh_context_operations": 1000,
+      "is_measured": false
+    }
+  ],
+  "additional_calculations": {
+    "two_retailers_daily_30_products_at_25_credits": 45000,
+    "two_retailers_daily_50_products_at_25_credits": 75000,
+    "max_daily_contexts_with_250_searches_and_30_days_before_discovery": 8,
+    "four_cycles_30_products_two_retailers_free_remaining": 10,
+    "five_cycles_30_products_two_retailers": 300,
+    "five_retailers_30_products_minimum_native_http_operations_30_days": 5400,
+    "five_retailers_50_products_minimum_native_http_operations_30_days": 9000
+  },
+  "primary_documents": [
+    {
+      "id": "walmart_opd",
+      "url": "https://www.walmart.io/docs/opd/stores/grocery-introduction",
+      "reviewed_on": "2026-10-21",
+      "scope_note": "Primary introduction: partner approval and localized prices; no successful protected call."
+    },
+    {
+      "id": "walmart_program_terms",
+      "url": "https://affiliates.walmart.com/terms",
+      "reviewed_on": "2026-10-21",
+      "scope_note": "Published update June2026; program terms, not all possible Walmart agreements."
+    },
+    {
+      "id": "walmart_store",
+      "url": "https://www.walmart.com/store/5969-chantilly-va",
+      "reviewed_on": "2026-10-21",
+      "scope_note": "Store identity only; retrieved/indexed page is not live offer evidence."
+    },
+    {
+      "id": "target_terms",
+      "url": "https://www.target.com/c/terms-conditions/-/N-4sr7l",
+      "reviewed_on": "2026-10-21",
+      "scope_note": "Published update September10,2026."
+    },
+    {
+      "id": "target_store",
+      "url": "https://www.target.com/sl/chantilly-store/1827",
+      "reviewed_on": "2026-10-21",
+      "scope_note": "Store identity only; no channel-bound local price validation."
+    },
+    {
+      "id": "target_partners",
+      "url": "https://partners.target.com/faqs",
+      "reviewed_on": "2026-10-21",
+      "scope_note": "JavaScript shell; feed/retention conditions not established."
+    },
+    {
+      "id": "wegmans_terms",
+      "url": "https://www.wegmans.com/terms",
+      "reviewed_on": "2026-10-21",
+      "scope_note": "Published update October5,2025."
+    },
+    {
+      "id": "hmart_terms",
+      "url": "https://support.hmart.com/hc/en-us/articles/4408061858579-Conditions-of-Use",
+      "reviewed_on": "2026-10-21",
+      "scope_note": "Published update March8,2023; no app-specific permission obtained."
+    },
+    {
+      "id": "hmart_price_scope",
+      "url": "https://support.hmart.com/hc/en-us/articles/4408935803411-Why-is-there-a-price-difference-between-in-stores-and-online",
+      "reviewed_on": "2026-10-21",
+      "scope_note": "Prices may differ; updated March8,2023."
+    },
+    {
+      "id": "lidl_terms_hub",
+      "url": "https://www.lidl.com/c/terms-conditions/s10092716",
+      "reviewed_on": "2026-10-21",
+      "scope_note": "No public regional-catalog reuse agreement established."
+    },
+    {
+      "id": "lidl_plus_terms",
+      "url": "https://www.lidl.com/c/lidl-plus-terms-conditions/s10093660",
+      "reviewed_on": "2026-10-21",
+      "scope_note": "Published update June17,2026; Plus scope, not a general catalog API license."
+    },
+    {
+      "id": "serpapi_walmart",
+      "url": "https://serpapi.com/walmart-product-api",
+      "reviewed_on": "2026-10-21",
+      "scope_note": "Published schema/example only; not Chantilly response evidence."
+    },
+    {
+      "id": "serpapi_target",
+      "url": "https://serpapi.com/target-search-api",
+      "reviewed_on": "2026-10-21",
+      "scope_note": "Published schema/example only; online price notes/ranges cannot become shelf prices."
+    },
+    {
+      "id": "serpapi_pricing",
+      "url": "https://serpapi.com/pricing",
+      "reviewed_on": "2026-10-21",
+      "scope_note": "Published quota and billing rules; no account or measured usage."
+    },
+    {
+      "id": "serpapi_terms",
+      "url": "https://serpapi.com/legal",
+      "reviewed_on": "2026-10-21",
+      "scope_note": "Published update August27,2026; downstream-use/public retention rights unresolved."
+    },
+    {
+      "id": "zenrows_pricing",
+      "url": "https://www.zenrows.com/pricing",
+      "reviewed_on": "2026-10-21",
+      "scope_note": "HTML JSON-LD modified October13,2026 distinguishes monthly from annual."
+    },
+    {
+      "id": "apify_pricing",
+      "url": "https://apify.com/pricing",
+      "reviewed_on": "2026-10-21",
+      "scope_note": "Plan/platform pricing, not an evaluated Actor or retailer-content license."
+    }
+  ],
+  "owner_input_gates": [
+    "Approved OPD or provider access; do not paste credentials into chat.",
+    "Applicable permission for each source: public display, comparison/history, shared cache, retention/deletion, attribution and quotas.",
+    "Five accepted Walmart5969 and Target1827 exact-product store/seller/channel checks.",
+    "Explicit catalog/cadence/budget choice; neither requested retailer is silently removed."
+  ],
+  "side_effects": {
+    "new_accounts": 0,
+    "purchases": 0,
+    "provider_outreach": 0,
+    "retailer_logins": 0,
+    "challenge_bypasses": 0,
+    "user_database_writes": 0
+  }
+}
