@@ -18,9 +18,10 @@ flowchart LR
 
 The diagram describes the intended shared architecture. The current executable
 binds only to `127.0.0.1`; a Mac and its iPhone simulator can exercise it locally.
-Other devices cannot connect to it. Individual sessions now use real, operator-issued
-single-use invitations. Public networking and native session enrollment remain
-future work; see the [session design and contract](CLIENT_SESSIONS.md).
+Other devices cannot connect to it. Individual sessions use real, operator-issued
+single-use invitations. The [native session client](NATIVE_SESSIONS.md) implements
+enrollment and secure credential refresh; public networking and a hosted physical
+iPhone smoke remain future work. See the [session design and contract](CLIENT_SESSIONS.md).
 
 ## Run locally
 
@@ -99,16 +100,41 @@ delete them when no longer needed. Do not commit them or share them in logs/issu
 Revoke a client locally with `swift run ThriftyMarketSessionAdmin revoke CLIENT_ID`,
 using its nonsecret server-issued ID. Revocation persists across server restarts.
 There is no remote admin endpoint, shared fallback secret or test enrollment
-bypass. Native Keychain storage and automatic enrollment/refresh are separate
-work in issue #48; these commands prepare and test the server contract.
+bypass. [Native Keychain storage and automatic enrollment/refresh](NATIVE_SESSIONS.md)
+implement the client side; these commands administer and test its server contract.
 
 `local-research` is a personal, bounded testing option. It is **not** approval to
 redistribute any retailer's prices publicly. Real fetching was not needed for
 the prototype tests. No provider subscription, retailer account or bypass was added.
 
-## Use from the iPhone simulator
+## Dedicated native pilot build
 
-Duplicate the StapleScout scheme as a local, unshared scheme in Xcode's
+Select the **ThriftyMarketPilot** Xcode scheme, which uses the **Pilot** build
+configuration on simulator and physical iPhone. Configure the approved HTTPS
+service with the `THRIFTY_SERVICE_URL` **build setting**; it becomes the compiled
+`ThriftyServiceURL` Info.plist value. No service address is committed. Xcode Run
+environment variables do not configure or downgrade this build. An empty or
+invalid address keeps shared fetching unavailable instead of selecting personal
+retailer clients.
+
+This installs a separate pilot bundle and keeps its local library separate from
+the personal app. In **Stores**, enter the operator's single-use invitation to
+connect. The credential pair stays in one device-only Keychain item, scoped to
+the exact service and app. Refreshes are serialized and replace both tokens
+together. An interrupted or ambiguous refresh requires a new invitation; it never
+replays an unsafe saved refresh token after restart. Disconnecting clears local
+credentials and preserves the pilot library; remote revocation remains an operator
+action. A connected session does not prove that any price source is available.
+
+The server documented here still binds only to localhost. A hosted HTTPS service,
+signing/provisioning and a separately authorized physical-device smoke are required
+before activating a beta. See [NATIVE_SESSIONS.md](NATIVE_SESSIONS.md) for build,
+recovery and isolated verification instructions.
+
+## Legacy Debug simulator opt-in
+
+For the existing **StapleScout** Debug scheme only, duplicate it as a local,
+unshared scheme in Xcode's
 **Manage Schemes**. In that copy, edit **Run → Arguments → Environment Variables**:
 
 ```text
@@ -116,9 +142,9 @@ THRIFTY_SERVICE_URL = http://127.0.0.1:8878
 THRIFTY_ACCESS_TOKEN = accessToken from the enrolled individual session
 ```
 
-This variable is still the simulator's transport input; it is no longer a server
+This variable is still the legacy simulator transport's input; it is no longer a server
 configuration variable. Keep it only in an unshared local scheme. The current
-transport does not refresh sessions: after 15 minutes, obtain a rotated access
+legacy transport does not refresh sessions: after 15 minutes, obtain a rotated access
 token through the documented refresh endpoint and restart the simulator app with
 the new value. Do not embed access or refresh tokens in project files or a binary.
 
@@ -229,8 +255,8 @@ retention policy remain issue #46.
 2. Validate exact local product identity, channel, price type, freshness, stock and
    offer conditions against a small Chantilly beta catalog. Unknown coverage must
    stay visible. Do not present national online prices as a physical store's shelf price.
-3. Connect physical iPhones to the invitation/session contract, with Keychain
-   storage and serialized refresh. Add HTTPS hosting, secrets management,
+3. Verify the native invitation/Keychain/serialized-refresh client against the
+   separately prepared HTTPS environment on a physical iPhone. Add hosting, secrets management,
    monitoring and source failure controls. Review search-term privacy,
    retention/deletion and provider-specific credit limits. Public self-service
    enrollment needs a separate design; deployment needs separate authorization.
