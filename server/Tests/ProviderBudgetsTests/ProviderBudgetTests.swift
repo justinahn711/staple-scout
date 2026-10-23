@@ -295,7 +295,7 @@ final class ProviderBudgetTests: XCTestCase, @unchecked Sendable {
         let gate = BudgetGate()
         let network = FakeProviderNetwork(gate: gate)
         let controller = ProviderBudgetController(ledger: ledger, network: network)
-        let cache = try SharedPriceCache(databasePath: ":memory:", maximumInFlight: 1, now: { self.instant })
+        let cache = try SharedPriceCache(databasePath: ":memory:", maximumInFlight: 1, policies: try fixturePolicies(), now: { self.instant })
         let context = try PriceContext(store: .wegmans, storeCode: "133", channel: .inStore)
         let first = Task {
             try await cache.admittedSearch(context: context, query: "first query", admit: {
@@ -385,4 +385,12 @@ final class BudgetClock: @unchecked Sendable {
     init(_ value: Date) { self.value = value }
     func read() -> Date { lock.lock(); defer { lock.unlock() }; return value }
     func advance(_ seconds: TimeInterval) { lock.lock(); defer { lock.unlock() }; value = value.addingTimeInterval(seconds) }
+}
+
+private func fixturePolicies() throws -> SourcePolicyRegistry {
+    try SourcePolicyRegistry(policies: [
+        try SourcePolicy(context: PriceContext(store: .wegmans, storeCode: "133", channel: .inStore), fetchApproved: true, publicServingApproved: true, attribution: "Offline fixture", cacheTTL: 172800, displayTTL: 172800),
+        try SourcePolicy(context: PriceContext(store: .hmart, storeCode: nil, channel: .online), fetchApproved: true, publicServingApproved: true, attribution: "Offline fixture", cacheTTL: 172800, displayTTL: 172800),
+        try SourcePolicy(context: PriceContext(store: .lidl, storeCode: "US01112", channel: .inStore), fetchApproved: true, publicServingApproved: true, attribution: "Offline fixture", cacheTTL: 172800, displayTTL: 172800)
+    ])
 }

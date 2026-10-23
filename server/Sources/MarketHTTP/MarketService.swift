@@ -55,13 +55,7 @@ public struct MarketService: Sendable {
             await respond(request) {
                 _ = try await authenticate(request)
                 guard request.url.query == nil else { throw CacheError.invalidRequest("The sources endpoint does not accept query parameters.") }
-                return try json(StoreLocation.defaults.map { location in
-                    SourceStatus(store: location.store, storeCode: location.code,
-                                 channel: location.store == .hmart ? .online : .inStore,
-                                 fetchingEnabled: upstream != nil && providerBudgets?.enabled == true && SourceCapability.forLocation(location, channel: location.store == .hmart ? .online : .inStore).isConnected,
-                                 publicAccessApproved: false,
-                                 message: SourceCapability.forLocation(location, channel: location.store == .hmart ? .online : .inStore).message)
-                })
+                return try json(try await cache.sourceStatuses(transportReady: upstream != nil && providerBudgets?.enabled == true))
             }
         }
         app.get("v1", "usage") { request async throws -> Response in
@@ -77,10 +71,13 @@ public struct MarketService: Sendable {
                 let principal = try await authenticate(request)
                 let (context, parameter) = try parse(request, parameter: "productID")
                 guard let upstream, let providerBudgets else { return try unavailable() }
+                let authorization = try cache.authorization(context: context)
                 let result = try await cache.admittedPrice(context: context, productID: parameter, admit: {
-                    let admitted = try await providerBudgets.admit(principal: principal)
+                    let admitted = try await providerBudgets.admit(principal: principal, beforeRequest: authorization)
                     return CacheFetchOperation(run: { try await upstream.price(context: context, productID: parameter, requests: admitted.requests) }, finish: { try await admitted.finish() })
                 })
+                try authorization()
+                try cache.validateForServing(result.value, context: context, at: now())
                 return try json(SharedPriceResponse(context: SharedPriceContext(location: context.location, channel: context.channel),
                                                     value: result.value, cacheHit: result.cacheHit, servedAt: now()))
             }
@@ -90,10 +87,13 @@ public struct MarketService: Sendable {
                 let principal = try await authenticate(request)
                 let (context, parameter) = try parse(request, parameter: "q")
                 guard let upstream, let providerBudgets else { return try unavailable() }
+                let authorization = try cache.authorization(context: context)
                 let result = try await cache.admittedSearch(context: context, query: parameter, admit: {
-                    let admitted = try await providerBudgets.admit(principal: principal)
+                    let admitted = try await providerBudgets.admit(principal: principal, beforeRequest: authorization)
                     return CacheFetchOperation(run: { try await upstream.search(context: context, query: parameter, requests: admitted.requests) }, finish: { try await admitted.finish() })
                 })
+                try authorization()
+                for value in result.page.candidates { try cache.validateForServing(value, context: context, at: now()) }
                 return try json(SharedSearchResponse(context: SharedPriceContext(location: context.location, channel: context.channel),
                                                      page: result.page, cacheHit: result.cacheHit, servedAt: now()))
             }
@@ -186,6 +186,7 @@ public struct MarketService: Sendable {
             case SessionError.refreshReplay: status = .unauthorized; code = "refresh_replayed"; message = "Refresh reuse revoked this session. Obtain a new operator invitation."
             case SessionError.rateLimited: status = .tooManyRequests; code = "request_limit"; message = "The client or enrollment request limit was reached."
             case SessionError.storageUnavailable, SessionError.entropyUnavailable: status = .serviceUnavailable; code = "auth_unavailable"; message = "Session storage is unavailable."
+            case ProviderBudgetError.sourceNotApproved: status = .serviceUnavailable; code = "source_access_not_configured"; message = "Public access to this exact source context is disabled."
             case ProviderBudgetError.disabled: status = .serviceUnavailable; code = "provider_disabled"; message = "Provider fetching is disabled."
             case ProviderBudgetError.providerLimit: status = .tooManyRequests; code = "provider_budget_exhausted"; message = "The provider reservation limit was reached."
             case ProviderBudgetError.clientLimit: status = .tooManyRequests; code = "client_provider_limit"; message = "This client's upstream reservation limit was reached."
@@ -193,6 +194,8 @@ public struct MarketService: Sendable {
             case ProviderBudgetError.operationLimit: status = .tooManyRequests; code = "operation_limit"; message = "The maximum upstream operations for this miss was reached."
             case ProviderBudgetError.storageUnavailable: status = .serviceUnavailable; code = "provider_storage_unavailable"; message = "Provider reservation storage is unavailable."
             case ProviderBudgetError.invalidRequest: status = .badRequest; code = "invalid_request"; message = "The provider request is invalid."
+            case CacheError.sourceDisabled: status = .serviceUnavailable; code = "source_access_not_configured"; message = "Public access to this exact source context is disabled."
+            case CacheError.shuttingDown: status = .serviceUnavailable; code = "service_stopping"; message = "The shared service is stopping."
             case CacheError.invalidRequest: status = .badRequest; code = "invalid_request"; message = "The store context or product query is invalid."
             case CacheError.budgetExceeded: status = .tooManyRequests; code = "budget_exceeded"; message = "The shared upstream attempt limit was reached."
             case CacheError.alreadyAttempted: status = .tooManyRequests; code = "attempted_today"; message = "This request was already attempted today; no usable cached evidence is available."
@@ -207,10 +210,7 @@ public struct MarketService: Sendable {
                  body: .init(data: try SharedMarketWire.encoder().encode(value)))
     }
     private struct Health: Encodable { let status: String; let schemaVersion: Int; let localOnly: Bool; let sourceMode: String }
-    private struct SourceStatus: Encodable {
-        let store: StoreID; let storeCode: String?; let channel: StapleScoutKit.Channel
-        let fetchingEnabled: Bool; let publicAccessApproved: Bool; let message: String
-    }
+
 }
 
 /// Covers body collection and routing failures before the handlers. Vapor's

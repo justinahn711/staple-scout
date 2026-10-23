@@ -78,12 +78,14 @@ public actor ProviderRequestScope {
     private let lease: MissLease
     private var firstReservation: UnitReservation?
     private let network: any ProviderHTTPNetwork
+    private let beforeRequest: @Sendable () throws -> Void
     private let dispatchCheckpoint: (@Sendable () async -> Void)?
-    init(ledger: ProviderBudgetLedger, lease: MissLease, firstReservation: UnitReservation, network: any ProviderHTTPNetwork, dispatchCheckpoint: (@Sendable () async -> Void)? = nil) {
-        self.ledger = ledger; self.lease = lease; self.firstReservation = firstReservation; self.network = network; self.dispatchCheckpoint = dispatchCheckpoint
+    init(ledger: ProviderBudgetLedger, lease: MissLease, firstReservation: UnitReservation, network: any ProviderHTTPNetwork, beforeRequest: @escaping @Sendable () throws -> Void = {}, dispatchCheckpoint: (@Sendable () async -> Void)? = nil) {
+        self.ledger = ledger; self.lease = lease; self.firstReservation = firstReservation; self.network = network; self.beforeRequest = beforeRequest; self.dispatchCheckpoint = dispatchCheckpoint
     }
     public func load(_ request: ProviderHTTPRequest) async throws -> Data {
         try Task.checkCancellation()
+        try authorize()
         let reservation: UnitReservation
         if let firstReservation { reservation = firstReservation; self.firstReservation = nil }
         else { reservation = try await ledger.reserve(lease: lease, purpose: request.purpose) }
@@ -92,7 +94,9 @@ public actor ProviderRequestScope {
             // exposes it. Holds must stay charged even if dispatch is delayed.
             if let dispatchCheckpoint { await dispatchCheckpoint() }
             try Task.checkCancellation()
+            try authorize()
             try await ledger.dispatched(reservation, purpose: request.purpose)
+            try authorize()
             let response = try await network.send(request)
             let successful = (200...299).contains(response.status)
             try await ledger.complete(reservation, receivedSuccess: successful)
@@ -104,6 +108,12 @@ public actor ProviderRequestScope {
             if let error = error as? ProviderBudgetError { throw error }
             throw ProviderBudgetError.networkUnavailable
         }
+    }
+    private func authorize() throws {
+        try Task.checkCancellation()
+        do { try beforeRequest() }
+        catch is CancellationError { throw CancellationError() }
+        catch { throw ProviderBudgetError.sourceNotApproved }
     }
     func finish() async throws {
         if let firstReservation {
@@ -131,9 +141,9 @@ public struct ProviderBudgetController: Sendable {
     init(ledger: ProviderBudgetLedger, network: any ProviderHTTPNetwork, dispatchCheckpoint: @escaping @Sendable () async -> Void) {
         self.ledger = ledger; self.network = network; self.dispatchCheckpoint = dispatchCheckpoint
     }
-    public func admit(principal: ClientPrincipal) async throws -> AdmittedProviderMiss {
+    public func admit(principal: ClientPrincipal, beforeRequest: @escaping @Sendable () throws -> Void = {}) async throws -> AdmittedProviderMiss {
         let (lease, reservation) = try await ledger.admit(principal: principal)
-        let scope = ProviderRequestScope(ledger: ledger, lease: lease, firstReservation: reservation, network: network, dispatchCheckpoint: dispatchCheckpoint)
+        let scope = ProviderRequestScope(ledger: ledger, lease: lease, firstReservation: reservation, network: network, beforeRequest: beforeRequest, dispatchCheckpoint: dispatchCheckpoint)
         return AdmittedProviderMiss(requests: scope)
     }
     public func withMiss<Value: Sendable>(principal: ClientPrincipal,

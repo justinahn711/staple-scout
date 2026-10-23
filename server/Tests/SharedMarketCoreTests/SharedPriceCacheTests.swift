@@ -23,7 +23,7 @@ final class SharedPriceCacheTests: XCTestCase, @unchecked Sendable {
 
     func testTwentyConcurrentIdenticalRequestsCoalesce() async throws {
         let clock = TestClock(instant)
-        let cache = try SharedPriceCache(databasePath: ":memory:", now: { clock.read() })
+        let cache = try SharedPriceCache(databasePath: ":memory:", policies: try fixturePolicies(), now: { clock.read() })
         let counter = Counter()
         let gate = Gate()
         let context = try wegmans()
@@ -56,7 +56,7 @@ final class SharedPriceCacheTests: XCTestCase, @unchecked Sendable {
     func testLatePreviousDayFetchCannotOverwriteNewDayPriceOrSearch() async throws {
         for isSearch in [false, true] {
             let clock = TestClock(instant)
-            let cache = try SharedPriceCache(databasePath: ":memory:", now: { clock.read() })
+            let cache = try SharedPriceCache(databasePath: ":memory:", policies: try fixturePolicies(), now: { clock.read() })
             let context = try wegmans()
             let gate = Gate()
             let yesterday = fixture(at: instant)
@@ -94,7 +94,7 @@ final class SharedPriceCacheTests: XCTestCase, @unchecked Sendable {
     }
 
     func testStoreChannelKeysAndSearchNormalizationDoNotShareEvidence() async throws {
-        let cache = try SharedPriceCache(databasePath: ":memory:", now: { self.instant })
+        let cache = try SharedPriceCache(databasePath: ":memory:", policies: try fixturePolicies(), now: { self.instant })
         let counter = Counter()
         let first = fixture(at: instant)
         let second = fixture(id: "123:456", store: .hmart, at: instant)
@@ -135,11 +135,11 @@ final class SharedPriceCacheTests: XCTestCase, @unchecked Sendable {
         original.validFrom = instant.addingTimeInterval(-3_600)
         original.validUntil = instant.addingTimeInterval(3_600)
         let payload = original
-        let first = try SharedPriceCache(databasePath: path, now: { clock.read() })
+        let first = try SharedPriceCache(databasePath: path, policies: try fixturePolicies(), now: { clock.read() })
         let initial = try await first.price(context: wegmans(), productID: "123") { payload }
         XCTAssertFalse(initial.cacheHit)
         clock.advance(300)
-        let restarted = try SharedPriceCache(databasePath: path, now: { clock.read() })
+        let restarted = try SharedPriceCache(databasePath: path, policies: try fixturePolicies(), now: { clock.read() })
         let saved = try await restarted.price(context: wegmans(), productID: "123") { XCTFail("Restart should use persisted evidence"); return payload }
         XCTAssertTrue(saved.cacheHit)
         let encoder = JSONEncoder()
@@ -157,12 +157,12 @@ final class SharedPriceCacheTests: XCTestCase, @unchecked Sendable {
         let clock = TestClock(instant)
         let counter = Counter()
         let context = try wegmans()
-        let first = try SharedPriceCache(databasePath: path, now: { clock.read() })
+        let first = try SharedPriceCache(databasePath: path, policies: try fixturePolicies(), now: { clock.read() })
         do {
             _ = try await first.price(context: context, productID: "123") { await counter.increment(); throw SampleFailure.upstream }
             XCTFail("Fetch should fail")
         } catch SampleFailure.upstream {} catch { XCTFail("Unexpected error: \(error)") }
-        let restarted = try SharedPriceCache(databasePath: path, now: { clock.read() })
+        let restarted = try SharedPriceCache(databasePath: path, policies: try fixturePolicies(), now: { clock.read() })
         do {
             _ = try await restarted.price(context: context, productID: "123") { await counter.increment(); return self.fixture(at: clock.read()) }
             XCTFail("A failed claim must survive restart")
@@ -176,7 +176,7 @@ final class SharedPriceCacheTests: XCTestCase, @unchecked Sendable {
 
     func testSuccessfulEvidenceRefreshesOnNextUTCDay() async throws {
         let clock = TestClock(instant)
-        let cache = try SharedPriceCache(databasePath: ":memory:", now: { clock.read() })
+        let cache = try SharedPriceCache(databasePath: ":memory:", policies: try fixturePolicies(), now: { clock.read() })
         let counter = Counter()
         let context = try wegmans()
         _ = try await cache.price(context: context, productID: "123") { await counter.increment(); return self.fixture(at: clock.read()) }
@@ -189,7 +189,7 @@ final class SharedPriceCacheTests: XCTestCase, @unchecked Sendable {
 
     func testExpiredCachedWindowCannotRefetchOrRenewTimestampOnSameDay() async throws {
         let clock = TestClock(instant)
-        let cache = try SharedPriceCache(databasePath: ":memory:", now: { clock.read() })
+        let cache = try SharedPriceCache(databasePath: ":memory:", policies: try fixturePolicies(), now: { clock.read() })
         var value = fixture(at: instant)
         value.validUntil = instant.addingTimeInterval(100)
         let original = value
@@ -215,7 +215,7 @@ final class SharedPriceCacheTests: XCTestCase, @unchecked Sendable {
         value = fixture(at: instant); value.price = -1; invalid.append(value)
         value = fixture(at: instant); value.quantity = Decimal.nan; invalid.append(value)
         for bad in invalid {
-            let cache = try SharedPriceCache(databasePath: ":memory:", now: { self.instant })
+            let cache = try SharedPriceCache(databasePath: ":memory:", policies: try fixturePolicies(), now: { self.instant })
             do {
                 _ = try await cache.price(context: wegmans(), productID: "123") { bad }
                 XCTFail("Invalid source evidence should fail")
@@ -230,8 +230,8 @@ final class SharedPriceCacheTests: XCTestCase, @unchecked Sendable {
     func testTwoConnectionsEnforceSharedDailyBudgetTransactionally() async throws {
         let path = temporaryDatabase()
         defer { removeDatabase(path) }
-        let first = try SharedPriceCache(databasePath: path, dailyLimit: 3, monthlyLimit: 100, maximumInFlight: 32, now: { self.instant })
-        let second = try SharedPriceCache(databasePath: path, dailyLimit: 3, monthlyLimit: 100, maximumInFlight: 32, now: { self.instant })
+        let first = try SharedPriceCache(databasePath: path, dailyLimit: 3, monthlyLimit: 100, maximumInFlight: 32, policies: try fixturePolicies(), now: { self.instant })
+        let second = try SharedPriceCache(databasePath: path, dailyLimit: 3, monthlyLimit: 100, maximumInFlight: 32, policies: try fixturePolicies(), now: { self.instant })
         let counter = Counter()
         let context = try wegmans()
         let successes = await withTaskGroup(of: Bool.self) { group in
@@ -258,7 +258,7 @@ final class SharedPriceCacheTests: XCTestCase, @unchecked Sendable {
     func testFailureAndPartialSearchConsumeTheSamePersistentAttemptBudget() async throws {
         let path = temporaryDatabase()
         defer { removeDatabase(path) }
-        let cache = try SharedPriceCache(databasePath: path, dailyLimit: 2, monthlyLimit: 2, now: { self.instant })
+        let cache = try SharedPriceCache(databasePath: path, dailyLimit: 2, monthlyLimit: 2, policies: try fixturePolicies(), now: { self.instant })
         let context = try wegmans()
         let counter = Counter()
         do {
@@ -270,7 +270,7 @@ final class SharedPriceCacheTests: XCTestCase, @unchecked Sendable {
             return RetailSearchPage(candidates: [], message: "The source did not complete the search.")
         }
         XCTAssertNotNil(partial.page.message)
-        let restarted = try SharedPriceCache(databasePath: path, dailyLimit: 2, monthlyLimit: 2, now: { self.instant })
+        let restarted = try SharedPriceCache(databasePath: path, dailyLimit: 2, monthlyLimit: 2, policies: try fixturePolicies(), now: { self.instant })
         do {
             _ = try await restarted.price(context: context, productID: "456") { await counter.increment(); return self.fixture(id: "456", at: self.instant) }
             XCTFail("Failed and partial closures both consume an attempt")
@@ -281,8 +281,8 @@ final class SharedPriceCacheTests: XCTestCase, @unchecked Sendable {
     func testTwoConnectionsEnforceSharedMonthlyBudgetTransactionally() async throws {
         let path = temporaryDatabase()
         defer { removeDatabase(path) }
-        let first = try SharedPriceCache(databasePath: path, dailyLimit: 100, monthlyLimit: 2, maximumInFlight: 32, now: { self.instant })
-        let second = try SharedPriceCache(databasePath: path, dailyLimit: 100, monthlyLimit: 2, maximumInFlight: 32, now: { self.instant })
+        let first = try SharedPriceCache(databasePath: path, dailyLimit: 100, monthlyLimit: 2, maximumInFlight: 32, policies: try fixturePolicies(), now: { self.instant })
+        let second = try SharedPriceCache(databasePath: path, dailyLimit: 100, monthlyLimit: 2, maximumInFlight: 32, policies: try fixturePolicies(), now: { self.instant })
         let counter = Counter()
         let context = try wegmans()
         await withTaskGroup(of: Void.self) { group in
@@ -303,8 +303,8 @@ final class SharedPriceCacheTests: XCTestCase, @unchecked Sendable {
     func testSecondConnectionCannotDuplicateInFlightClaim() async throws {
         let path = temporaryDatabase()
         defer { removeDatabase(path) }
-        let first = try SharedPriceCache(databasePath: path, now: { self.instant })
-        let second = try SharedPriceCache(databasePath: path, now: { self.instant })
+        let first = try SharedPriceCache(databasePath: path, policies: try fixturePolicies(), now: { self.instant })
+        let second = try SharedPriceCache(databasePath: path, policies: try fixturePolicies(), now: { self.instant })
         let gate = Gate()
         let context = try wegmans()
         let task = Task { try await first.price(context: context, productID: "123") { await gate.enterAndWait(); return self.fixture(at: self.instant) } }
@@ -324,11 +324,11 @@ final class SharedPriceCacheTests: XCTestCase, @unchecked Sendable {
         let clock = TestClock(endOfMonth)
         let path = temporaryDatabase()
         defer { removeDatabase(path) }
-        let cache = try SharedPriceCache(databasePath: path, dailyLimit: 5, monthlyLimit: 1, now: { clock.read() })
+        let cache = try SharedPriceCache(databasePath: path, dailyLimit: 5, monthlyLimit: 1, policies: try fixturePolicies(), now: { clock.read() })
         let context = try wegmans()
         _ = try await cache.price(context: context, productID: "123") { self.fixture(at: clock.read()) }
         clock.advance(86_400)
-        let restarted = try SharedPriceCache(databasePath: path, dailyLimit: 5, monthlyLimit: 1, now: { clock.read() })
+        let restarted = try SharedPriceCache(databasePath: path, dailyLimit: 5, monthlyLimit: 1, policies: try fixturePolicies(), now: { clock.read() })
         do {
             _ = try await restarted.price(context: context, productID: "123") { XCTFail("October's monthly budget is consumed"); return self.fixture(at: clock.read()) }
             XCTFail("Monthly budget should persist after daily rollover")
@@ -341,12 +341,12 @@ final class SharedPriceCacheTests: XCTestCase, @unchecked Sendable {
     func testPartialSearchIsReturnedButNotCachedAcrossRestart() async throws {
         let path = temporaryDatabase()
         defer { removeDatabase(path) }
-        let cache = try SharedPriceCache(databasePath: path, now: { self.instant })
+        let cache = try SharedPriceCache(databasePath: path, policies: try fixturePolicies(), now: { self.instant })
         let page = RetailSearchPage(candidates: [fixture(at: instant)], message: "One product could not be checked.")
         let result = try await cache.search(context: wegmans(), query: "milk") { page }
         XCTAssertEqual(result.page.message, page.message)
         XCTAssertFalse(result.cacheHit)
-        let restarted = try SharedPriceCache(databasePath: path, now: { self.instant })
+        let restarted = try SharedPriceCache(databasePath: path, policies: try fixturePolicies(), now: { self.instant })
         do {
             _ = try await restarted.search(context: wegmans(), query: " MILK ") { XCTFail("Partial search cannot be repeated today"); return page }
             XCTFail("Partial search must not become a complete cached result")
@@ -359,7 +359,7 @@ final class SharedPriceCacheTests: XCTestCase, @unchecked Sendable {
                      RetailSearchPage(candidates: (1...6).map { fixture(id: String($0), at: instant) }),
                      RetailSearchPage(candidates: [fixture(id: "123:456", store: .hmart, at: instant)])]
         for page in pages {
-            let cache = try SharedPriceCache(databasePath: ":memory:", now: { self.instant })
+            let cache = try SharedPriceCache(databasePath: ":memory:", policies: try fixturePolicies(), now: { self.instant })
             do {
                 _ = try await cache.search(context: wegmans(), query: "milk") { page }
                 XCTFail("Invalid search evidence must fail")
@@ -368,7 +368,7 @@ final class SharedPriceCacheTests: XCTestCase, @unchecked Sendable {
     }
 
     func testLidlKeepsUnknownStockAndSourceWindow() async throws {
-        let cache = try SharedPriceCache(databasePath: ":memory:", now: { self.instant })
+        let cache = try SharedPriceCache(databasePath: ":memory:", policies: try fixturePolicies(), now: { self.instant })
         let context = try PriceContext(store: .lidl, storeCode: "US01112", channel: .inStore)
         var value = fixture(store: .lidl, at: instant)
         value.available = nil
@@ -440,4 +440,12 @@ private actor Gate {
         for waiter in releaseWaiters { waiter.resume() }
         releaseWaiters.removeAll()
     }
+}
+
+private func fixturePolicies() throws -> SourcePolicyRegistry {
+    try SourcePolicyRegistry(policies: [
+        try SourcePolicy(context: PriceContext(store: .wegmans, storeCode: "133", channel: .inStore), fetchApproved: true, publicServingApproved: true, attribution: "Offline fixture", cacheTTL: 172800, displayTTL: 172800),
+        try SourcePolicy(context: PriceContext(store: .hmart, storeCode: nil, channel: .online), fetchApproved: true, publicServingApproved: true, attribution: "Offline fixture", cacheTTL: 172800, displayTTL: 172800),
+        try SourcePolicy(context: PriceContext(store: .lidl, storeCode: "US01112", channel: .inStore), fetchApproved: true, publicServingApproved: true, attribution: "Offline fixture", cacheTTL: 172800, displayTTL: 172800)
+    ])
 }

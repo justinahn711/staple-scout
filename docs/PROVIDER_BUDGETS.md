@@ -66,8 +66,9 @@ regardless of their original age. Dispatch and first completion move the hold's
 charge timestamp forward to the current effective time. This prevents a request
 reserved before an hour/day/month boundary from sending later after its capacity
 has been reused. Completion is idempotent. Pending work also retains its global
-and client in-flight slots across connections and restarts; one process never
-clears another process's work.
+and client in-flight slots across standalone connections and restarts. The running
+service's exclusive ownership proof is required before retiring interrupted work;
+one process never clears a live owner's work.
 
 The clock is sampled after the SQLite write lock is acquired and clamped to a
 persisted last-seen time. Rolling time backwards, including after restart, cannot
@@ -78,12 +79,16 @@ clock, ledger or executable.
 
 A crash after reservation deliberately leaves capacity and pending slots held.
 A crash after send but before completion cannot prove whether provider work was
-charged. Restarting does not refund or silently retry it. Safe lease/reconciliation
-and operator recovery are deferred to issue #45; the current behavior is
-fail-closed and may require stopping operation. Do not delete/reset the ledger to
-recover capacity. Completed history is pruned after 62 days on subsequent miss
-admission; pending rows are never pruned. Caps bound reservations and misses in
-that retention window; client identity rows have a lifetime maximum of 50.
+charged. The [single-instance recovery boundary](SOURCE_POLICY_RECOVERY.md)
+locks all three service databases before opening them. Only a new exclusive owner
+may finalize orphaned reservations as uncertain, retime their charge to recovery
+and release blocked work slots. This never refunds a unit, replays a request or
+clears the cache's same-day attempt claim. Standalone ledger connections without
+that proof still retain pending work. Do not delete/reset the ledger or its lock
+files to recover capacity. Completed/uncertain history is pruned after 62 days on
+subsequent miss admission; pending rows are never pruned. Caps bound reservations
+and misses in that retention window; client identity rows have a lifetime maximum
+of 50.
 
 ## Cache and transport boundary
 
