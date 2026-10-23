@@ -1,6 +1,16 @@
 import Foundation
 import StapleScoutKit
 
+/// Admission is completed only by the single-flight leader, before the durable
+/// logical cache claim. Denied clients cannot poison another client's key.
+public struct CacheFetchOperation<Value: Sendable>: Sendable {
+    let run: @Sendable () async throws -> Value
+    let finish: @Sendable () async throws -> Void
+    public init(run: @escaping @Sendable () async throws -> Value, finish: @escaping @Sendable () async throws -> Void = {}) {
+        self.run = run; self.finish = finish
+    }
+}
+
 /// Shared public evidence only. Neither keys nor payloads contain a user's
 /// library, list, substitutions, or library UUIDs.
 public actor SharedPriceCache {
@@ -8,20 +18,29 @@ public actor SharedPriceCache {
     private let dailyLimit: Int
     private let monthlyLimit: Int
     private let now: @Sendable () -> Date
+    private let maximumInFlight: Int
+    private let maximumFollowers: Int
+    private var followers: [String: Int] = [:]
     private var pricesInFlight: [String: Task<FetchedPrice, Error>] = [:]
     private var searchesInFlight: [String: Task<RetailSearchPage, Error>] = [:]
 
-    public init(databasePath: String, dailyLimit: Int = 50, monthlyLimit: Int = 250,
+    public init(databasePath: String, dailyLimit: Int = 50, monthlyLimit: Int = 250, maximumInFlight: Int = 4, maximumFollowers: Int = 50,
                 now: @escaping @Sendable () -> Date = { Date() }) throws {
-        guard dailyLimit >= 0, monthlyLimit >= 0 else { throw CacheError.invalidRequest("Attempt budgets cannot be negative.") }
+        guard dailyLimit >= 0, monthlyLimit >= 0, (1...32).contains(maximumInFlight), (1...100).contains(maximumFollowers) else { throw CacheError.invalidRequest("The cache attempt or concurrency limits are invalid.") }
         self.storage = try SQLiteStore(path: databasePath)
         self.dailyLimit = dailyLimit
         self.monthlyLimit = monthlyLimit
         self.now = now
+        self.maximumInFlight = maximumInFlight; self.maximumFollowers = maximumFollowers
     }
 
     public func price(context: PriceContext, productID: String,
                       fetch: @escaping @Sendable () async throws -> FetchedPrice) async throws -> CachedPrice {
+        try await admittedPrice(context: context, productID: productID, admit: { CacheFetchOperation(run: fetch) })
+    }
+
+    public func admittedPrice(context: PriceContext, productID: String,
+                      admit: @escaping @Sendable () async throws -> CacheFetchOperation<FetchedPrice>) async throws -> CachedPrice {
         try Self.validateIdentity(productID, context: context)
         try Task.checkCancellation()
         let checkedAt = now()
@@ -35,15 +54,22 @@ public actor SharedPriceCache {
         }
         let operation = day + key
         if let task = pricesInFlight[operation] {
+            try addFollower(operation)
+            defer { removeFollower(operation) }
             return CachedPrice(value: try await task.value, cacheHit: true)
         }
-        // Claim before starting the closure. A second process returns
-        // alreadyAttempted while this process works, rather than duplicating it.
-        try storage.claim(key: key, day: day, month: String(day.prefix(7)), dailyLimit: dailyLimit, monthlyLimit: monthlyLimit)
+        // Register the leader before awaiting admission. The durable claim
+        // still precedes fetching; another process cannot repeat that fetch.
+        guard pricesInFlight.count + searchesInFlight.count < maximumInFlight else { throw CacheError.pending("The upstream work limit is busy.") }
         let task = Task<FetchedPrice, Error> {
-            let value = try await fetch()
-            try self.finishPrice(value, context: context, productID: productID, key: key, day: day)
-            return value
+            let work = try await admit()
+            do {
+                try self.storage.claim(key: key, day: day, month: String(day.prefix(7)), dailyLimit: self.dailyLimit, monthlyLimit: self.monthlyLimit)
+                let value = try await work.run()
+                try await work.finish()
+                try self.finishPrice(value, context: context, productID: productID, key: key, day: day)
+                return value
+            } catch { try? await work.finish(); throw error }
         }
         pricesInFlight[operation] = task
         defer { pricesInFlight.removeValue(forKey: operation) }
@@ -52,6 +78,11 @@ public actor SharedPriceCache {
 
     public func search(context: PriceContext, query: String,
                        fetch: @escaping @Sendable () async throws -> RetailSearchPage) async throws -> CachedSearch {
+        try await admittedSearch(context: context, query: query, admit: { CacheFetchOperation(run: fetch) })
+    }
+
+    public func admittedSearch(context: PriceContext, query: String,
+                       admit: @escaping @Sendable () async throws -> CacheFetchOperation<RetailSearchPage>) async throws -> CachedSearch {
         let normalized = try Self.normalize(query)
         try Task.checkCancellation()
         let checkedAt = now()
@@ -66,17 +97,33 @@ public actor SharedPriceCache {
         }
         let operation = day + key
         if let task = searchesInFlight[operation] {
+            try addFollower(operation)
+            defer { removeFollower(operation) }
             return CachedSearch(page: try await task.value, cacheHit: true)
         }
-        try storage.claim(key: key, day: day, month: String(day.prefix(7)), dailyLimit: dailyLimit, monthlyLimit: monthlyLimit)
+        guard pricesInFlight.count + searchesInFlight.count < maximumInFlight else { throw CacheError.pending("The upstream work limit is busy.") }
         let task = Task<RetailSearchPage, Error> {
-            let page = try await fetch()
-            try self.finishSearch(page, context: context, key: key, day: day)
-            return page
+            let work = try await admit()
+            do {
+                try self.storage.claim(key: key, day: day, month: String(day.prefix(7)), dailyLimit: self.dailyLimit, monthlyLimit: self.monthlyLimit)
+                let page = try await work.run()
+                try await work.finish()
+                try self.finishSearch(page, context: context, key: key, day: day)
+                return page
+            } catch { try? await work.finish(); throw error }
         }
         searchesInFlight[operation] = task
         defer { searchesInFlight.removeValue(forKey: operation) }
         return CachedSearch(page: try await task.value, cacheHit: false)
+    }
+
+    private func addFollower(_ operation: String) throws {
+        guard followers[operation, default: 0] < maximumFollowers else { throw CacheError.pending("The shared operation has enough waiting requests.") }
+        followers[operation, default: 0] += 1
+    }
+    private func removeFollower(_ operation: String) {
+        if followers[operation, default: 0] <= 1 { followers.removeValue(forKey: operation) }
+        else { followers[operation, default: 0] -= 1 }
     }
 
     private func finishPrice(_ value: FetchedPrice, context: PriceContext, productID: String, key: String, day: String) throws {

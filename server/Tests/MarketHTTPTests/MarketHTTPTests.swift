@@ -5,6 +5,7 @@ import VaporTesting
 import MarketHTTP
 import SharedMarketCore
 import ClientSessions
+import ProviderBudgets
 import StapleScoutKit
 
 @Suite(.serialized)
@@ -54,9 +55,11 @@ struct MarketHTTPTests {
         let secondTokens = try await sessions.enroll(invitation: secondInvitation.invitation)
         let firstPrincipal = try await sessions.authenticate(accessToken: token)
         #expect(firstPrincipal.clientID != secondTokens.clientID)
-        var secondHeaders = headers
-        secondHeaders.replaceOrAdd(name: "Authorization", value: "Bearer " + secondTokens.accessToken)
-        let service = MarketService(cache: cache, sessions: sessions, upstream: upstream, now: { instant })
+        var newHeaders = headers
+        newHeaders.replaceOrAdd(name: "Authorization", value: "Bearer " + secondTokens.accessToken)
+        let secondHeaders = newHeaders
+        let provider = try budgets()
+        let service = MarketService(cache: cache, sessions: sessions, upstream: upstream, providerBudgets: provider, now: { instant })
         try await withApp(configure: { service.configure($0) }) { app in
             let tester = try app.testing()
             async let first = tester.sendRequest(.GET, pricePath, headers: headers)
@@ -68,6 +71,9 @@ struct MarketHTTPTests {
                 return try SharedMarketWire.decoder().decode(SharedPriceResponse.self, from: Data(response.body.readableBytesView))
             }
             #expect(await upstream.priceCalls == 1)
+            let usage = try await provider.ledger.usage(for: firstPrincipal)
+            #expect(usage.windows[0].reserved == 1)
+            #expect(usage.windows[0].attempted == 1)
             #expect(payloads.filter(\.cacheHit).count == 1)
             for payload in payloads {
                 #expect(payload.product.price == "3.39")
@@ -84,7 +90,7 @@ struct MarketHTTPTests {
 
     @Test func invalidContextOriginHostDuplicateQueryAndBodyNeverFetch() async throws {
         let upstream = FakeUpstream(value: evidence())
-        let service = MarketService(cache: try SharedPriceCache(databasePath: ":memory:"), sessions: sessions, upstream: upstream)
+        let service = MarketService(cache: try SharedPriceCache(databasePath: ":memory:"), sessions: sessions, upstream: upstream, providerBudgets: try budgets())
         try await withApp(configure: { service.configure($0) }) { app in
             for path in [pricePath + "&productID=94427", pricePath + "&token=hidden",
                          pricePath.replacingOccurrences(of: "133", with: "132"),
@@ -106,7 +112,7 @@ struct MarketHTTPTests {
     @Test func failedAttemptIsNotRetriedOrReportedAsFreshAndBudgetIsShared() async throws {
         let upstream = FakeUpstream(value: evidence(), failure: true)
         let cache = try SharedPriceCache(databasePath: ":memory:", dailyLimit: 1, monthlyLimit: 1, now: { instant })
-        let service = MarketService(cache: cache, sessions: sessions, upstream: upstream, now: { instant })
+        let service = MarketService(cache: cache, sessions: sessions, upstream: upstream, providerBudgets: try budgets(), now: { instant })
         try await withApp(configure: { service.configure($0) }) { app in
             try await app.testing().test(.GET, pricePath, headers: headers) { response in
                 #expect(response.status == .badGateway)
@@ -127,7 +133,7 @@ struct MarketHTTPTests {
 
     @Test func searchNormalizationSharesCache() async throws {
         let upstream = FakeUpstream(value: evidence())
-        let service = MarketService(cache: try SharedPriceCache(databasePath: ":memory:", now: { instant }), sessions: sessions, upstream: upstream, now: { instant })
+        let service = MarketService(cache: try SharedPriceCache(databasePath: ":memory:", now: { instant }), sessions: sessions, upstream: upstream, providerBudgets: try budgets(), now: { instant })
         try await withApp(configure: { service.configure($0) }) { app in
             for (query, hit) in [("Milk", false), ("%20milk%20", true)] {
                 try await app.testing().test(.GET, "/v1/search?store=wegmans&storeCode=133&channel=in_store&q=" + query, headers: headers) { response in
@@ -139,6 +145,79 @@ struct MarketHTTPTests {
             }
             #expect(await upstream.searchCalls == 1)
         }
+    }
+
+    @Test func exhaustedClientCannotPoisonSharedClaimsAndRotationRetainsProviderQuota() async throws {
+        let invitation = try await sessions.issueInvitation()
+        let limited = try await sessions.enroll(invitation: invitation.invitation)
+        let principal = try await sessions.authenticate(accessToken: limited.accessToken)
+        let policy = try ProviderBudgetPolicy(providerHourly: 50, providerDaily: 50, providerMonthly: 250,
+            clientDaily: 1, clientMonthly: 1, globalMissesDaily: 50, globalMissesMonthly: 250, clientMissesDaily: 50, clientMissesMonthly: 250)
+        let provider = ProviderBudgetController(ledger: try ProviderBudgetLedger(databasePath: ":memory:", policy: policy, now: { instant }), network: HTTPFixtureNetwork())
+        let upstream = FakeUpstream(value: evidence())
+        let cache = try SharedPriceCache(databasePath: ":memory:", dailyLimit: 2, monthlyLimit: 2, now: { instant })
+        let service = MarketService(cache: cache, sessions: sessions, upstream: upstream, providerBudgets: provider, now: { instant })
+        var limitedHeaders = headers; limitedHeaders.replaceOrAdd(name: "Authorization", value: "Bearer " + limited.accessToken)
+        try await withApp(configure: { service.configure($0) }) { app in
+            try await app.testing().test(.GET, pricePath, headers: limitedHeaders) { #expect($0.status == .ok) }
+            let rotated = try await sessions.rotate(refreshToken: limited.refreshToken)
+            #expect(rotated.clientID == principal.clientID)
+            limitedHeaders.replaceOrAdd(name: "Authorization", value: "Bearer " + rotated.accessToken)
+            // Denied admission must not claim any cache key or shared attempt.
+            for index in 0..<20 {
+                let path = "/v1/search?store=wegmans&storeCode=133&channel=in_store&q=private-query-\(index)"
+                try await app.testing().test(.GET, path, headers: limitedHeaders) { response in
+                    #expect(response.status == .tooManyRequests)
+                    #expect(response.body.string.contains("client_provider_limit"))
+                    #expect(!response.body.string.contains("private-query"))
+                }
+            }
+            try await app.testing().test(.GET, "/v1/search?store=wegmans&storeCode=133&channel=in_store&q=private-query-0", headers: headers) { #expect($0.status == .ok) }
+            // An exhausted client can still read valid shared evidence for free.
+            try await app.testing().test(.GET, pricePath, headers: limitedHeaders) { response in
+                #expect(response.status == .ok)
+                let payload = try SharedMarketWire.decoder().decode(SharedPriceResponse.self, from: Data(response.body.readableBytesView))
+                #expect(payload.cacheHit)
+            }
+            try await app.testing().test(.GET, "/v1/usage", headers: limitedHeaders) { response in
+                #expect(response.status == .ok)
+                let json = try #require(JSONSerialization.jsonObject(with: Data(response.body.readableBytesView)) as? [String: Any])
+                #expect(json["providerReportedUnits"] is NSNull)
+                #expect(json["accounting"] as? String == "conservative_local_reservations")
+                for secret in [rotated.accessToken, principal.clientID, "private-query", "94427"] { #expect(!response.body.string.contains(secret)) }
+                let windows = try #require(json["windows"] as? [[String: Any]])
+                #expect(windows[0]["reserved"] as? Int == 2)
+                #expect(windows[3]["reserved"] as? Int == 1)
+            }
+            #expect(await upstream.priceCalls == 1)
+            #expect(await upstream.searchCalls == 1)
+        }
+    }
+
+    @Test func usageIsProtectedAndZeroCapsCannotFetch() async throws {
+        let provider = ProviderBudgetController(ledger: try ProviderBudgetLedger(databasePath: ":memory:"))
+        let upstream = FakeUpstream(value: evidence())
+        let service = MarketService(cache: try SharedPriceCache(databasePath: ":memory:"), sessions: sessions, upstream: upstream, providerBudgets: provider)
+        try await withApp(configure: { service.configure($0) }) { app in
+            try await app.testing().test(.GET, "/v1/usage", headers: ["Host": "localhost"]) { #expect($0.status == .unauthorized) }
+            try await app.testing().test(.GET, "/v1/usage?clientID=attacker", headers: headers) { #expect($0.status == .badRequest) }
+            try await app.testing().test(.GET, "/v1/usage", headers: headers) { response in
+                #expect(response.status == .ok)
+                #expect(response.body.string.contains("conservative_local_reservations"))
+                #expect(response.body.string.contains("\"remaining\":0"))
+            }
+            try await app.testing().test(.GET, pricePath, headers: headers) { response in
+                #expect(response.status == .serviceUnavailable)
+                #expect(response.body.string.contains("provider_disabled"))
+            }
+            #expect(await upstream.priceCalls == 0)
+        }
+    }
+
+    private func budgets() throws -> ProviderBudgetController {
+        let policy = try ProviderBudgetPolicy(providerHourly: 50, providerDaily: 50, providerMonthly: 250,
+            clientDaily: 50, clientMonthly: 250, globalMissesDaily: 50, globalMissesMonthly: 250, clientMissesDaily: 50, clientMissesMonthly: 250)
+        return ProviderBudgetController(ledger: try ProviderBudgetLedger(databasePath: ":memory:", policy: policy, now: { instant }), network: HTTPFixtureNetwork())
     }
 
     private func evidence() -> FetchedPrice {
@@ -155,15 +234,21 @@ private actor FakeUpstream: MarketUpstream {
     private(set) var priceCalls = 0
     private(set) var searchCalls = 0
     init(value: FetchedPrice, failure: Bool = false) { self.value = value; self.failure = failure }
-    func price(context: PriceContext, productID: String) async throws -> FetchedPrice {
+    func price(context: PriceContext, productID: String, requests: ProviderRequestScope) async throws -> FetchedPrice {
         priceCalls += 1
+        _ = try await requests.load(ProviderHTTPRequest(engine: .walmartProduct, productID: productID, purpose: .detail))
         try await Task.sleep(for: .milliseconds(20))
         if failure { throw Failure.privateMessage("private upstream secret") }
         return value
     }
-    func search(context: PriceContext, query: String) async throws -> RetailSearchPage {
+    func search(context: PriceContext, query: String, requests: ProviderRequestScope) async throws -> RetailSearchPage {
         searchCalls += 1
+        _ = try await requests.load(ProviderHTTPRequest(engine: .walmart, query: query, purpose: .search))
         return RetailSearchPage(candidates: [value])
     }
     private enum Failure: Error { case privateMessage(String) }
+}
+
+private struct HTTPFixtureNetwork: ProviderHTTPNetwork {
+    func send(_ request: ProviderHTTPRequest) async throws -> ProviderHTTPResponse { ProviderHTTPResponse(status: 200, body: Data("{}".utf8)) }
 }
