@@ -152,7 +152,7 @@ availability, conditions, exclusions and promotion start/end dates are retained.
 | `GET /health` | None; minimal service status, no prices or paths |
 | `POST /v1/session/enroll` | Strict JSON `schemaVersion: 1` plus single-use `invitation`; no query or Authorization header |
 | `POST /v1/session/refresh` | Strict JSON `schemaVersion: 1` plus `refreshToken`; no query or Authorization header |
-| `GET /v1/sources` | None; fetching status and unapproved public access for all five stores |
+| `GET /v1/sources` | No query; versioned source permissions, exact contexts, limitations, evidence dates and disabled/pending/failed/stale states |
 | `GET /v1/usage` | No query; authenticated current-client/global aggregate windows, without identities, search terms or credentials |
 | `GET /v1/search` | `store`, `channel`, `q`, plus `storeCode` for location-specific stores |
 | `GET /v1/price` | `store`, `channel`, `productID`, plus `storeCode` for location-specific stores |
@@ -190,17 +190,30 @@ bounded to five products. Product and search caches are separate; this first
 version does not seed an exact-price cache from search results.
 
 Within one server process, concurrent identical requests share one upstream
-operation. Across SQLite connections/processes, transactional durable claims
-prevent duplicate attempts, but another process receives `attempted_today` while
-the first is working. This is not a distributed worker queue or lease system.
+operation. The executable supports one service process per set of databases.
+It holds exclusive, non-expiring ownership locks for all three database paths;
+a second service sharing any of them is rejected. Lock files are not deleted or
+replaced as a recovery step. The standalone cache's transactional durable claims
+also remain covered by multiple-connection tests. This is not a distributed queue.
+
+Public fetching and serving require an exact provider/retailer/store/channel
+policy. Permission is checked before cache hits, admission, provider requests and
+delivery; personal-client capability messages do not grant public permission.
+All runtime policies remain unapproved. Approved attribution, reference-only
+limits and separate cache/display/observation/retention limits belong to that
+policy; missing permission fails closed.
 
 Successful evidence is reused only on the same UTC day while less than 48 hours
-old and within its source offer window. Serving it never renews timestamps.
+old, within its source offer window and within the stricter source policy limits.
+Serving it never renews observation, retrieval or insertion timestamps.
 Expired, failed or partial responses are not silently retried on that UTC day.
 Claims and budgets survive restart; failures consume a budget slot. A slow
 previous-day request cannot overwrite a newer day's cache entry. Price and search
 attempts share the daily/monthly budget. Cached hits do not consume another slot.
-There is no scheduler: upstream work happens only on an explicit request.
+The bounded opt-in refresh runner accepts only explicitly known public product
+contexts. Its durable daily claim prevents a second scheduled run after failure
+or restart. It does not discover products, receive private shopping lists, poll
+indefinitely or start automatically. No live schedule is configured.
 
 These existing cache limits count **logical attempts**, separately from provider
 HTTP reservations. The 250/month cache default is not a provider allowance or a
@@ -225,14 +238,22 @@ inside the reservation boundary and reconcile verified provider rules separately
 uncertain/pending and remaining counts. `providerReportedUnits` stays null: HTTP
 success, a cache miss or an application-rejected response does not prove an actual
 provider charge. Uncertain work is not refunded. Pending holds survive crashes and
-remain fail-closed until the reviewed recovery policy in issue #45; restarting or
-deleting the ledger is not a safe way to reclaim capacity.
+remain charged. Only a proven exclusive service owner may retire interrupted
+pending work as uncertain and release its concurrency slots. Recovery starts a
+fresh conservative charging window; it never refunds or replays the operation.
+Durable cache attempts still prevent another same-day fetch. Deleting the ledger
+or ownership locks is not recovery. See [source policy and recovery](SOURCE_POLICY_RECOVERY.md)
+for the precise status contract, retention boundary, runner and shutdown behavior.
 
 SQLite uses WAL, a busy timeout and transactions. Payloads are limited to 1 MB
-and 5,000 cache entries. Attempts/budget history is retained; there is no retention
-policy yet. The server stores no user account, staple list, match approval or
-receipt. **Search terms are stored as cache keys**, so they must be included in a
-future privacy/retention policy. Keep this database separate from the iPhone's
+and 5,000 cache entries. Read and maintenance gates evict payloads that exceed
+source retention or no longer have permission. This is logical deletion when the
+service runs; it is not a wall-clock erasure guarantee while idle or stopped, nor
+secure deletion of SQLite pages/backups. Full service identity, quota-history,
+physical expiry and deletion policy remains issue #46 and an activation gate.
+The server stores no user account, staple list, match approval or receipt.
+**Search terms can be present in retained cache keys**, so cache privacy must be
+included in that service-wide policy. Keep this database separate from the iPhone's
 private SwiftData library. Database files and local credentials are ignored by git.
 
 The separate auth database retains server-generated client/session IDs, credential

@@ -12,15 +12,16 @@ let package = Package(
     ],
     targets: [
         .systemLibrary(name: "CSQLite", pkgConfig: "sqlite3", providers: [.apt(["libsqlite3-dev"]), .brew(["sqlite3"])]),
-        .target(name: "SharedMarketCore", dependencies: [.product(name: "StapleScoutKit", package: "StapleScoutKit"), "CSQLite"]),
+        .target(name: "ServiceOwnership"),
+        .target(name: "SharedMarketCore", dependencies: [.product(name: "StapleScoutKit", package: "StapleScoutKit"), "CSQLite", "ServiceOwnership"]),
         .target(name: "ClientSessions", dependencies: ["CSQLite"]),
-        .target(name: "ProviderBudgets", dependencies: ["ClientSessions", "CSQLite", .product(name: "AsyncHTTPClient", package: "async-http-client")]),
+        .target(name: "ProviderBudgets", dependencies: ["ClientSessions", "CSQLite", "ServiceOwnership", .product(name: "AsyncHTTPClient", package: "async-http-client")]),
         .target(name: "MarketHTTP", dependencies: ["SharedMarketCore", "ClientSessions", "ProviderBudgets", .product(name: "StapleScoutKit", package: "StapleScoutKit"), .product(name: "Vapor", package: "vapor")]),
-        .executableTarget(name: "MarketServer", dependencies: ["MarketHTTP", "ClientSessions", "ProviderBudgets", .product(name: "Vapor", package: "vapor")]),
+        .executableTarget(name: "MarketServer", dependencies: ["ServiceOwnership", "MarketHTTP", "ClientSessions", "ProviderBudgets", .product(name: "Vapor", package: "vapor")]),
         .executableTarget(name: "SessionAdmin", dependencies: ["ClientSessions"]),
         .testTarget(name: "ClientSessionsTests", dependencies: ["ClientSessions", "CSQLite"]),
-        .testTarget(name: "ProviderBudgetsTests", dependencies: ["ProviderBudgets", "ClientSessions", "SharedMarketCore", .product(name: "StapleScoutKit", package: "StapleScoutKit")]),
-        .testTarget(name: "SharedMarketCoreTests", dependencies: ["SharedMarketCore", .product(name: "StapleScoutKit", package: "StapleScoutKit")]),
+        .testTarget(name: "ProviderBudgetsTests", dependencies: ["ServiceOwnership", "ProviderBudgets", "ClientSessions", "SharedMarketCore", .product(name: "StapleScoutKit", package: "StapleScoutKit")]),
+        .testTarget(name: "SharedMarketCoreTests", dependencies: ["CSQLite", "SharedMarketCore", .product(name: "StapleScoutKit", package: "StapleScoutKit")]),
         .testTarget(name: "MarketHTTPTests", dependencies: ["MarketHTTP", "ClientSessions", "ProviderBudgets", .product(name: "VaporTesting", package: "vapor")])
     ],
     swiftLanguageModes: [.v5]

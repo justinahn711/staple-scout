@@ -3,6 +3,7 @@ import MarketHTTP
 import SharedMarketCore
 import ClientSessions
 import ProviderBudgets
+import ServiceOwnership
 import Darwin
 import Vapor
 
@@ -34,16 +35,18 @@ enum Entry {
         for database in [path, authPath, providerPath] {
             try FileManager.default.createDirectory(at: URL(fileURLWithPath: database).deletingLastPathComponent(), withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         }
+        let ownership = try ServiceOwnership(databasePaths: [authPath, path, providerPath])
         let sessions = try ClientSessionStore(databasePath: authPath)
-        let cache = try SharedPriceCache(databasePath: path, dailyLimit: daily, monthlyLimit: monthly)
-        let ledger = try ProviderBudgetLedger(databasePath: providerPath)
+        let cache = try SharedPriceCache(databasePath: path, dailyLimit: daily, monthlyLimit: monthly, ownership: ownership)
+        let ledger = try ProviderBudgetLedger(databasePath: providerPath, ownership: ownership)
         let service = MarketService(cache: cache, sessions: sessions, providerBudgets: ProviderBudgetController(ledger: ledger))
         let app = try await Application.make(.development)
         app.http.server.configuration.hostname = "127.0.0.1"
         app.http.server.configuration.port = port
         service.configure(app)
         do { try await app.execute() }
-        catch { try? await app.asyncShutdown(); throw error }
+        catch { await cache.shutdown(); try? await app.asyncShutdown(); throw error }
+        await cache.shutdown()
         try await app.asyncShutdown()
     }
     private enum ConfigurationError: Error { case invalid(String) }

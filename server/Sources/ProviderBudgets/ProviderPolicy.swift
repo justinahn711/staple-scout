@@ -1,7 +1,7 @@
 import Foundation
 
 public enum ProviderBudgetError: Error, Sendable, Equatable {
-    case disabled, providerLimit, clientLimit, workPending, operationLimit, invalidRequest, storageUnavailable, networkUnavailable
+    case sourceNotApproved, disabled, providerLimit, clientLimit, workPending, operationLimit, invalidRequest, storageUnavailable, networkUnavailable
 }
 
 /// A single pooled SerpApi account. Positive policies are injectable for offline

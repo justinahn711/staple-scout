@@ -1,5 +1,6 @@
 import Foundation
 import ClientSessions
+import ServiceOwnership
 
 struct MissLease: Sendable { let id: String; let clientID: String }
 struct UnitReservation: Sendable { let id: String; let missID: String; let clientID: String }
@@ -7,13 +8,16 @@ struct UnitReservation: Sendable { let id: String; let missID: String; let clien
 /// Every durable row represents one potentially billable network operation,
 /// independent of cache keys, result counts, retailer engines and credentials.
 public actor ProviderBudgetLedger {
+    private let ownership: ServiceOwnership?
     private let database: BudgetSQLite
     private let policy: ProviderBudgetPolicy
     private let now: @Sendable () -> Date
     public nonisolated let enabled: Bool
     private let retention: TimeInterval = 62 * 86_400
 
-    public init(databasePath: String, policy: ProviderBudgetPolicy? = nil, now: @escaping @Sendable () -> Date = { Date() }) throws {
+    public init(databasePath: String, policy: ProviderBudgetPolicy? = nil, ownership: ServiceOwnership? = nil, now: @escaping @Sendable () -> Date = { Date() }) throws {
+        try ownership?.claimDatabase(databasePath)
+        self.ownership = ownership
         let policy = try policy ?? ProviderBudgetPolicy()
         let database = try BudgetSQLite(path: databasePath)
         self.database = database; self.policy = policy; self.enabled = policy.enabled; self.now = now
@@ -24,6 +28,21 @@ public actor ProviderBudgetLedger {
             if let existing = try database.rows("SELECT policy FROM budget_configuration WHERE id = 1").first {
                 guard existing["policy"] == fingerprint else { throw ProviderBudgetError.invalidRequest }
             } else { try database.run("INSERT INTO budget_configuration (id, policy) VALUES (1, ?)", [fingerprint]) }
+        }
+        if let ownership {
+            try ownership.validate(databasePath: databasePath)
+            // The non-expiring locks prove the predecessor cannot still send.
+            // Never replay or refund: restart time begins a full conservative
+            // hour/day/31-day charge for every unresolved operation.
+            try database.transaction {
+                let sampled = now().timeIntervalSince1970
+                guard sampled.isFinite, (0..<253_402_300_800).contains(sampled) else { throw ProviderBudgetError.storageUnavailable }
+                let previous = try database.rows("SELECT last_seen FROM budget_clock WHERE id = 1").first?["last_seen"].flatMap(Double.init) ?? 0
+                let time = max(sampled, previous)
+                try database.run("INSERT INTO budget_clock (id, last_seen) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET last_seen = excluded.last_seen", [String(time)])
+                try database.run("UPDATE budget_reservations SET state = 'uncertain', created_at = ? WHERE state IN ('reserved', 'dispatched')", [String(time)])
+                try database.run("UPDATE budget_misses SET active = 0 WHERE active = 1")
+            }
         }
     }
 
@@ -143,7 +162,8 @@ public actor ProviderBudgetLedger {
         return value
     }
     private func clockedTransaction<T>(_ body: (Double) throws -> T) throws -> T {
-        try database.transaction {
+        try ownership?.validate()
+        return try database.transaction {
             // Sample after the write lock. A request queued earlier cannot
             // spuriously move the durable clock backwards after a later one.
             let sampled = try timestamp()

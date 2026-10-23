@@ -41,16 +41,18 @@ struct MarketHTTPTests {
             }
             try await app.testing().test(.GET, "/v1/sources", headers: headers) { response in
                 #expect(response.status == .ok)
-                let entries = try #require(JSONSerialization.jsonObject(with: Data(response.body.readableBytesView)) as? [[String: Any]])
-                #expect(entries.count == 5)
-                #expect(entries.allSatisfy { ($0["fetchingEnabled"] as? Bool) == false && ($0["publicAccessApproved"] as? Bool) == false })
+                let entries = try #require(JSONSerialization.jsonObject(with: Data(response.body.readableBytesView)) as? [String: Any])
+                #expect(entries["schemaVersion"] as? Int == 1)
+                let sources = try #require(entries["sources"] as? [[String: Any]])
+                #expect(sources.count == 5)
+                #expect(sources.allSatisfy { ($0["fetchingEnabled"] as? Bool) == false && ($0["publicAccessApproved"] as? Bool) == false })
             }
         }
     }
 
     @Test func twoAuthenticatedClientsShareOriginalEvidenceAndDecimalWireValues() async throws {
         let upstream = FakeUpstream(value: evidence())
-        let cache = try SharedPriceCache(databasePath: ":memory:", now: { instant })
+        let cache = try SharedPriceCache(databasePath: ":memory:", policies: try fixturePolicies(), now: { instant })
         let secondInvitation = try await sessions.issueInvitation()
         let secondTokens = try await sessions.enroll(invitation: secondInvitation.invitation)
         let firstPrincipal = try await sessions.authenticate(accessToken: token)
@@ -90,7 +92,7 @@ struct MarketHTTPTests {
 
     @Test func invalidContextOriginHostDuplicateQueryAndBodyNeverFetch() async throws {
         let upstream = FakeUpstream(value: evidence())
-        let service = MarketService(cache: try SharedPriceCache(databasePath: ":memory:"), sessions: sessions, upstream: upstream, providerBudgets: try budgets())
+        let service = MarketService(cache: try SharedPriceCache(databasePath: ":memory:", policies: try fixturePolicies()), sessions: sessions, upstream: upstream, providerBudgets: try budgets())
         try await withApp(configure: { service.configure($0) }) { app in
             for path in [pricePath + "&productID=94427", pricePath + "&token=hidden",
                          pricePath.replacingOccurrences(of: "133", with: "132"),
@@ -111,7 +113,7 @@ struct MarketHTTPTests {
 
     @Test func failedAttemptIsNotRetriedOrReportedAsFreshAndBudgetIsShared() async throws {
         let upstream = FakeUpstream(value: evidence(), failure: true)
-        let cache = try SharedPriceCache(databasePath: ":memory:", dailyLimit: 1, monthlyLimit: 1, now: { instant })
+        let cache = try SharedPriceCache(databasePath: ":memory:", dailyLimit: 1, monthlyLimit: 1, policies: try fixturePolicies(), now: { instant })
         let service = MarketService(cache: cache, sessions: sessions, upstream: upstream, providerBudgets: try budgets(), now: { instant })
         try await withApp(configure: { service.configure($0) }) { app in
             try await app.testing().test(.GET, pricePath, headers: headers) { response in
@@ -133,7 +135,7 @@ struct MarketHTTPTests {
 
     @Test func searchNormalizationSharesCache() async throws {
         let upstream = FakeUpstream(value: evidence())
-        let service = MarketService(cache: try SharedPriceCache(databasePath: ":memory:", now: { instant }), sessions: sessions, upstream: upstream, providerBudgets: try budgets(), now: { instant })
+        let service = MarketService(cache: try SharedPriceCache(databasePath: ":memory:", policies: try fixturePolicies(), now: { instant }), sessions: sessions, upstream: upstream, providerBudgets: try budgets(), now: { instant })
         try await withApp(configure: { service.configure($0) }) { app in
             for (query, hit) in [("Milk", false), ("%20milk%20", true)] {
                 try await app.testing().test(.GET, "/v1/search?store=wegmans&storeCode=133&channel=in_store&q=" + query, headers: headers) { response in
@@ -155,7 +157,7 @@ struct MarketHTTPTests {
             clientDaily: 1, clientMonthly: 1, globalMissesDaily: 50, globalMissesMonthly: 250, clientMissesDaily: 50, clientMissesMonthly: 250)
         let provider = ProviderBudgetController(ledger: try ProviderBudgetLedger(databasePath: ":memory:", policy: policy, now: { instant }), network: HTTPFixtureNetwork())
         let upstream = FakeUpstream(value: evidence())
-        let cache = try SharedPriceCache(databasePath: ":memory:", dailyLimit: 2, monthlyLimit: 2, now: { instant })
+        let cache = try SharedPriceCache(databasePath: ":memory:", dailyLimit: 2, monthlyLimit: 2, policies: try fixturePolicies(), now: { instant })
         let service = MarketService(cache: cache, sessions: sessions, upstream: upstream, providerBudgets: provider, now: { instant })
         var limitedHeaders = headers; limitedHeaders.replaceOrAdd(name: "Authorization", value: "Bearer " + limited.accessToken)
         try await withApp(configure: { service.configure($0) }) { app in
@@ -197,7 +199,7 @@ struct MarketHTTPTests {
     @Test func usageIsProtectedAndZeroCapsCannotFetch() async throws {
         let provider = ProviderBudgetController(ledger: try ProviderBudgetLedger(databasePath: ":memory:"))
         let upstream = FakeUpstream(value: evidence())
-        let service = MarketService(cache: try SharedPriceCache(databasePath: ":memory:"), sessions: sessions, upstream: upstream, providerBudgets: provider)
+        let service = MarketService(cache: try SharedPriceCache(databasePath: ":memory:", policies: try fixturePolicies()), sessions: sessions, upstream: upstream, providerBudgets: provider)
         try await withApp(configure: { service.configure($0) }) { app in
             try await app.testing().test(.GET, "/v1/usage", headers: ["Host": "localhost"]) { #expect($0.status == .unauthorized) }
             try await app.testing().test(.GET, "/v1/usage?clientID=attacker", headers: headers) { #expect($0.status == .badRequest) }
@@ -251,4 +253,12 @@ private actor FakeUpstream: MarketUpstream {
 
 private struct HTTPFixtureNetwork: ProviderHTTPNetwork {
     func send(_ request: ProviderHTTPRequest) async throws -> ProviderHTTPResponse { ProviderHTTPResponse(status: 200, body: Data("{}".utf8)) }
+}
+
+private func fixturePolicies() throws -> SourcePolicyRegistry {
+    try SourcePolicyRegistry(policies: [
+        try SourcePolicy(context: PriceContext(store: .wegmans, storeCode: "133", channel: .inStore), fetchApproved: true, publicServingApproved: true, attribution: "Offline fixture", cacheTTL: 172800, displayTTL: 172800),
+        try SourcePolicy(context: PriceContext(store: .hmart, storeCode: nil, channel: .online), fetchApproved: true, publicServingApproved: true, attribution: "Offline fixture", cacheTTL: 172800, displayTTL: 172800),
+        try SourcePolicy(context: PriceContext(store: .lidl, storeCode: "US01112", channel: .inStore), fetchApproved: true, publicServingApproved: true, attribution: "Offline fixture", cacheTTL: 172800, displayTTL: 172800)
+    ])
 }

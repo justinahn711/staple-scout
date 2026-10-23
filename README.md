@@ -35,6 +35,8 @@ No Costco, receipts, automated retail login, challenge bypass, fabricated produc
 
 The optional shared server now has [provider/client budget accounting](docs/PROVIDER_BUDGETS.md) around each potential provider HTTP request, including search follow-ups. Runtime provider caps are zero and sources remain disabled; the earlier unmetered `local-research` server mode is rejected. This does not change the personal app’s direct clients or establish a usable Walmart/Target feed. Local conservative reservations and provider-reported billing are reported separately; actual provider usage is still unmeasured.
 
+[Source policy and recovery](docs/SOURCE_POLICY_RECOVERY.md) define the shared service's public-serving boundary, evidence lifetime, exclusive process ownership and interrupted-work handling. Permission applies to cached evidence as well as new requests. The bounded refresh runner is preparation for an approved service; it does not activate a schedule or collect the phone's private shopping lists.
+
 ## Tests
 
 ```sh

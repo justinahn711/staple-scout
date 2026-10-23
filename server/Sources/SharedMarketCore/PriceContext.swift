@@ -9,8 +9,12 @@ public struct PriceContext: Codable, Hashable, Sendable {
     public let channel: Channel
 
     public init(store: StoreID, storeCode: String?, channel: Channel) throws {
-        guard let location = StoreLocation.defaults.first(where: { $0.store == store && $0.code == storeCode }),
-              SourceCapability.forLocation(location, channel: channel).isConnected else {
+        let supported: Bool
+        switch (store, storeCode, channel) {
+        case (.wegmans, "133", .inStore), (.hmart, nil, .online), (.lidl, "US01112", .inStore): supported = true
+        default: supported = false
+        }
+        guard supported else {
             throw CacheError.invalidRequest("This store, location, and channel are not supported by the Chantilly pilot.")
         }
         self.store = store
@@ -52,9 +56,13 @@ public enum CacheError: Error, LocalizedError, Sendable {
     case alreadyAttempted(String)
     case storage(String)
     case pending(String)
+    case sourceDisabled
+    case shuttingDown
 
     public var errorDescription: String? {
         switch self {
+        case .sourceDisabled: return "Public access to this exact source context is disabled."
+        case .shuttingDown: return "The shared service is shutting down."
         case .invalidRequest(let message), .invalidEvidence(let message), .budgetExceeded(let message),
              .alreadyAttempted(let message), .storage(let message), .pending(let message): return message
         }
