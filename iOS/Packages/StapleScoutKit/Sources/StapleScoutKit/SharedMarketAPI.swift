@@ -120,13 +120,34 @@ public enum SharedMarketWire {
     }
 }
 
+/// Typed safe codes; arbitrary server messages never reach the interface.
+public struct SharedServiceError: Error, LocalizedError, Sendable {
+    public let status: Int
+    public let code: String?
+    init(status: Int, code: String?) {
+        self.status = status
+        // Never retain arbitrary server prose in an error's debug representation.
+        let authenticationCodes: Set<String> = ["auth_invalid", "auth_expired", "auth_revoked", "refresh_replayed"]
+        self.code = code.flatMap { authenticationCodes.contains($0) ? $0 : nil }
+    }
+    public var errorDescription: String? {
+        switch status {
+        case 401: return "The pilot session was rejected. Reconnect in My stores."
+        case 429: return "The shared service request limit was reached. Try again later."
+        case 503: return "This price source is unavailable or pending. Saved evidence keeps its original date."
+        default: return "The shared service could not complete the request. Try again later."
+        }
+    }
+}
+
 /// Opt-in transport for a configured service. It never silently falls back to direct retailer requests.
 public final class SharedMarketClient: RetailPriceFetching, RetailProductSearching, @unchecked Sendable {
     private let baseURL: URL
     private let token: String
     private let session: URLSession
+    private let typedServiceErrors: Bool
 
-    public init(baseURL: URL, accessToken: String, configuration: URLSessionConfiguration = .ephemeral) throws {
+    public init(baseURL: URL, accessToken: String, configuration: URLSessionConfiguration = .ephemeral, typedServiceErrors: Bool = false) throws {
         let localHosts = ["localhost", "127.0.0.1", "[::1]", "::1"]
         guard let components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false),
               let host = components.host, !host.isEmpty,
@@ -135,7 +156,7 @@ public final class SharedMarketClient: RetailPriceFetching, RetailProductSearchi
               (32...256).contains(accessToken.utf8.count), accessToken.utf8.allSatisfy({ (33...126).contains($0) }) else {
             throw RetailClientError.invalidProduct("Configure an HTTPS shared service and a valid access token. HTTP is allowed only on loopback for development.")
         }
-        self.baseURL = baseURL; token = accessToken
+        self.baseURL = baseURL; token = accessToken; self.typedServiceErrors = typedServiceErrors
         configuration.httpCookieStorage = nil; configuration.httpShouldSetCookies = false
         configuration.urlCache = nil; configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
         session = URLSession(configuration: configuration, delegate: SharedMarketRedirectGuard(), delegateQueue: nil)
@@ -231,6 +252,10 @@ public final class SharedMarketClient: RetailPriceFetching, RetailProductSearchi
         let (data, rawResponse) = try await session.data(for: request)
         guard let response = rawResponse as? HTTPURLResponse, response.url == request.url else { throw RetailClientError.invalidResponse("The shared service returned an unreadable or redirected response.") }
         guard response.statusCode == 200 else {
+            if typedServiceErrors {
+                let code = data.count <= 4096 ? (try? JSONDecoder().decode(SharedAPIError.self, from: data))?.code : nil
+                throw SharedServiceError(status: response.statusCode, code: code)
+            }
             if response.statusCode == 401 { throw RetailClientError.unsupportedSource("Shared service access was rejected. Check its access configuration.") }
             if response.statusCode == 429 { throw RetailClientError.unsupportedSource("The shared service request limit was reached. Try again later.") }
             throw RetailClientError.unavailable(response.statusCode)

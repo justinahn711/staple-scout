@@ -21,11 +21,15 @@ Invitation possession identifies an operator-approved installation, not a person
 or a verified Apple device. A stolen invitation can be redeemed by its possessor;
 transfer it privately, revoke its client slot if exposed, and do not send it in a
 URL. A bearer access or refresh token can also be used by whoever steals it. The
-future native client must keep the pair in Keychain, serialize refreshes, replace
-both tokens atomically, and clear credentials after revocation. Native onboarding
-and credential storage/refresh are issue #48; this change implements the server
-contract, not that UI. A reinstallation or lost/revoked family needs operator
-review and a new slot. Expired, used and revoked slots are **not automatically
+native client keeps the pair in Keychain, serializes refreshes, replaces
+both tokens atomically, and clears credentials after revocation. Native onboarding
+and credential storage/refresh are described in [NATIVE_SESSIONS.md](NATIVE_SESSIONS.md);
+this document defines their server contract. A lost or revoked family needs operator review and a new
+slot. The native client can restore its bundle/service-scoped Keychain item across
+launches; iOS may retain that item across uninstall/reinstall, so uninstalling is
+not a reliable credential-deletion or remote-revocation procedure. Use Disconnect
+to remove local credentials and operator revocation to deny them remotely.
+Expired, used and revoked slots are **not automatically
 recycled**: the 50-slot lifetime cap bounds retained identity metadata and prevents
 unlimited re-enrollment from resetting quotas. Recovery/reassignment after that
 cap requires a separately reviewed operator workflow; deleting the auth database
@@ -48,8 +52,9 @@ to verify these invitations. A later App Attest rollout requires a registered
 App ID, the correct App Attest entitlement/environment, server validation and
 physical-device tests; see [Apple's app-integrity setup](https://developer.apple.com/documentation/devicecheck/establishing-your-app-s-integrity).
 Simulator/tests use the same real invitation/token checks with isolated databases;
-they do not assert device integrity. Physical-device session onboarding remains
-blocked on issue #48 and separately authorized HTTPS networking/hosting. The
+they do not assert device integrity. Native device builds implement the session
+client, but an actual signed-device/Keychain/HTTPS smoke remains gated on the
+separately prepared operations environment and activation. The
 current localhost host/origin guards intentionally remain in place.
 
 ## Local administration
@@ -58,8 +63,9 @@ Run from the same directory as the service, using matching database environment
 variables. The defaults are `THRIFTY_AUTH_DATABASE_PATH=data/client-sessions.sqlite`
 and `THRIFTY_DATABASE_PATH=data/shared-prices.sqlite`. The server rejects the old
 `THRIFTY_ACCESS_TOKEN` setting. A simulator's existing variable of that name may
-temporarily contain an issued 15-minute access token; it is not a server secret
-or an automatic refresh implementation.
+temporarily contain an issued 15-minute access token in the legacy Debug opt-in;
+it is not a server secret or an automatic refresh implementation. The dedicated
+Pilot build uses the native session lifecycle instead.
 
 ```sh
 cd server
