@@ -33,6 +33,8 @@ Add a staple or choose **Find store prices** to search by name. Wegmans, H Mart 
 
 No Costco, receipts, automated retail login, challenge bypass, fabricated production prices, automatic substitute approvals, notifications or deployment. The earlier plan’s Mac scheduling approach has been superseded for the iPhone app.
 
+The optional shared server now has [provider/client budget accounting](docs/PROVIDER_BUDGETS.md) around each potential provider HTTP request, including search follow-ups. Runtime provider caps are zero and sources remain disabled; the earlier unmetered `local-research` server mode is rejected. This does not change the personal app’s direct clients or establish a usable Walmart/Target feed. Local conservative reservations and provider-reported billing are reported separately; actual provider usage is still unmeasured.
+
 ## Tests
 
 ```sh

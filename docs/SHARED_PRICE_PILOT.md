@@ -2,7 +2,7 @@
 
 This is the first implementation step toward a public Thrifty Market app. It is
 an authenticated, **localhost-only prototype**, not a public beta or deployed
-service. It reuses the native Swift retailer code through a Vapor 4 server and
+service. It uses the native Swift price contracts through a Vapor 4 server and
 a separate SQLite database. The iPhone remains Swift/SwiftUI/SwiftData. Python
 is not required to run either component.
 
@@ -52,15 +52,17 @@ Stop with Control-C.
 | Environment variable | Default / allowed values |
 |---|---|
 | `THRIFTY_AUTH_DATABASE_PATH` | `data/client-sessions.sqlite`, separate persistent, private session database |
-| `THRIFTY_SOURCE_MODE` | `disabled`; `local-research` explicitly enables existing anonymous web adapters |
+| `THRIFTY_SOURCE_MODE` | `disabled` only; the prior unmetered `local-research` server mode is rejected |
 | `THRIFTY_DATABASE_PATH` | `data/shared-prices.sqlite`, relative to the launch directory |
+| `THRIFTY_PROVIDER_DATABASE_PATH` | `data/provider-budgets.sqlite`, separate private provider ledger; runtime caps stay zero |
 | `THRIFTY_PORT` | `8878`, range 1024–65535; hostname stays loopback |
 | `THRIFTY_DAILY_LIMIT` | 50 logical upstream attempts, configurable down to 0 |
 | `THRIFTY_MONTHLY_LIMIT` | 250 logical upstream attempts, configurable down to 0 |
 
 Relative paths are resolved from the launch directory. Start the server and admin
-CLI from the same directory with the same path settings. Auth and cache paths must
-be different files, including symlink/hardlink aliases. Auth files must be owned
+CLI from the same directory with the same path settings. Auth, price-cache and
+provider-ledger paths must be different files, including symlink/hardlink aliases.
+Auth and provider-ledger files must be owned
 by the operator with mode `0600`; permissive or unrelated existing databases are
 rejected. Do not point either path at a private app library.
 
@@ -102,9 +104,11 @@ There is no remote admin endpoint, shared fallback secret or test enrollment
 bypass. Native Keychain storage and automatic enrollment/refresh are separate
 work in issue #48; these commands prepare and test the server contract.
 
-`local-research` is a personal, bounded testing option. It is **not** approval to
-redistribute any retailer's prices publicly. Real fetching was not needed for
-the prototype tests. No provider subscription, retailer account or bypass was added.
+The prior unmetered `local-research` server path has been removed. Setting that
+mode now stops startup, so an anonymous retailer request cannot bypass the new
+per-request provider accounting. The native personal app remains separate. No
+provider source, key, nonzero runtime budget, subscription, retailer account or
+bypass is enabled by this implementation.
 
 ## Use from the iPhone simulator
 
@@ -149,6 +153,7 @@ availability, conditions, exclusions and promotion start/end dates are retained.
 | `POST /v1/session/enroll` | Strict JSON `schemaVersion: 1` plus single-use `invitation`; no query or Authorization header |
 | `POST /v1/session/refresh` | Strict JSON `schemaVersion: 1` plus `refreshToken`; no query or Authorization header |
 | `GET /v1/sources` | None; fetching status and unapproved public access for all five stores |
+| `GET /v1/usage` | No query; authenticated current-client/global aggregate windows, without identities, search terms or credentials |
 | `GET /v1/search` | `store`, `channel`, `q`, plus `storeCode` for location-specific stores |
 | `GET /v1/price` | `store`, `channel`, `productID`, plus `storeCode` for location-specific stores |
 
@@ -197,11 +202,31 @@ previous-day request cannot overwrite a newer day's cache entry. Price and searc
 attempts share the daily/monthly budget. Cached hits do not consume another slot.
 There is no scheduler: upstream work happens only on an explicit request.
 
-Limits count **logical adapter calls**, not retailer HTTP requests, provider
-credits or dollars. Search can make several network requests to validate its
-candidates. The 250/month default is a conservative prototype cap, not a promise
-of compatibility with a particular free provider plan. A paid provider will need
-its own verified quota accounting before integration.
+These existing cache limits count **logical attempts**, separately from provider
+HTTP reservations. The 250/month cache default is not a provider allowance or a
+promise that daily multi-store coverage fits a free plan.
+
+The separate [provider ledger](PROVIDER_BUDGETS.md) reserves conservatively before
+each potential search, page, candidate/detail check or explicit retry. Cache hits
+and coalesced followers do not make another provider reservation. Global provider
+windows roll over one hour, 24 hours and 31 days; client day/month abuse limits use
+UTC periods. Calendar-month resets alone cannot model a provider renewal cycle.
+Provider/client caps, miss/fanout and concurrent-work limits persist transactionally
+across connections/restarts. Denied client admission cannot poison a shared cache
+key or consume its durable logical attempt.
+
+Runtime provider caps are **zero**. There is no key, cap override or activation
+switch in this executable. The scoped transport is infrastructure tested with
+offline/loopback fixtures, not a live Walmart/Target adapter or a grant to display
+retailer content. Any approved integration must keep every billable network call
+inside the reservation boundary and reconcile verified provider rules separately.
+
+`/v1/usage` reports conservative local reserved/attempted/completed-upper-bound,
+uncertain/pending and remaining counts. `providerReportedUnits` stays null: HTTP
+success, a cache miss or an application-rejected response does not prove an actual
+provider charge. Uncertain work is not refunded. Pending holds survive crashes and
+remain fail-closed until the reviewed recovery policy in issue #45; restarting or
+deleting the ledger is not a safe way to reclaim capacity.
 
 SQLite uses WAL, a busy timeout and transactions. Payloads are limited to 1 MB
 and 5,000 cache entries. Attempts/budget history is retained; there is no retention
@@ -216,7 +241,7 @@ minimal quota counters. It does not retain the plaintext credentials, email,
 device identifiers, IP address or local library UUIDs. Access requests, including
 cache hits, use a persistent 1,000/day client limit; enrollment, refresh and invalid
 authentication have additional bounded counters. These are pilot abuse controls;
-actual provider-credit accounting remains issue #44. Full identity deletion and
+provider accounting has its own ledger and zero-cap policy. Full identity deletion and
 retention policy remain issue #46.
 
 ## Next milestones before inviting the public
@@ -232,7 +257,7 @@ retention policy remain issue #46.
 3. Connect physical iPhones to the invitation/session contract, with Keychain
    storage and serialized refresh. Add HTTPS hosting, secrets management,
    monitoring and source failure controls. Review search-term privacy,
-   retention/deletion and provider-specific credit limits. Public self-service
+   retention/deletion and provider rules, usage reconciliation and recovery. Public self-service
    enrollment needs a separate design; deployment needs separate authorization.
 4. Select a shared production database and a worker/lease design if multiple
    service processes are needed. Load-test cache hit rates, source quotas,

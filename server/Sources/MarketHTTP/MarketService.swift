@@ -4,44 +4,25 @@ import FoundationNetworking
 #endif
 import SharedMarketCore
 import ClientSessions
+import ProviderBudgets
 import StapleScoutKit
 import Vapor
 
 public protocol MarketUpstream: Sendable {
-    func price(context: PriceContext, productID: String) async throws -> FetchedPrice
-    func search(context: PriceContext, query: String) async throws -> RetailSearchPage
-}
-
-/// Personal research only. Working website access does not grant public redistribution rights.
-public struct LocalResearchUpstream: MarketUpstream {
-    private let prices: RetailClient
-    private let products: RetailSearchClient
-    public init() {
-        let configuration = URLSessionConfiguration.ephemeral
-        configuration.httpCookieStorage = nil; configuration.httpShouldSetCookies = false
-        configuration.urlCache = nil; configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
-        let session = URLSession(configuration: configuration)
-        prices = RetailClient(session: session); products = RetailSearchClient(session: session)
-    }
-    public func price(context: PriceContext, productID: String) async throws -> FetchedPrice {
-        let variant = ProductVariant(store: context.store, productID: productID, name: productID,
-                                     quantity: 1, unit: .each, quantityKind: .variable)
-        return try await prices.fetch(FetchRequest(variant: variant, location: context.location, channel: context.channel))
-    }
-    public func search(context: PriceContext, query: String) async throws -> RetailSearchPage {
-        try await products.search(query: query, location: context.location, channel: context.channel)
-    }
+    func price(context: PriceContext, productID: String, requests: ProviderRequestScope) async throws -> FetchedPrice
+    func search(context: PriceContext, query: String, requests: ProviderRequestScope) async throws -> RetailSearchPage
 }
 
 public struct MarketService: Sendable {
     private let cache: SharedPriceCache
     private let sessions: ClientSessionStore
+    private let providerBudgets: ProviderBudgetController?
     private let upstream: (any MarketUpstream)?
     private let now: @Sendable () -> Date
 
-    public init(cache: SharedPriceCache, sessions: ClientSessionStore, upstream: (any MarketUpstream)? = nil,
+    public init(cache: SharedPriceCache, sessions: ClientSessionStore, upstream: (any MarketUpstream)? = nil, providerBudgets: ProviderBudgetController? = nil,
                 now: @escaping @Sendable () -> Date = { Date() }) {
-        self.cache = cache; self.sessions = sessions; self.upstream = upstream; self.now = now
+        self.cache = cache; self.sessions = sessions; self.upstream = upstream; self.providerBudgets = providerBudgets; self.now = now
     }
 
     public func configure(_ app: Application) {
@@ -52,7 +33,7 @@ public struct MarketService: Sendable {
         app.get("health") { request async throws -> Response in
             try guardLocalRequest(request)
             return try json(Health(status: "ok", schemaVersion: 1, localOnly: true,
-                                   sourceMode: upstream == nil ? "disabled" : "local-research"))
+                                   sourceMode: upstream == nil || providerBudgets?.enabled != true ? "disabled" : "offline-configured"))
         }
         app.post("v1", "session", "enroll") { request async throws -> Response in
             await respond(request) {
@@ -72,37 +53,47 @@ public struct MarketService: Sendable {
         }
         app.get("v1", "sources") { request async throws -> Response in
             await respond(request) {
-                try await authenticate(request)
+                _ = try await authenticate(request)
                 guard request.url.query == nil else { throw CacheError.invalidRequest("The sources endpoint does not accept query parameters.") }
                 return try json(StoreLocation.defaults.map { location in
                     SourceStatus(store: location.store, storeCode: location.code,
                                  channel: location.store == .hmart ? .online : .inStore,
-                                 fetchingEnabled: upstream != nil && SourceCapability.forLocation(location, channel: location.store == .hmart ? .online : .inStore).isConnected,
+                                 fetchingEnabled: upstream != nil && providerBudgets?.enabled == true && SourceCapability.forLocation(location, channel: location.store == .hmart ? .online : .inStore).isConnected,
                                  publicAccessApproved: false,
                                  message: SourceCapability.forLocation(location, channel: location.store == .hmart ? .online : .inStore).message)
                 })
             }
         }
+        app.get("v1", "usage") { request async throws -> Response in
+            await respond(request) {
+                let principal = try await authenticate(request)
+                guard request.url.query == nil else { throw CacheError.invalidRequest("The usage endpoint does not accept query parameters.") }
+                guard let providerBudgets else { throw ProviderBudgetError.disabled }
+                return try json(try await providerBudgets.ledger.usage(for: principal))
+            }
+        }
         app.get("v1", "price") { request async throws -> Response in
             await respond(request) {
-                try await authenticate(request)
+                let principal = try await authenticate(request)
                 let (context, parameter) = try parse(request, parameter: "productID")
-                guard let upstream else { return try unavailable() }
-                let result = try await cache.price(context: context, productID: parameter) {
-                    try await upstream.price(context: context, productID: parameter)
-                }
+                guard let upstream, let providerBudgets else { return try unavailable() }
+                let result = try await cache.admittedPrice(context: context, productID: parameter, admit: {
+                    let admitted = try await providerBudgets.admit(principal: principal)
+                    return CacheFetchOperation(run: { try await upstream.price(context: context, productID: parameter, requests: admitted.requests) }, finish: { try await admitted.finish() })
+                })
                 return try json(SharedPriceResponse(context: SharedPriceContext(location: context.location, channel: context.channel),
                                                     value: result.value, cacheHit: result.cacheHit, servedAt: now()))
             }
         }
         app.get("v1", "search") { request async throws -> Response in
             await respond(request) {
-                try await authenticate(request)
+                let principal = try await authenticate(request)
                 let (context, parameter) = try parse(request, parameter: "q")
-                guard let upstream else { return try unavailable() }
-                let result = try await cache.search(context: context, query: parameter) {
-                    try await upstream.search(context: context, query: parameter)
-                }
+                guard let upstream, let providerBudgets else { return try unavailable() }
+                let result = try await cache.admittedSearch(context: context, query: parameter, admit: {
+                    let admitted = try await providerBudgets.admit(principal: principal)
+                    return CacheFetchOperation(run: { try await upstream.search(context: context, query: parameter, requests: admitted.requests) }, finish: { try await admitted.finish() })
+                })
                 return try json(SharedSearchResponse(context: SharedPriceContext(location: context.location, channel: context.channel),
                                                      page: result.page, cacheHit: result.cacheHit, servedAt: now()))
             }
@@ -120,14 +111,14 @@ public struct MarketService: Sendable {
         }
     }
 
-    private func authenticate(_ request: Request) async throws {
+    private func authenticate(_ request: Request) async throws -> ClientPrincipal {
         try guardLocalRequest(request)
         let headers = request.headers["Authorization"]
         guard headers.count == 1, headers[0].hasPrefix("Bearer "), headers[0].utf8.count <= 128 else {
             try await sessions.rejectAuthenticationAttempt()
             throw SessionError.invalidCredential
         }
-        _ = try await sessions.authenticate(accessToken: String(headers[0].dropFirst(7)))
+        return try await sessions.authenticate(accessToken: String(headers[0].dropFirst(7)))
     }
 
     private func sessionBody(_ request: Request, key: String, prefix: String) throws -> String {
@@ -195,6 +186,13 @@ public struct MarketService: Sendable {
             case SessionError.refreshReplay: status = .unauthorized; code = "refresh_replayed"; message = "Refresh reuse revoked this session. Obtain a new operator invitation."
             case SessionError.rateLimited: status = .tooManyRequests; code = "request_limit"; message = "The client or enrollment request limit was reached."
             case SessionError.storageUnavailable, SessionError.entropyUnavailable: status = .serviceUnavailable; code = "auth_unavailable"; message = "Session storage is unavailable."
+            case ProviderBudgetError.disabled: status = .serviceUnavailable; code = "provider_disabled"; message = "Provider fetching is disabled."
+            case ProviderBudgetError.providerLimit: status = .tooManyRequests; code = "provider_budget_exhausted"; message = "The provider reservation limit was reached."
+            case ProviderBudgetError.clientLimit: status = .tooManyRequests; code = "client_provider_limit"; message = "This client's upstream reservation limit was reached."
+            case ProviderBudgetError.workPending, CacheError.pending: status = .tooManyRequests; code = "work_pending"; message = "Bounded upstream work is already pending."
+            case ProviderBudgetError.operationLimit: status = .tooManyRequests; code = "operation_limit"; message = "The maximum upstream operations for this miss was reached."
+            case ProviderBudgetError.storageUnavailable: status = .serviceUnavailable; code = "provider_storage_unavailable"; message = "Provider reservation storage is unavailable."
+            case ProviderBudgetError.invalidRequest: status = .badRequest; code = "invalid_request"; message = "The provider request is invalid."
             case CacheError.invalidRequest: status = .badRequest; code = "invalid_request"; message = "The store context or product query is invalid."
             case CacheError.budgetExceeded: status = .tooManyRequests; code = "budget_exceeded"; message = "The shared upstream attempt limit was reached."
             case CacheError.alreadyAttempted: status = .tooManyRequests; code = "attempted_today"; message = "This request was already attempted today; no usable cached evidence is available."

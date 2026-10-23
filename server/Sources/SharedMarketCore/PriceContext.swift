@@ -51,11 +51,12 @@ public enum CacheError: Error, LocalizedError, Sendable {
     case budgetExceeded(String)
     case alreadyAttempted(String)
     case storage(String)
+    case pending(String)
 
     public var errorDescription: String? {
         switch self {
         case .invalidRequest(let message), .invalidEvidence(let message), .budgetExceeded(let message),
-             .alreadyAttempted(let message), .storage(let message): return message
+             .alreadyAttempted(let message), .storage(let message), .pending(let message): return message
         }
     }
 }

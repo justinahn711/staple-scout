@@ -230,8 +230,8 @@ final class SharedPriceCacheTests: XCTestCase, @unchecked Sendable {
     func testTwoConnectionsEnforceSharedDailyBudgetTransactionally() async throws {
         let path = temporaryDatabase()
         defer { removeDatabase(path) }
-        let first = try SharedPriceCache(databasePath: path, dailyLimit: 3, monthlyLimit: 100, now: { self.instant })
-        let second = try SharedPriceCache(databasePath: path, dailyLimit: 3, monthlyLimit: 100, now: { self.instant })
+        let first = try SharedPriceCache(databasePath: path, dailyLimit: 3, monthlyLimit: 100, maximumInFlight: 32, now: { self.instant })
+        let second = try SharedPriceCache(databasePath: path, dailyLimit: 3, monthlyLimit: 100, maximumInFlight: 32, now: { self.instant })
         let counter = Counter()
         let context = try wegmans()
         let successes = await withTaskGroup(of: Bool.self) { group in
@@ -281,8 +281,8 @@ final class SharedPriceCacheTests: XCTestCase, @unchecked Sendable {
     func testTwoConnectionsEnforceSharedMonthlyBudgetTransactionally() async throws {
         let path = temporaryDatabase()
         defer { removeDatabase(path) }
-        let first = try SharedPriceCache(databasePath: path, dailyLimit: 100, monthlyLimit: 2, now: { self.instant })
-        let second = try SharedPriceCache(databasePath: path, dailyLimit: 100, monthlyLimit: 2, now: { self.instant })
+        let first = try SharedPriceCache(databasePath: path, dailyLimit: 100, monthlyLimit: 2, maximumInFlight: 32, now: { self.instant })
+        let second = try SharedPriceCache(databasePath: path, dailyLimit: 100, monthlyLimit: 2, maximumInFlight: 32, now: { self.instant })
         let counter = Counter()
         let context = try wegmans()
         await withTaskGroup(of: Void.self) { group in
