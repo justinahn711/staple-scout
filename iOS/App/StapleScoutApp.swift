@@ -15,7 +15,7 @@ import StapleScoutKit
             let configuration = try AppLibraryConfiguration.make(pilot: pilot != nil, runningTests: runningTests)
             let container = try ModelContainer(for: SavedLibrary.self, configurations: configuration)
             if let pilot {
-                return try LibraryStore(context: ModelContext(container), client: pilot.transport, searchClient: pilot.transport)
+                return try LibraryStore(context: ModelContext(container), client: pilot.transport, searchClient: pilot.transport, sourceClient: pilot.transport)
             }
             #if targetEnvironment(simulator)
             return try LibraryStore.configured(context: ModelContext(container), environment: ProcessInfo.processInfo.environment)
@@ -51,6 +51,9 @@ struct RootView: View {
             NavigationStack { StoresView(store: store, pilot: pilot) }.tabItem { Label("Stores", systemImage: "storefront") }
         }
         .task { await pilot?.observe() }
+        .onChange(of: pilot?.state) { _, state in
+            if state != .connected && state != .refreshing { store.invalidateRemoteSources() }
+        }
         .tint(appearance == .dark ? Color(red: 0.46, green: 0.79, blue: 0.62) : Color(red: 0.09, green: 0.39, blue: 0.28))
         .alert("Couldn’t complete that", isPresented: Binding(get: { store.failure != nil }, set: { if !$0 { store.failure = nil } })) {
             Button("OK", role: .cancel) { store.failure = nil }

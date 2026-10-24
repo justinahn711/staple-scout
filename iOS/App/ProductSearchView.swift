@@ -30,7 +30,7 @@ struct ProductSearchView: View {
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .disabled(loading || query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 } footer: {
-                    Text("Search results are source evidence. Track a product to add it as Pending for your review.")
+                    Text(store.isSharedPilot ? "Search sends these words and your selected store/channel to the pilot service. Check status and choose approved sources in My stores first. Track a product as Pending, then review its package and match." : "Search results are source evidence. Track a product to add it as Pending for your review.")
                 }
 
                 ForEach(StoreID.allCases, id: \.self) { retailer in
@@ -93,6 +93,7 @@ struct ProductSearchView: View {
     private func sourceRow(_ result: StoreSearchResult) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             LabeledContent("Source", value: "\(result.location.name) · \(channelName(result.channel))")
+            if store.isSharedPilot { RemoteSourceStatusRow(store: store, location: result.location, channel: result.channel) }
             if result.id == .hmart {
                 Label("Online reference only — local shelf stock and shipping are unverified.", systemImage: "globe")
                     .font(.caption)

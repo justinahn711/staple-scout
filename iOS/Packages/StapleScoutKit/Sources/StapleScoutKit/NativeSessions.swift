@@ -160,6 +160,8 @@ public actor NativeSessionController {
     }
 
     public func currentState() -> NativeSessionState { state }
+    func operationGeneration() -> Int { generation }
+    func acceptsOperation(_ epoch: Int) -> Bool { epoch == generation && tokens != nil && (state == .connected || state == .refreshing) }
     public func observe(_ handler: @escaping @Sendable (NativeSessionState) -> Void) { observer = handler; handler(state) }
     private func setState(_ value: NativeSessionState) { state = value; observer?(value) }
     private func persist(_ value: NativeSessionTokens, inFlight: Bool) throws {
@@ -285,33 +287,63 @@ public actor NativeSessionController {
 }
 
 /// Authenticated price requests retain the existing evidence validator and never instantiate direct clients.
-public final class SessionMarketClient: RetailPriceFetching, RetailProductSearching, @unchecked Sendable {
+public final class SessionMarketClient: RetailPriceFetching, RetailProductSearching, RemoteSourceLoading, @unchecked Sendable {
     private let sessions: NativeSessionController
     private let configuration: @Sendable () -> URLSessionConfiguration
-    public init(sessions: NativeSessionController, configuration: @escaping @Sendable () -> URLSessionConfiguration = { .ephemeral }) {
-        self.sessions = sessions; self.configuration = configuration
+    private let catalog: RemoteSourceCatalog?
+    public init(sessions: NativeSessionController, catalog: RemoteSourceCatalog? = nil, configuration: @escaping @Sendable () -> URLSessionConfiguration = { .ephemeral }) {
+        self.sessions = sessions; self.catalog = catalog; self.configuration = configuration
     }
     public func search(query: String, location: StoreLocation, channel: Channel) async throws -> RetailSearchPage {
         try await perform { try await $0.search(query: query, location: location, channel: channel) }
     }
     public func fetch(_ request: FetchRequest) async throws -> FetchedPrice { try await perform { try await $0.fetch(request) } }
-    private func perform<T>(_ action: (SharedMarketClient) async throws -> T) async throws -> T {
+    public func sources() async throws -> RemoteSourceSnapshot {
+        // Status checks are explicit; never turn a missing status into a polling loop.
+        let epoch = await sessions.operationGeneration()
+        let revision = await catalog?.beginCheck()
+        let result: RemoteSourceSnapshot = try await perform(requiresCatalog: false, expectedEpoch: epoch) { try await $0.sources() }
+        if let catalog, let revision { guard await catalog.replace(result, expected: revision, sessionEpoch: epoch) else { throw NativeSessionError.superseded } }
+        guard await sessions.acceptsOperation(epoch) else { throw NativeSessionError.superseded }
+        return result
+    }
+    private func perform<T>(requiresCatalog: Bool = true, expectedEpoch: Int? = nil, _ action: (SharedMarketClient) async throws -> T) async throws -> T {
+        let epoch = await sessions.operationGeneration()
+        if let expectedEpoch, expectedEpoch != epoch { throw NativeSessionError.superseded }
+        let captured = await catalog?.capture()
+        if requiresCatalog, catalog != nil, captured?.0 == nil {
+            throw RetailClientError.unsupportedSource("Check source status in My stores before searching or refreshing. The status check is valid for five minutes.")
+        }
+        if requiresCatalog, catalog != nil, captured?.2 != epoch { throw NativeSessionError.superseded }
+        let snapshot = requiresCatalog ? captured?.0 : nil
+        func checked(_ token: String) async throws -> T {
+            guard await sessions.acceptsOperation(epoch) else { throw NativeSessionError.superseded }
+            if requiresCatalog, let catalog, let revision = captured?.1 {
+                guard await catalog.matches(revision) else { throw NativeSessionError.superseded }
+            }
+            let result = try await action(client(token, snapshot: snapshot))
+            guard await sessions.acceptsOperation(epoch) else { throw NativeSessionError.superseded }
+            if requiresCatalog, let catalog, let revision = captured?.1 {
+                guard await catalog.matches(revision) else { throw NativeSessionError.superseded }
+            }
+            return result
+        }
         let first = try await sessions.accessToken()
-        do { return try await action(client(first)) }
+        do { return try await checked(first) }
         catch let error as SharedServiceError where error.status == 401 {
             if error.code == "auth_revoked" || error.code == "refresh_replayed" {
                 let cleared = try await sessions.reject(accessToken: first)
                 throw cleared ? NativeSessionError.recoveryRequired : NativeSessionError.superseded
             }
             let replacement = try await sessions.accessToken(rejectedAccessToken: first)
-            do { return try await action(client(replacement)) }
+            do { return try await checked(replacement) }
             catch let error as SharedServiceError where error.status == 401 {
                 let cleared = try await sessions.reject(accessToken: replacement)
                 throw cleared ? NativeSessionError.recoveryRequired : NativeSessionError.superseded
             }
         }
     }
-    private func client(_ token: String) throws -> SharedMarketClient {
-        try SharedMarketClient(baseURL: sessions.endpoint.url, accessToken: token, configuration: configuration(), typedServiceErrors: true)
+    private func client(_ token: String, snapshot: RemoteSourceSnapshot?) throws -> SharedMarketClient {
+        try SharedMarketClient(baseURL: sessions.endpoint.url, accessToken: token, configuration: configuration(), typedServiceErrors: true, sourceSnapshot: snapshot)
     }
 }

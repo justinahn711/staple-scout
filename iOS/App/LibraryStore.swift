@@ -41,9 +41,72 @@ private struct UnconfiguredSharedTransport: RetailPriceFetching, RetailProductSe
     private let client: any RetailPriceFetching
     private let searchClient: any RetailProductSearching
     private var searchedProducts: [StoreSearchResult] = []
+    private let sourceClient: (any RemoteSourceLoading)?
+    private(set) var remoteSources: RemoteSourceSnapshot?
+    private(set) var checkingSources = false
+    private(set) var sourceStatusError: String?
+    private(set) var selectedRemoteContexts: [StoreID: String] = [:]
+    private var sourceEpoch = 0
+    var isSharedPilot: Bool { sourceClient != nil }
+    var hasCurrentSources: Bool { remoteSources?.isCurrent() == true }
 
-    init(context: ModelContext, client: any RetailPriceFetching = RetailClient(), searchClient: any RetailProductSearching = RetailSearchClient()) throws {
-        self.context = context; self.client = client; self.searchClient = searchClient
+    func invalidateRemoteSources() {
+        sourceEpoch += 1; remoteSources = nil; searchedProducts = []; selectedRemoteContexts = [:]
+    }
+    func checkSources() async {
+        guard !checkingSources, let sourceClient else { return }
+        sourceEpoch += 1; let epoch = sourceEpoch
+        checkingSources = true; sourceStatusError = nil; remoteSources = nil; searchedProducts = []
+        defer { checkingSources = false }
+        do {
+            let snapshot = try await sourceClient.sources()
+            guard epoch == sourceEpoch, !Task.isCancelled else { return }
+            remoteSources = snapshot
+            selectedRemoteContexts = selectedRemoteContexts.filter { store, id in snapshot.sources.contains { $0.store == store && $0.id == id && $0.permitsRequests } }
+        } catch {
+            guard epoch == sourceEpoch else { return }
+            sourceStatusError = error.localizedDescription
+        }
+    }
+    func sourceStatus(for location: StoreLocation, channel: Channel? = nil) -> RemoteSourceStatus? {
+        remoteSources?.status(location: location, channel: channel)
+    }
+    func selectRemoteSource(_ source: RemoteSourceStatus) throws {
+        guard let snapshot = remoteSources else { throw LibraryError(message: "Check source status before choosing a pilot source.") }
+        _ = try snapshot.require(source.context)
+        guard snapshot.sources.contains(where: { $0.id == source.id }), let validated = StoreLocation.defaults.first(where: { $0.store == source.store && $0.code == source.storeCode }) else {
+            throw LibraryError(message: "This store location is not in the current pilot catalog.")
+        }
+        try update { next in
+            let location = next.locations.first { $0.store == validated.store && $0.code == validated.code } ?? validated
+            if !next.locations.contains(where: { $0.id == location.id }) { next.locations.append(location) }
+            next.preferredLocations[validated.store] = location.id
+        }
+        sourceEpoch += 1
+        selectedRemoteContexts[source.store] = source.id
+        searchedProducts = []
+    }
+    func requestChannel(for location: StoreLocation) -> Channel {
+        if isSharedPilot {
+            return remoteSources?.sources.first { $0.store == location.store && $0.storeCode == location.code && $0.id == selectedRemoteContexts[location.store] }?.channel
+                ?? sourceStatus(for: location)?.channel ?? (location.store == .walmart ? .pickup : location.store == .hmart ? .online : .inStore)
+        }
+        return location.store == .hmart ? .online : .inStore
+    }
+    func sourceRequestReason(location: StoreLocation, channel: Channel) -> String? {
+        if isSharedPilot {
+            guard let snapshot = remoteSources, snapshot.isCurrent() else { return "Check source status in My stores before requesting prices. Status checks are valid for five minutes." }
+            guard let source = snapshot.status(location: location, channel: channel) else { return "This location and channel are outside the limited pilot catalog." }
+            guard source.permitsRequests else { return source.channelVerified ? source.statusText + ". " + source.limitation : "Price channel unverified. " + source.limitation }
+            guard selectedRemoteContexts[location.store] == source.id else { return "Choose this approved location and channel in My stores before searching." }
+            return nil
+        }
+        let capability = SourceCapability.forLocation(location, channel: channel)
+        return capability.isConnected ? nil : capability.message
+    }
+
+    init(context: ModelContext, client: any RetailPriceFetching = RetailClient(), searchClient: any RetailProductSearching = RetailSearchClient(), sourceClient: (any RemoteSourceLoading)? = nil) throws {
+        self.context = context; self.client = client; self.searchClient = searchClient; self.sourceClient = sourceClient
         let records = try context.fetch(FetchDescriptor<SavedLibrary>())
         guard records.count <= 1 else { throw LibraryError(message: "More than one library was found. Your data has been preserved; reopen the app or restore a backup.") }
         if let saved = records.first {
@@ -162,31 +225,33 @@ private struct UnconfiguredSharedTransport: RetailPriceFetching, RetailProductSe
     }
 
     func searchProducts(query: String) async -> [StoreSearchResult] {
+        let epoch = sourceEpoch
         var results: [StoreSearchResult] = []
         let locations = StoreID.allCases.compactMap { state.location(for: $0) }
         for location in locations {
-            if Task.isCancelled { return [] }
-            let channel: Channel = location.store == .hmart ? .online : .inStore
-            let capability = SourceCapability.forLocation(location, channel: channel)
-            guard capability.isConnected else {
-                results.append(StoreSearchResult(location: location, channel: channel, message: capability.message))
+            if Task.isCancelled || (isSharedPilot && epoch != sourceEpoch) { return [] }
+            let channel = requestChannel(for: location)
+            if let reason = sourceRequestReason(location: location, channel: channel) {
+                results.append(StoreSearchResult(location: location, channel: channel, message: reason))
                 continue
             }
             do {
                 let page = try await searchClient.search(query: query, location: location, channel: channel)
+                guard !isSharedPilot || (epoch == sourceEpoch && sourceRequestReason(location: location, channel: channel) == nil) else { return [] }
                 results.append(StoreSearchResult(location: location, channel: channel, candidates: page.candidates, message: page.message))
             } catch {
-                if Task.isCancelled { return [] }
+                if Task.isCancelled || (isSharedPilot && (epoch != sourceEpoch || !hasCurrentSources)) { return [] }
                 results.append(StoreSearchResult(location: location, channel: channel, message: error.localizedDescription))
             }
         }
-        if !Task.isCancelled { searchedProducts = results }
+        guard !Task.isCancelled, !isSharedPilot || epoch == sourceEpoch else { return [] }
+        searchedProducts = results
         return results
     }
 
     func trackProduct(_ candidate: FetchedPrice, location: StoreLocation, channel: Channel, stapleID: UUID) throws {
         guard state.location(for: location.store)?.id == location.id,
-              SourceCapability.forLocation(location, channel: channel).isConnected,
+              sourceRequestReason(location: location, channel: channel) == nil,
               let fetched = searchedProducts.first(where: { $0.location.id == location.id && $0.channel == channel })?.candidates.first(where: { $0.productID == candidate.productID }) else {
             throw LibraryError(message: "These search results are no longer current. Search again for your selected store.")
         }
@@ -224,8 +289,32 @@ private struct UnconfiguredSharedTransport: RetailPriceFetching, RetailProductSe
         }
     }
 
+    /// Current pilot policy is a view over dated evidence; never rewrite library history.
+    func comparisonState(at date: Date = Date()) -> LibraryState {
+        guard isSharedPilot else { return state }
+        var result = state
+        for i in result.observations.indices where result.observations[i].source != .manual {
+            let observation = result.observations[i]
+            let location = result.locations.first { $0.id == observation.locationID }
+            let source = location.flatMap { remoteSources?.status(location: $0, channel: observation.channel) }
+            let reason: String?
+            if !hasCurrentSources { reason = "Current pilot source permission is unverified. Check source status in My stores." }
+            else if let source, source.technicallySupported && source.channelVerified && source.publicAccessApproved && source.displayTTLSeconds > 0 {
+                if let retrieved = observation.retrievedAt, date >= retrieved,
+                   date.timeIntervalSince(retrieved) < min(source.displayTTLSeconds, source.retentionSeconds),
+                   date.timeIntervalSince(observation.observedAt) < source.maximumObservationAgeSeconds {
+                    reason = source.referenceOnly ? "National online reference; excluded from local comparisons." : nil
+                } else { reason = "Evidence exceeds this pilot source’s display or observation limit." }
+            } else { reason = "Public display is not approved for this exact pilot store and channel." }
+            if let reason {
+                result.observations[i].sourceExclusion = [observation.sourceExclusion, reason].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " ")
+            }
+        }
+        return result
+    }
+
     func report(_ request: ReportRequest) throws -> WeeklyReport {
-        let report = try ReportEngine.build(state: state, request: request)
+        let report = try ReportEngine.build(state: comparisonState(), request: request)
         if !state.reports.contains(where: { $0.id == report.id }) { try update { $0.reports.append(report) } }
         return report
     }
@@ -258,22 +347,28 @@ private struct UnconfiguredSharedTransport: RetailPriceFetching, RetailProductSe
         var seen = Set<String>()
         for variant in state.variants.reversed() where variant.productID?.isEmpty == false {
             guard state.matches.contains(where: { match in match.variantID == variant.id && match.status != .rejected && state.staples.contains(where: { $0.id == match.stapleID }) }), let location = state.location(for: variant.store) else { continue }
-            let channel: Channel = variant.store == .hmart ? .online : .inStore
-            guard SourceCapability.forLocation(location, channel: channel).isConnected else { continue }
+            let channel = requestChannel(for: location)
+            guard sourceRequestReason(location: location, channel: channel) == nil else { continue }
             let key = "\(variant.store.rawValue):\(location.id):\(variant.productID ?? "")"
             guard !activeLinks(in: state, store: variant.store, productID: variant.productID ?? "", locationID: location.id, channel: channel).isEmpty, seen.insert(key).inserted else { continue }
             requests.append(FetchRequest(variant: variant, location: location, channel: channel))
         }
-        guard !requests.isEmpty else { failure = "Choose Find store prices on a staple and track a product first. Connected stores can then refresh its price automatically."; return }
+        guard !requests.isEmpty else { failure = isSharedPilot ? "Check source status and choose an approved location and channel in My stores, then find and track a product. No price retrieval was started." : "Choose Find store prices on a staple and track a product first. Connected stores can then refresh its price automatically."; return }
         guard requests.count <= 50 else { failure = "More than 50 tracked products are selected. Remove unused product tracking before refreshing."; return }
         do { try update { $0.lastRefreshDay = day } } catch { failure = error.localizedDescription; return }
         failure = nil
         refreshing = true; defer { refreshing = false }
         var successes = 0; var errors = 0
+        let epoch = sourceEpoch
         for request in requests {
+            guard !Task.isCancelled, !isSharedPilot || (epoch == sourceEpoch && sourceRequestReason(location: request.location, channel: request.channel) == nil && state.location(for: request.location.store)?.id == request.location.id) else {
+                failure = "The source selection or connection changed. The remaining refresh requests were not started. Check source status before trying again."
+                break
+            }
             let attempted = Date()
             do {
                 let fetched = try await client.fetch(request)
+                guard !isSharedPilot || (epoch == sourceEpoch && sourceRequestReason(location: request.location, channel: request.channel) == nil && state.location(for: request.location.store)?.id == request.location.id) else { throw NativeSessionError.superseded }
                 let finished = Date()
                 try update { next in
                     // One fetch serves every tracked alias of this exact store product.

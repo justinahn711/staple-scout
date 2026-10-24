@@ -8,8 +8,8 @@ struct ShoppingView: View {
     @State private var neededOnly = true
     @State private var makingReport = false
     @State private var asOf = Date()
-    private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
-    private var comparisons: [StapleComparison] { ComparisonEngine.compare(state: store.state, channel: channel, stores: planned, neededOnly: neededOnly, asOf: asOf) }
+    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    private var comparisons: [StapleComparison] { ComparisonEngine.compare(state: store.comparisonState(at: asOf), channel: channel, stores: planned, neededOnly: neededOnly, asOf: asOf) }
     var body: some View {
         List {
             ComparisonFilters(channel: $channel, planned: $planned, neededOnly: $neededOnly)

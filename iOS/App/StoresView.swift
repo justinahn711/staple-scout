@@ -7,20 +7,27 @@ struct StoresView: View {
     @State private var editing: StoreLocation?
     var body: some View {
         List {
-            if let pilot { PilotConnectionSection(connection: pilot) }
+            if let pilot {
+                PilotConnectionSection(connection: pilot)
+                PilotSourcesSection(store: store)
+            }
             Section {
                 ForEach(StoreID.allCases, id: \.self) { retailer in
                     if let location = store.state.location(for: retailer) {
                         VStack(alignment: .leading, spacing: 10) {
                             Text(retailer.name).font(.headline)
                             Text(location.name).font(.subheadline)
-                            SourceStatusRow(store: store, location: location, channel: .inStore, sharedPilot: pilot != nil)
-                            if retailer == .hmart { SourceStatusRow(store: store, location: location, channel: .online, sharedPilot: pilot != nil) }
-                            Button("Change location") { editing = location }.frame(minHeight: 44)
+                            if store.isSharedPilot {
+                                PilotStoreSources(store: store, location: location)
+                            } else {
+                                SourceStatusRow(store: store, location: location, channel: .inStore)
+                                if retailer == .hmart { SourceStatusRow(store: store, location: location, channel: .online) }
+                                Button("Change location") { editing = location }.frame(minHeight: 44)
+                            }
                         }.padding(.vertical, 4)
                     }
                 }
-            } footer: { Text("Changing a location preserves old prices at their original store. Manual observations can qualify even when a website source is disconnected.") }
+            } footer: { Text("Changing a location preserves old prices at their original store. Manual observations can qualify independently. The pilot covers only the locations and channels supplied by the service.") }
             Section("Refresh") {
                 RefreshButton(store: store).frame(minHeight: 44)
                 Text("Up to 50 tracked products, once per UTC day while you use the app. No background schedule or account login.").font(.subheadline).foregroundStyle(.secondary)
@@ -111,5 +118,100 @@ struct PilotConnectionSection: View {
             Button("Disconnect this device", role: .destructive) { invitation = ""; Task { await connection.signOut() } }
             Button("Cancel", role: .cancel) {}
         } message: { Text("Your library will be preserved. The operator must issue a new invitation to reconnect. This does not revoke the session on the server.") }
+    }
+}
+
+
+struct PilotSourcesSection: View {
+    @Bindable var store: LibraryStore
+    var body: some View {
+        Section("Pilot coverage") {
+            Text("This small pilot checks a limited catalog, not every supermarket item. Start with My stores, check source status, then choose an approved location and channel.")
+                .font(.subheadline).foregroundStyle(.secondary)
+            Button { Task { await store.checkSources() } } label: {
+                HStack { if store.checkingSources { ProgressView() }; Text(store.checkingSources ? "Checking source status…" : "Check source status") }
+            }.frame(minHeight: 44).disabled(store.checkingSources)
+                .accessibilityHint("Checks permissions and availability. Does not request product prices or schedule work.")
+            if let error = store.sourceStatusError { Text(error).font(.subheadline).foregroundStyle(.secondary) }
+            if let snapshot = store.remoteSources {
+                Text("Status generated \(snapshot.generatedAt.formatted(date: .abbreviated, time: .shortened)). Check again after five minutes before requesting prices. Attempt and success times may be unavailable after retention.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            DisclosureGroup("What is sent to the service") {
+                Text("Search sends the words you enter and exact retailer, store code and price channel. Refresh sends a product ID and that context. Requests use your pilot session. Your staple list, product approvals and saved reports stay on this device.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+                Text("Source status describes recent work for a store and channel. Ready does not mean complete inventory, stock or an eligible comparison winner. Pending is not a promise of background work; checking status never schedules a price refresh.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+struct RemoteSourceStatusRow: View {
+    let store: LibraryStore
+    let location: StoreLocation
+    var channel: Channel? = nil
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { context in sourceBody(at: context.date) }
+    }
+    private func sourceBody(at date: Date) -> some View {
+        let current = store.remoteSources?.isCurrent(at: date) == true
+        return VStack(alignment: .leading, spacing: 6) {
+            if let source = store.sourceStatus(for: location, channel: channel) {
+                Label("\(source.channel == .inStore ? "Shelf" : source.channel.name): \(!current ? "source status unverified — check again" : source.channelVerified ? source.statusText : "price channel unverified")", systemImage: current && source.state == .ready ? "info.circle" : "exclamationmark.circle")
+                    .font(.subheadline).foregroundStyle(.secondary)
+                if !current { Text("Status needs a new check before requesting prices.").font(.caption).foregroundStyle(.secondary) }
+                Text(source.attribution).font(.caption).foregroundStyle(.secondary)
+                if !source.limitation.isEmpty { Text(source.limitation).font(.caption).foregroundStyle(.secondary) }
+                if source.referenceOnly { Label("National online reference; not a local shelf or pickup price", systemImage: "globe").font(.caption).foregroundStyle(.secondary) }
+                if source.store == .lidl { Text("Regional offers; local stock is unknown.").font(.caption).foregroundStyle(.secondary) }
+                if let attempt = source.lastAttemptedAt { Text("Last source attempt \(attempt.formatted(date: .abbreviated, time: .shortened))").font(.caption).foregroundStyle(.secondary) }
+                else { Text("Source attempt time unavailable").font(.caption).foregroundStyle(.secondary) }
+                if let success = source.lastSucceededAt { Text("Last complete source success \(success.formatted(date: .abbreviated, time: .shortened))").font(.caption).foregroundStyle(.secondary) }
+                else { Text("Complete success time unavailable").font(.caption).foregroundStyle(.secondary) }
+                if let evidence = source.evidence {
+                    Text("Source observed \(evidence.observedAt.formatted(date: .abbreviated, time: .shortened)) (\(evidence.observedAt.formatted(.relative(presentation: .named))))")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Text("Source retrieved \(evidence.retrievedAt.formatted(date: .abbreviated, time: .shortened))").font(.caption).foregroundStyle(.secondary)
+                }
+                if let meaning = source.pendingMeaning { Text(meaning).font(.caption).foregroundStyle(.secondary) }
+                if source.permitsRequests {
+                    if store.selectedRemoteContexts[source.store] == source.id {
+                        Label("Selected for search and refresh", systemImage: "checkmark.circle").font(.subheadline)
+                    } else {
+                        Button("Use \(location.name) · \(source.channel == .inStore ? "Shelf" : source.channel.name)") {
+                            do { try store.selectRemoteSource(source) } catch { store.failure = error.localizedDescription }
+                        }.frame(minHeight: 44).disabled(!current)
+                    }
+                }
+            } else {
+                Label("\(location.store.name): \(store.hasCurrentSources ? "outside this pilot catalog" : "source status unverified")", systemImage: "questionmark.circle")
+                    .font(.subheadline).foregroundStyle(.secondary)
+                Text("Check source status in My stores. Unsupported locations remain unavailable.").font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+
+struct PilotStoreSources: View {
+    let store: LibraryStore
+    let location: StoreLocation
+    private var choices: [RemoteSourceStatus] { store.remoteSources?.sources.filter { $0.store == location.store } ?? [] }
+    var body: some View {
+        if choices.isEmpty {
+            RemoteSourceStatusRow(store: store, location: location)
+        } else {
+            if !choices.contains(where: { $0.storeCode == location.code }) {
+                Text("This saved location is outside the pilot. Its old prices retain their original store. Choose an approved pilot location below when available.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+            }
+            ForEach(choices) { source in
+                if let validated = StoreLocation.defaults.first(where: { $0.store == source.store && $0.code == source.storeCode }) {
+                    Text(validated.name).font(.subheadline)
+                    RemoteSourceStatusRow(store: store, location: validated, channel: source.channel)
+                }
+            }
+        }
     }
 }
