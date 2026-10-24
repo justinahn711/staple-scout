@@ -24,8 +24,8 @@ struct CompareView: View {
     @State private var planned = Set(StoreID.allCases)
     @State private var neededOnly = false
     @State private var asOf = Date()
-    private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
-    private var comparisons: [StapleComparison] { ComparisonEngine.compare(state: store.state, channel: channel, stores: planned, neededOnly: neededOnly, asOf: asOf) }
+    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    private var comparisons: [StapleComparison] { ComparisonEngine.compare(state: store.comparisonState(at: asOf), channel: channel, stores: planned, neededOnly: neededOnly, asOf: asOf) }
     var body: some View {
         List {
             ComparisonFilters(channel: $channel, planned: $planned, neededOnly: $neededOnly)
@@ -47,7 +47,14 @@ struct CompareView: View {
             Section {
                 DisclosureGroup("Price source status") {
                     ForEach(StoreID.allCases.filter { planned.contains($0) }, id: \.self) { retailer in
-                        if let location = store.state.location(for: retailer) { SourceStatusRow(store: store, location: location, channel: channel) }
+                        if let location = store.state.location(for: retailer) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(retailer.name).font(.headline).accessibilityAddTraits(.isHeader)
+                                Text(location.name).font(.subheadline)
+                                if store.isSharedPilot { RemoteSourceStatusRow(store: store, location: location, channel: channel) }
+                                else { SourceStatusRow(store: store, location: location, channel: channel) }
+                            }
+                        }
                     }
                 }
             } footer: { Text("Only approved, available, unconditional prices less than 48 hours old can win. Online reference prices and uncertain weights remain excluded.") }

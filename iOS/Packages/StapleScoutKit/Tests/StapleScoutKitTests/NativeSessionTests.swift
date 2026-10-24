@@ -387,6 +387,68 @@ final class NativeSessionTests: XCTestCase {
         XCTAssertNil(store.snapshot()); XCTAssertEqual(NativeSessionStub.requests.count, 4)
     }
 
+    func testManualStatusGateAndLatePriceAfterCatalogChangeAreRejected() async throws {
+        let date = Date(), gate = SessionGate(), catalog = RemoteSourceCatalog()
+        NativeSessionStub.install { request in
+            if request.url!.path.hasSuffix("enroll") { return .ok(self.payload(at: date)) }
+            if request.url!.path.hasSuffix("sources") { return .ok(self.sourcePayload(at: date)) }
+            await gate.wait(); return .ok(self.searchPayload(at: date))
+        }
+        let c = controller(MemorySessionStorage(), SessionClock(date)); try await c.enroll(invitation: invitation)
+        let client = SessionMarketClient(sessions: c, catalog: catalog, configuration: { NativeSessionStub.configuration() })
+        let location = StoreLocation.defaults.first { $0.store == .wegmans }!
+        do { _ = try await client.search(query: "milk", location: location, channel: .inStore); XCTFail() }
+        catch RetailClientError.unsupportedSource {}
+        XCTAssertEqual(NativeSessionStub.requests.count, 1)
+        _ = try await client.sources()
+        let search = Task { try await client.search(query: "milk", location: location, channel: .inStore) }
+        await NativeSessionStub.waitForRequests(3)
+        NativeSessionStub.install(resetRequests: false) { _ in .ok(self.sourcePayload(at: date, enabled: false)) }
+        _ = try await client.sources()
+        await gate.open()
+        do { _ = try await search.value; XCTFail("A withdrawn source cannot finish an old request") }
+        catch { XCTAssertEqual(error as? NativeSessionError, .superseded) }
+        XCTAssertEqual(NativeSessionStub.requests.count, 4)
+    }
+
+    func testLateStatusCannotOverwriteNewSessionCatalogAndOldEpochCannotAuthorizeRequests() async throws {
+        let date = Date(), gate = SessionGate(), catalog = RemoteSourceCatalog()
+        NativeSessionStub.install { request in
+            if request.url!.path.hasSuffix("enroll") { return .ok(self.payload(at: date)) }
+            await gate.wait(); return .ok(self.sourcePayload(at: date))
+        }
+        let c = controller(MemorySessionStorage(), SessionClock(date)); try await c.enroll(invitation: invitation)
+        let client = SessionMarketClient(sessions: c, catalog: catalog, configuration: { NativeSessionStub.configuration() })
+        let older = Task { try await client.sources() }
+        await NativeSessionStub.waitForRequests(2)
+        try await c.signOut()
+        NativeSessionStub.install(resetRequests: false) { request in
+            request.url!.path.hasSuffix("enroll") ? .ok(self.payload(at: date, version: 2)) : .ok(self.sourcePayload(at: date, enabled: false))
+        }
+        try await c.enroll(invitation: invitation)
+        _ = try await client.sources()
+        await gate.open()
+        do { _ = try await older.value; XCTFail() } catch { XCTAssertEqual(error as? NativeSessionError, .superseded) }
+        let current = await catalog.current(); XCTAssertEqual(current?.sources.first?.state, .disabled)
+        // Even without the UI's explicit catalog.clear, a new session epoch invalidates old grants.
+        try await c.signOut()
+        try await c.enroll(invitation: invitation)
+        let count = NativeSessionStub.requests.count
+        do { _ = try await client.search(query: "milk", location: StoreLocation.defaults[0], channel: .inStore); XCTFail() }
+        catch { XCTAssertEqual(error as? NativeSessionError, .superseded) }
+        XCTAssertEqual(NativeSessionStub.requests.count, count)
+    }
+
+    private func sourcePayload(at date: Date, enabled: Bool = true) -> Data {
+        try! JSONSerialization.data(withJSONObject: ["schemaVersion": 1, "generatedAt": date.timeIntervalSince1970 * 1000, "sources": [[
+            "provider": "retailer_website", "store": "wegmans", "storeCode": "133", "channel": "in_store",
+            "technicallySupported": true, "channelVerified": true, "fetchingEnabled": enabled, "publicAccessApproved": enabled,
+            "attribution": "Synthetic status", "referenceOnly": false, "limitation": "Synthetic fixture",
+            "cacheTTLSeconds": enabled ? 86400 : 0, "displayTTLSeconds": enabled ? 86400 : 0,
+            "maximumObservationAgeSeconds": enabled ? 172800 : 0, "retentionSeconds": enabled ? 172800 : 0,
+            "state": enabled ? "ready" : "disabled"]]])
+    }
+
     private func searchPayload(at date: Date) -> Data {
         let value = FetchedPrice(productID: "123", productName: "Synthetic milk", barcode: nil,
             price: 3, quantity: 64, unit: .flOz, packCount: 1, quantityKind: .fixed, available: nil,

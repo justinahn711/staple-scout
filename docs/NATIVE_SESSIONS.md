@@ -47,9 +47,11 @@ store/code/channel context; request privacy/retention remains server-policy work
 The session status updates during enrollment and refresh. Expired, used or
 rejected invitations get safe, actionable messages. Quota and unavailable-source
 responses remain visible failures; they do not trigger a direct retailer request.
-The store rows explicitly say remote source availability is unverified. A saved
-session is not proof that any retailer source is enabled. The server-backed
-capability/onboarding work remains #49.
+The [source-status flow](PILOT_ONBOARDING.md) starts with remote availability
+unverified. **Check source status** loads the versioned service catalog; the user
+then chooses an approved location/channel. A saved session is not proof that any
+retailer source is enabled. Expired, unsupported or unapproved status cannot
+enable remote requests or silently select a personal client.
 
 **Disconnect this device** asks for confirmation and deletes its stored session.
 It preserves the local library and does not call a nonexistent server revocation

@@ -21,24 +21,26 @@ struct AppServiceConfiguration {
     }
 }
 
-private struct UnavailablePilotTransport: RetailPriceFetching, RetailProductSearching {
+private struct UnavailablePilotTransport: RetailPriceFetching, RetailProductSearching, RemoteSourceLoading {
+    func sources() async throws -> RemoteSourceSnapshot { throw NativeSessionError.configuration }
     func fetch(_ request: FetchRequest) async throws -> FetchedPrice { throw NativeSessionError.configuration }
     func search(query: String, location: StoreLocation, channel: Channel) async throws -> RetailSearchPage { throw NativeSessionError.configuration }
 }
 
 @MainActor @Observable final class PilotConnection {
     let controller: NativeSessionController?
-    let transport: any RetailPriceFetching & RetailProductSearching
+    let transport: any RetailPriceFetching & RetailProductSearching & RemoteSourceLoading
     private(set) var state: NativeSessionState = .signedOut
     private(set) var busy = false
     var message: String?
     let configured: Bool
+    private let catalog = RemoteSourceCatalog()
 
     init(endpoint: SessionEndpoint?, bundleIdentifier: String) {
         configured = endpoint != nil
         if let endpoint, let storage = try? KeychainSessionStorage(bundleIdentifier: bundleIdentifier, endpoint: endpoint) {
             let sessions = NativeSessionController(endpoint: endpoint, storage: storage)
-            controller = sessions; transport = SessionMarketClient(sessions: sessions)
+            controller = sessions; transport = SessionMarketClient(sessions: sessions, catalog: catalog)
         } else {
             controller = nil; transport = UnavailablePilotTransport()
         }
@@ -51,6 +53,7 @@ private struct UnavailablePilotTransport: RetailPriceFetching, RetailProductSear
     func enroll(_ invitation: String) async {
         guard !busy, let controller else { message = NativeSessionError.configuration.localizedDescription; return }
         busy = true; message = nil
+        await catalog.clear()
         defer { busy = false }
         do { try await controller.enroll(invitation: invitation.trimmingCharacters(in: .whitespacesAndNewlines)) }
         catch { message = (error as? NativeSessionError ?? .unavailable).localizedDescription }
@@ -65,6 +68,7 @@ private struct UnavailablePilotTransport: RetailPriceFetching, RetailProductSear
         guard let controller else { return }
         busy = true; message = nil
         defer { busy = false }
+        await catalog.clear()
         do { try await controller.signOut() }
         catch { message = NativeSessionError.storage.localizedDescription }
         state = await controller.currentState()
