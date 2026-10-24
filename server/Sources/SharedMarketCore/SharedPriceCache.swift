@@ -39,8 +39,9 @@ public actor SharedPriceCache {
         self.monthlyLimit = monthlyLimit
         self.now = now
         self.maximumInFlight = maximumInFlight; self.maximumFollowers = maximumFollowers
-        _ = try Self.utcDay(now())
-        try Self.maintain(storage: storage, policies: self.policies, at: now())
+        let initialDate = try storage.clampedDate(now())
+        _ = try Self.utcDay(initialDate)
+        try Self.maintain(storage: storage, policies: self.policies, at: initialDate)
         if ownership != nil { try storage.recoverPending() }
     }
 
@@ -57,9 +58,10 @@ public actor SharedPriceCache {
         try maintain()
         let policy = try policies.require(context)
         let revision = policies.revisionFor(context)
-        let checkedAt = now()
+        let checkedAt = try currentDate()
         let day = try Self.utcDay(checkedAt)
-        let key = try Self.key(kind: "price", context: context, identity: productID)
+        let rawKey = try Self.key(kind: "price", context: context, identity: productID)
+        let key = try storage.lookupKey(rawKey)
         if let entry = try storage.cached(key: key, day: day), entry.policy == policy.fingerprint {
             let saved: FetchedPrice = try decode(entry.data)
             if (try? policy.validateCache(at: checkedAt, insertedAt: entry.insertedAt)) != nil, (try? Self.validate(saved, context: context, productID: productID, at: checkedAt)) != nil,
@@ -73,8 +75,8 @@ public actor SharedPriceCache {
             defer { removeFollower(operation) }
             let value = try await task.value
             try authorize(policy, context: context, revision: revision)
-            try Self.validate(value, context: context, productID: productID, at: now())
-            try policy.validate(value, at: now(), insertedAt: nil)
+            try Self.validate(value, context: context, productID: productID, at: try currentDate())
+            try policy.validate(value, at: try currentDate(), insertedAt: nil)
             return CachedPrice(value: value, cacheHit: true)
         }
         // Register the leader before awaiting admission. The durable claim
@@ -85,7 +87,7 @@ public actor SharedPriceCache {
             var started = false
             do {
                 try self.authorize(policy, context: context, revision: revision)
-                try self.storage.claim(key: key, day: day, month: String(day.prefix(7)), dailyLimit: self.dailyLimit, monthlyLimit: self.monthlyLimit)
+                try self.storage.claim(key: rawKey, day: day, month: String(day.prefix(7)), dailyLimit: self.dailyLimit, monthlyLimit: self.monthlyLimit)
                 started = true
                 try self.record(.pending, context: context, day: day)
                 try self.authorize(policy, context: context, revision: revision)
@@ -101,8 +103,8 @@ public actor SharedPriceCache {
         defer { pricesInFlight.removeValue(forKey: operation) }
         let value = try await task.value
         try authorize(policy, context: context, revision: revision)
-        try Self.validate(value, context: context, productID: productID, at: now())
-        try policy.validate(value, at: now(), insertedAt: nil)
+        try Self.validate(value, context: context, productID: productID, at: try currentDate())
+        try policy.validate(value, at: try currentDate(), insertedAt: nil)
         return CachedPrice(value: value, cacheHit: false)
     }
 
@@ -119,16 +121,17 @@ public actor SharedPriceCache {
         let revision = policies.revisionFor(context)
         let normalized = try Self.normalize(query)
         try Task.checkCancellation()
-        let checkedAt = now()
+        let checkedAt = try currentDate()
         let day = try Self.utcDay(checkedAt)
-        let key = try Self.key(kind: "search", context: context, identity: normalized)
+        let rawKey = try Self.key(kind: "search", context: context, identity: normalized)
+        let key = try storage.lookupKey(rawKey)
         if let entry = try storage.cached(key: key, day: day), entry.policy == policy.fingerprint {
             let saved: SearchPayload = try decode(entry.data)
             if (try? policy.validateCache(at: checkedAt, insertedAt: entry.insertedAt)) == nil {
                 try storage.delete(key: key)
             }
-            let page = RetailSearchPage(candidates: saved.candidates, message: saved.message)
-            if (try? policy.validateCache(at: checkedAt, insertedAt: entry.insertedAt)) != nil, saved.message == nil, (try? Self.validate(page, context: context, at: checkedAt)) != nil,
+            let page = RetailSearchPage(candidates: saved.candidates, message: nil)
+            if (try? policy.validateCache(at: checkedAt, insertedAt: entry.insertedAt)) != nil, (try? Self.validate(page, context: context, at: checkedAt)) != nil,
                page.candidates.allSatisfy({ (try? policy.validate($0, at: checkedAt, insertedAt: entry.insertedAt)) != nil }) {
                 return CachedSearch(page: page, cacheHit: true)
             }
@@ -139,8 +142,8 @@ public actor SharedPriceCache {
             defer { removeFollower(operation) }
             let page = try await task.value
             try authorize(policy, context: context, revision: revision)
-            try Self.validate(page, context: context, at: now())
-            for value in page.candidates { try policy.validate(value, at: now(), insertedAt: nil) }
+            try Self.validate(page, context: context, at: try currentDate())
+            for value in page.candidates { try policy.validate(value, at: try currentDate(), insertedAt: nil) }
             return CachedSearch(page: page, cacheHit: true)
         }
         guard pricesInFlight.count + searchesInFlight.count < maximumInFlight else { throw CacheError.pending("The upstream work limit is busy.") }
@@ -149,7 +152,7 @@ public actor SharedPriceCache {
             var started = false
             do {
                 try self.authorize(policy, context: context, revision: revision)
-                try self.storage.claim(key: key, day: day, month: String(day.prefix(7)), dailyLimit: self.dailyLimit, monthlyLimit: self.monthlyLimit)
+                try self.storage.claim(key: rawKey, day: day, month: String(day.prefix(7)), dailyLimit: self.dailyLimit, monthlyLimit: self.monthlyLimit)
                 started = true
                 try self.record(.pending, context: context, day: day)
                 try self.authorize(policy, context: context, revision: revision)
@@ -165,8 +168,8 @@ public actor SharedPriceCache {
         defer { searchesInFlight.removeValue(forKey: operation) }
         let page = try await task.value
         try authorize(policy, context: context, revision: revision)
-        try Self.validate(page, context: context, at: now())
-        for value in page.candidates { try policy.validate(value, at: now(), insertedAt: nil) }
+        try Self.validate(page, context: context, at: try currentDate())
+        for value in page.candidates { try policy.validate(value, at: try currentDate(), insertedAt: nil) }
         return CachedSearch(page: page, cacheHit: false)
     }
 
@@ -181,7 +184,9 @@ public actor SharedPriceCache {
         try policy.validate(value, at: date, insertedAt: nil)
     }
     private func record(_ state: SourceState, context: PriceContext, day: String) throws {
-        try storage.record(state: state, context: Self.contextKey(context), day: day)
+        let date = try currentDate()
+        guard day == (try Self.utcDay(date)) else { return }
+        try storage.record(state: state, context: Self.contextKey(context), day: day, at: date)
     }
     private func checkRunning() throws {
         try ownership?.validate()
@@ -208,9 +213,16 @@ public actor SharedPriceCache {
         for task in prices { task.cancel() }; for task in searches { task.cancel() }
         for task in prices { _ = await task.result }; for task in searches { _ = await task.result }
     }
-    private func maintain() throws { _ = try Self.utcDay(now()); try Self.maintain(storage: storage, policies: policies, at: now()) }
+    private func currentDate() throws -> Date { try storage.clampedDate(now()) }
+    private func maintain() throws { try Self.maintain(storage: storage, policies: policies, at: currentDate()) }
     private static func maintain(storage: SQLiteStore, policies: SourcePolicyRegistry, at date: Date) throws {
+        try storage.pruneClaims(at: date)
         let policies = policies.snapshot()
+        for policy in policies {
+            let context = contextKey(store: policy.store, code: policy.storeCode, channel: policy.channel)
+            if !policy.permitted { try storage.clearRecorded(context: context) }
+            else { try storage.purgeRecorded(context: context, before: date.addingTimeInterval(-policy.retention)) }
+        }
         for key in try storage.entryKeys() {
             guard let entry = try storage.entry(key: key) else { continue }
             guard let parts = try? JSONDecoder().decode([String].self, from: Data(key.utf8)), parts.count == 5,
@@ -235,7 +247,7 @@ public actor SharedPriceCache {
     public func sourceStatuses(transportReady: Bool) throws -> SourceStatusResponse {
         try ownership?.validate()
         try maintain()
-        let date = now(); let entries = try storage.entryKeys()
+        let date = try currentDate(); let entries = try storage.entryKeys()
         return SourceStatusResponse(at: date, sources: try policies.snapshot().map { policy in
             var evidence: FetchedPrice?
             var usable = false
@@ -246,7 +258,7 @@ public actor SharedPriceCache {
                 guard isPrice || isSearch else { continue }
                 let values: [FetchedPrice]
                 if isPrice, let value = try? JSONDecoder().decode(FetchedPrice.self, from: entry.data) { values = [value] }
-                else if isSearch, let page = try? JSONDecoder().decode(SearchPayload.self, from: entry.data), page.message == nil { values = page.candidates }
+                else if isSearch, let page = try? JSONDecoder().decode(SearchPayload.self, from: entry.data) { values = page.candidates }
                 else { continue }
                 var valid = (try? policy.validateCache(at: date, insertedAt: entry.insertedAt)) != nil
                 for value in values {
@@ -259,12 +271,19 @@ public actor SharedPriceCache {
             let state: SourceState
             let recorded = try storage.recorded(context: Self.contextKey(store: policy.store, code: policy.storeCode, channel: policy.channel))
             if !policy.permitted || !transportReady || stopping { state = .disabled }
-            else if let recorded, [.pending, .partial, .failed].contains(recorded) { state = recorded }
+            else if let recorded, [.pending, .partial, .failed].contains(recorded.state) { state = recorded.state }
             else if usable { state = .ready }
-            else if evidence != nil || recorded == .ready || recorded == .stale { state = .stale }
+            else if evidence != nil || recorded?.state == .ready || recorded?.state == .stale { state = .stale }
             else { state = .pending }
-            return PublicSourceStatus(policy: policy, state: state, evidence: evidence.map { SourceEvidenceDates(observedAt: $0.observedAt, retrievedAt: $0.retrievedAt, validFrom: $0.validFrom, validUntil: $0.validUntil) }, transportReady: transportReady && !stopping)
+            return PublicSourceStatus(policy: policy, state: state, evidence: evidence.map { SourceEvidenceDates(observedAt: $0.observedAt, retrievedAt: $0.retrievedAt, validFrom: $0.validFrom, validUntil: $0.validUntil) }, transportReady: transportReady && !stopping, lastAttemptedAt: recorded?.attemptedAt, lastSucceededAt: recorded?.succeededAt)
         })
+    }
+    public func purgeRetainedData() throws {
+        guard let ownership else { throw CacheError.storage("Exclusive service ownership is required for explicit maintenance.") }
+        try ownership.validate()
+        try maintain()
+        try storage.checkpoint()
+        try ownership.validate()
     }
     public struct KnownProduct: Sendable { public let context: PriceContext; public let productID: String }
     public func beginScheduledRun(enabled: Bool, maximumProducts: Int = 50) throws -> (day: String, products: [KnownProduct])? {
@@ -272,7 +291,7 @@ public actor SharedPriceCache {
         guard enabled else { return nil }
         guard (1...50).contains(maximumProducts) else { throw CacheError.invalidRequest("The scheduled refresh bound is invalid.") }
         try maintain()
-        let day = try Self.utcDay(now())
+        let day = try Self.utcDay(currentDate())
         guard try storage.claimScheduled(day: day) else { return nil }
         var products: [KnownProduct] = []
         for key in try storage.entryKeys() {
@@ -285,7 +304,7 @@ public actor SharedPriceCache {
         }
         return (day, products)
     }
-    public func scheduledDayIsCurrent(_ day: String) throws -> Bool { try checkRunning(); return try Self.utcDay(now()) == day }
+    public func scheduledDayIsCurrent(_ day: String) throws -> Bool { try checkRunning(); return try Self.utcDay(currentDate()) == day }
 
     private func addFollower(_ operation: String) throws {
         guard followers[operation, default: 0] < maximumFollowers else { throw CacheError.pending("The shared operation has enough waiting requests.") }
@@ -297,7 +316,7 @@ public actor SharedPriceCache {
     }
 
     private func finishPrice(_ value: FetchedPrice, context: PriceContext, productID: String, key: String, day: String, policy: SourcePolicy, revision: UUID?) throws {
-        let finishedAt = now()
+        let finishedAt = try currentDate()
         try authorize(policy, context: context, revision: revision)
         try Self.validate(value, context: context, productID: productID, at: finishedAt)
         try policy.validate(value, at: finishedAt, insertedAt: nil)
@@ -305,14 +324,14 @@ public actor SharedPriceCache {
     }
 
     private func finishSearch(_ page: RetailSearchPage, context: PriceContext, key: String, day: String, policy: SourcePolicy, revision: UUID?) throws {
-        let finishedAt = now()
+        let finishedAt = try currentDate()
         try authorize(policy, context: context, revision: revision)
         try Self.validate(page, context: context, at: finishedAt)
         for value in page.candidates { try policy.validate(value, at: finishedAt, insertedAt: nil) }
         // A partial page can be displayed, but its durable claim prevents a
         // retry being silently promoted to a complete result on the same day.
         if page.message == nil {
-            try storage.save(JSONEncoder().encode(SearchPayload(candidates: page.candidates, message: page.message)), key: key, day: day, now: finishedAt, policy: policy.fingerprint)
+            try storage.save(JSONEncoder().encode(SearchPayload(candidates: page.candidates)), key: key, day: day, now: finishedAt, policy: policy.fingerprint)
         }
     }
 
@@ -323,7 +342,6 @@ public actor SharedPriceCache {
 
     private struct SearchPayload: Codable {
         let candidates: [FetchedPrice]
-        let message: String?
     }
 
     private static func key(kind: String, context: PriceContext, identity: String) throws -> String {

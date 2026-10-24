@@ -142,6 +142,14 @@ public actor ProviderBudgetLedger {
         }
     }
 
+    /// Explicit operator maintenance never resets quotas or drops unresolved work.
+    public func purgeRetainedData() throws {
+        guard let ownership else { throw ProviderBudgetError.storageUnavailable }
+        try ownership.validate()
+        try clockedTransaction { time in try prune(time) }
+        try database.checkpoint()
+        try ownership.validate()
+    }
     private func usageWindow(_ scope: String, cap: Int, condition: String, values: [String]) throws -> ProviderUsageWindow {
         let row = try database.rows("SELECT COUNT(*) AS reserved, COALESCE(SUM(dispatched), 0) AS attempted, COALESCE(SUM(state = 'completed'), 0) AS consumed, COALESCE(SUM(state IN ('reserved', 'dispatched')), 0) AS pending FROM budget_reservations WHERE " + condition, values).first ?? [:]
         guard let reserved = Int(row["reserved"] ?? ""), let attempted = Int(row["attempted"] ?? ""), let consumed = Int(row["consumed"] ?? ""), let pending = Int(row["pending"] ?? "") else { throw ProviderBudgetError.storageUnavailable }
@@ -151,10 +159,10 @@ public actor ProviderBudgetLedger {
         try database.scalar("SELECT COUNT(*) FROM " + table + " WHERE " + condition, values)
     }
     private func prune(_ time: TimeInterval) throws {
-        // Never clear another process's pending work, even after a crash or
-        // restart. Recovery/leases need an explicit future operator protocol.
-        try database.run("DELETE FROM budget_reservations WHERE created_at < ? AND state NOT IN ('reserved', 'dispatched')", [String(time - retention)])
-        try database.run("DELETE FROM budget_misses WHERE created_at < ? AND active = 0 AND NOT EXISTS (SELECT 1 FROM budget_reservations WHERE miss_id = budget_misses.miss_id)", [String(time - retention)])
+        // Pending work is never expired by retention. Only exclusive-owner
+        // recovery may retire it, starting a fresh conservative charge window.
+        try database.run("DELETE FROM budget_reservations WHERE rowid IN (SELECT rowid FROM budget_reservations WHERE created_at < ? AND state NOT IN ('reserved', 'dispatched') LIMIT 5000)", [String(time - retention)])
+        try database.run("DELETE FROM budget_misses WHERE rowid IN (SELECT rowid FROM budget_misses WHERE created_at < ? AND active = 0 AND NOT EXISTS (SELECT 1 FROM budget_reservations WHERE miss_id = budget_misses.miss_id) LIMIT 5000)", [String(time - retention)])
     }
     private func clientID(_ principal: ClientPrincipal) throws -> String {
         let value = principal.clientID

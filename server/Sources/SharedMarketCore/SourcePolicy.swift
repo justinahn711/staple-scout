@@ -139,14 +139,18 @@ public struct PublicSourceStatus: Codable, Sendable {
     public let retentionSeconds: Double
     public let state: SourceState
     public let evidence: SourceEvidenceDates?
+    /// Operational context dates; never replace source observation/retrieval dates.
+    public let lastAttemptedAt: Date?
+    public let lastSucceededAt: Date?
     public let pendingMeaning: String?
-    init(policy: SourcePolicy, state: SourceState, evidence: SourceEvidenceDates?, transportReady: Bool) {
+    init(policy: SourcePolicy, state: SourceState, evidence: SourceEvidenceDates?, transportReady: Bool, lastAttemptedAt: Date? = nil, lastSucceededAt: Date? = nil) {
         provider = policy.provider; store = policy.store; storeCode = policy.storeCode; channel = policy.channel
         technicallySupported = policy.technicallySupported; channelVerified = policy.technicallySupported; fetchingEnabled = policy.permitted && transportReady
         publicAccessApproved = policy.publicServingApproved; attribution = policy.attribution
         referenceOnly = policy.referenceOnly; limitation = policy.limitation; cacheTTLSeconds = policy.cacheTTL
         displayTTLSeconds = policy.displayTTL; maximumObservationAgeSeconds = policy.maximumObservationAge; retentionSeconds = policy.retention
         self.state = state; self.evidence = evidence
+        self.lastAttemptedAt = lastAttemptedAt; self.lastSucceededAt = lastSucceededAt
         pendingMeaning = state == .pending ? "A bounded operation is active, or no accepted evidence exists. Polling does not schedule work; retry only after an explicit user action or next scheduled UTC day." : nil
     }
 }

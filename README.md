@@ -37,6 +37,8 @@ The optional shared server now has [provider/client budget accounting](docs/PROV
 
 [Source policy and recovery](docs/SOURCE_POLICY_RECOVERY.md) define the shared service's public-serving boundary, evidence lifetime, exclusive process ownership and interrupted-work handling. Permission applies to cached evidence as well as new requests. The bounded refresh runner is preparation for an approved service; it does not activate a schedule or collect the phone's private shopping lists.
 
+[Retention and deletion](docs/DATA_RETENTION.md) document the actual stored fields, keyed search lookups and exclusive offline maintenance command. Cleanup preserves live quotas, uncertain charges and nonreusable client slots. Logical deletion and best-effort SQLite checkpoints do not promise erasure from backups or a stopped host.
+
 ## Tests
 
 ```sh

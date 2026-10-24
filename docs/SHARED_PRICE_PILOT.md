@@ -249,11 +249,15 @@ SQLite uses WAL, a busy timeout and transactions. Payloads are limited to 1 MB
 and 5,000 cache entries. Read and maintenance gates evict payloads that exceed
 source retention or no longer have permission. This is logical deletion when the
 service runs; it is not a wall-clock erasure guarantee while idle or stopped, nor
-secure deletion of SQLite pages/backups. Full service identity, quota-history,
-physical expiry and deletion policy remains issue #46 and an activation gate.
+secure deletion of SQLite pages/backups. [Retention and deletion](DATA_RETENTION.md)
+define bounded exclusive maintenance, credential deletion and protected quota
+history; actual host backup/log controls and stricter physical expiry remain
+activation gates.
 The server stores no user account, staple list, match approval or receipt.
-**Search terms can be present in retained cache keys**, so cache privacy must be
-included in that service-wide policy. Keep this database separate from the iPhone's
+Search cache keys use a stable database-scoped HMAC lookup rather than plaintext
+query text. Public candidate names/conditions can naturally overlap search words;
+the lookup key is colocated with the database and does not anonymize it. Legacy
+payloads are dropped by migration without refunding consumed attempts. Keep this database separate from the iPhone's
 private SwiftData library. Database files and local credentials are ignored by git.
 
 The separate auth database retains server-generated client/session IDs, credential
@@ -262,8 +266,9 @@ minimal quota counters. It does not retain the plaintext credentials, email,
 device identifiers, IP address or local library UUIDs. Access requests, including
 cache hits, use a persistent 1,000/day client limit; enrollment, refresh and invalid
 authentication have additional bounded counters. These are pilot abuse controls;
-provider accounting has its own ledger and zero-cap policy. Full identity deletion and
-retention policy remain issue #46.
+provider accounting has its own ledger and zero-cap policy. Offline maintenance
+can remove selected client credentials/session metadata while preserving permanent
+lifetime-slot tombstones and live usage limits; see the retention inventory.
 
 ## Next milestones before inviting the public
 

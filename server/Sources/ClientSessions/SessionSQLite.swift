@@ -50,13 +50,14 @@ final class SessionSQLite {
             let objects = try rows("SELECT name FROM sqlite_master WHERE name NOT LIKE 'sqlite_%'")
             let applicationID = try scalar("PRAGMA application_id")
             let version = try scalar("PRAGMA user_version")
-            let allowed = Set(["auth_clients", "auth_invitations", "auth_sessions", "auth_refresh_history", "auth_refresh_history_expiry", "auth_attempts"])
+            let allowed = Set(["auth_clients", "auth_invitations", "auth_sessions", "auth_refresh_history", "auth_refresh_history_expiry", "auth_attempts", "auth_clock"])
             guard (objects.isEmpty && applicationID == 0 && version == 0)
-                    || (applicationID == 1_414_353_729 && version == 1 && objects.allSatisfy({ allowed.contains($0["name"] ?? "") })) else {
+                    || (applicationID == 1_414_353_729 && version == 1 && Set(objects.compactMap { $0["name"] }) == allowed.subtracting(["auth_clock"]))
+                    || (applicationID == 1_414_353_729 && version == 2 && Set(objects.compactMap { $0["name"] }) == allowed) else {
                 throw SessionError.invalidRequest
             }
             if path != ":memory:" { try execute("PRAGMA journal_mode = WAL") }
-            try execute("PRAGMA synchronous = FULL; PRAGMA foreign_keys = ON")
+            try execute("PRAGMA synchronous = FULL; PRAGMA foreign_keys = ON; PRAGMA secure_delete = ON")
             try execute("BEGIN IMMEDIATE")
             do {
                 try execute("""
@@ -88,8 +89,22 @@ final class SessionSQLite {
                     PRIMARY KEY(scope, period)
                 );
                 PRAGMA application_id = 1414353729;
-                PRAGMA user_version = 1;
+                CREATE TABLE IF NOT EXISTS auth_clock (id INTEGER PRIMARY KEY CHECK(id = 1), last_seen REAL NOT NULL);
+                PRAGMA user_version = 2;
                 """)
+                if version < 2 {
+                    try execute("ALTER TABLE auth_clients ADD COLUMN deleted_at REAL")
+                    try execute("""
+                    INSERT INTO auth_clock (id, last_seen) SELECT 1, MAX(moment) FROM (
+                        SELECT COALESCE(MAX(created_at), 0) AS moment FROM auth_clients
+                        UNION ALL SELECT COALESCE(MAX(enrolled_at), 0) FROM auth_clients
+                        UNION ALL SELECT COALESCE(MAX(revoked_at), 0) FROM auth_clients
+                        UNION ALL SELECT COALESCE(MAX(access_expires - 900), 0) FROM auth_sessions
+                        UNION ALL SELECT COALESCE(MAX(refresh_expires - 2592000), 0) FROM auth_sessions
+                        UNION ALL SELECT COALESCE(MAX(CASE WHEN scope LIKE 'hour:%' THEN period * 3600 ELSE period * 86400 END), 0) FROM auth_attempts
+                    );
+                    """)
+                }
                 try execute("COMMIT")
             } catch { try? execute("ROLLBACK"); throw error }
             if path != ":memory:" {
@@ -133,6 +148,13 @@ final class SessionSQLite {
         } catch { try? execute("ROLLBACK"); throw SessionError.storageUnavailable }
     }
 
+    func clampedTime(_ sampled: Double) throws -> Double {
+        guard let previous = try rows("SELECT last_seen FROM auth_clock WHERE id = 1").first?["last_seen"].flatMap(Double.init), previous.isFinite, (0..<253_402_300_800).contains(previous) else { throw SessionError.storageUnavailable }
+        let time = max(sampled, previous)
+        try run("INSERT INTO auth_clock VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET last_seen = excluded.last_seen", [String(time)])
+        return time
+    }
+    func checkpoint() throws { try execute("PRAGMA wal_checkpoint(TRUNCATE)") }
     func execute(_ sql: String) throws {
         var error: UnsafeMutablePointer<CChar>?
         let status = sqlite3_exec(database, sql, nil, nil, &error)

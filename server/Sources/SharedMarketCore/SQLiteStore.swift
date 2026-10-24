@@ -1,6 +1,7 @@
 import Foundation
 import CSQLite
 import CryptoKit
+import Security
 import Darwin
 
 /// Used only by its owning SharedPriceCache actor. Separate actors/processes may
@@ -8,6 +9,7 @@ import Darwin
 final class SQLiteStore {
     private var database: OpaquePointer?
     private let maximumEntries = 5_000
+    private var lookupSecret: SymmetricKey!
     private let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
     init(path: String, bootstrapCheckpoint: (() throws -> Void)? = nil) throws {
@@ -31,11 +33,13 @@ final class SQLiteStore {
             let appID = try integer("PRAGMA application_id")
             let legacy = Set(["cache_entries", "attempt_claims", "attempt_budgets"])
             let current = legacy.union(["scheduled_runs", "source_runs"])
+            let retained = current.union(["cache_metadata"])
             guard (objects.isEmpty && version == 0 && appID == 0)
                 || (version == 1 && appID == 0 && objects == legacy)
-                || (version == 3 && appID == 1_414_354_243 && objects == current) else { throw CacheError.storage("Unsupported shared cache schema.") }
+                || (version == 3 && appID == 1_414_354_243 && objects == current)
+                || (version == 4 && appID == 1_414_354_243 && objects == retained) else { throw CacheError.storage("Unsupported shared cache schema.") }
             if physical != ":memory:" { try execute("PRAGMA journal_mode = WAL") }
-            try execute("PRAGMA synchronous = FULL; BEGIN IMMEDIATE")
+            try execute("PRAGMA synchronous = FULL; PRAGMA secure_delete = ON; BEGIN IMMEDIATE")
             do {
                 try execute("""
                 CREATE TABLE IF NOT EXISTS cache_entries (
@@ -55,6 +59,7 @@ final class SQLiteStore {
                     try execute("ALTER TABLE cache_entries ADD COLUMN policy TEXT NOT NULL DEFAULT ''")
                     // Preserve all prior daily dedupe claims, but erase their raw
                     // product/search identities. Hashes are not usable evidence.
+                    guard try integer("SELECT COUNT(*) FROM attempt_claims") <= 100_000 else { throw CacheError.storage("Legacy claims require an offline reviewed migration.") }
                     let statement = try prepare("SELECT cache_key, utc_day FROM attempt_claims")
                     var claims: [(String, String)] = []
                     do {
@@ -69,8 +74,51 @@ final class SQLiteStore {
                     try execute("DELETE FROM attempt_claims")
                     for (key, day) in claims { try run("INSERT OR IGNORE INTO attempt_claims (cache_key, utc_day) VALUES (?, ?)", values: [Self.digest(key), day]) }
                 }
+                if version < 4 {
+                    try execute("CREATE TABLE cache_metadata (name TEXT PRIMARY KEY NOT NULL, value TEXT NOT NULL)")
+                    var bytes = [UInt8](repeating: 0, count: 32)
+                    guard SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes) == errSecSuccess else { throw failure() }
+                    let secret = Data(bytes)
+                    try run("INSERT INTO cache_metadata VALUES ('lookup_secret', ?)", values: [secret.base64EncodedString()])
+                    lookupSecret = SymmetricKey(data: secret)
+                    try run("INSERT INTO cache_metadata VALUES ('lookup_check', ?)", values: [keyedDigest("key-integrity-check")])
+                    // Legacy claims already hold SHA256(canonical raw key).
+                    // HMAC that digest, exactly as new requests do, so neither
+                    // migration nor query minimization permits a fresh attempt.
+                    guard try integer("SELECT COUNT(*) FROM attempt_claims") <= 100_000 else { throw CacheError.storage("Legacy claims require an offline reviewed migration.") }
+                    let statement = try prepare("SELECT cache_key, utc_day FROM attempt_claims")
+                    var claims: [(String, String)] = []
+                    do {
+                        while true {
+                            let status = sqlite3_step(statement)
+                            if status == SQLITE_DONE { break }
+                            guard status == SQLITE_ROW else { throw failure() }
+                            claims.append((String(cString: sqlite3_column_text(statement, 0)), String(cString: sqlite3_column_text(statement, 1))))
+                        }
+                        sqlite3_finalize(statement)
+                    } catch { sqlite3_finalize(statement); throw error }
+                    try execute("DELETE FROM attempt_claims; DELETE FROM cache_entries")
+                    for (digest, day) in claims { try run("INSERT OR IGNORE INTO attempt_claims VALUES (?, ?)", values: [keyedDigest(digest), day]) }
+                    try execute("ALTER TABLE source_runs ADD COLUMN attempted_at REAL; ALTER TABLE source_runs ADD COLUMN succeeded_at REAL")
+                } else {
+                    let statement = try prepare("SELECT value FROM cache_metadata WHERE name = 'lookup_secret'")
+                    defer { sqlite3_finalize(statement) }
+                    guard sqlite3_step(statement) == SQLITE_ROW,
+                          let secret = Data(base64Encoded: String(cString: sqlite3_column_text(statement, 0))), secret.count == 32 else { throw failure() }
+                    lookupSecret = SymmetricKey(data: secret)
+                    let check = try prepare("SELECT value FROM cache_metadata WHERE name = 'lookup_check'")
+                    defer { sqlite3_finalize(check) }
+                    guard sqlite3_step(check) == SQLITE_ROW,
+                          String(cString: sqlite3_column_text(check, 0)) == keyedDigest("key-integrity-check") else { throw failure() }
+                }
+                if version < 4 {
+                    let statement = try prepare("SELECT COALESCE(MAX(CAST(strftime('%s', utc_day) AS REAL)), 0) FROM (SELECT utc_day FROM attempt_claims UNION ALL SELECT utc_day FROM scheduled_runs UNION ALL SELECT utc_day FROM source_runs)")
+                    defer { sqlite3_finalize(statement) }
+                    guard sqlite3_step(statement) == SQLITE_ROW else { throw failure() }
+                    try run("INSERT INTO cache_metadata VALUES ('last_seen', ?)", values: [String(sqlite3_column_double(statement, 0))])
+                }
                 try bootstrapCheckpoint?()
-                try execute("PRAGMA application_id = 1414354243; PRAGMA user_version = 3; COMMIT")
+                try execute("PRAGMA application_id = 1414354243; PRAGMA user_version = 4; COMMIT")
             } catch { try? execute("ROLLBACK"); throw error }
             if physical != ":memory:" {
                 for suffix in ["", "-wal", "-shm"] where FileManager.default.fileExists(atPath: physical + suffix) { try Self.secureFile(physical + suffix) }
@@ -128,7 +176,7 @@ final class SQLiteStore {
         try execute("BEGIN IMMEDIATE")
         var committed = false
         defer { if !committed { try? execute("ROLLBACK") } }
-        let key = Self.digest(key)
+        let key = keyedDigest(Self.digest(key))
         let previous = try integer("SELECT COUNT(*) FROM attempt_claims WHERE cache_key = ? AND utc_day = ?", values: [key, day])
         guard previous == 0 else {
             throw CacheError.alreadyAttempted("This operation was already attempted today; its evidence is unavailable or has expired. Try again on the next UTC day.")
@@ -163,18 +211,73 @@ final class SQLiteStore {
         committed = true
     }
 
-    func record(state: SourceState, context: String, day: String) throws {
-        try run("INSERT INTO source_runs (context, state, utc_day) VALUES (?, ?, ?) ON CONFLICT(context) DO UPDATE SET state = excluded.state, utc_day = excluded.utc_day WHERE excluded.utc_day >= source_runs.utc_day", values: [context, state.rawValue, day])
+    struct SourceRun { let state: SourceState; let attemptedAt: Date?; let succeededAt: Date? }
+    func record(state: SourceState, context: String, day: String, at date: Date) throws {
+        try run("""
+        INSERT INTO source_runs (context, state, utc_day, attempted_at, succeeded_at)
+        VALUES (?, ?, ?, ?, CASE WHEN ? = 'ready' THEN ? ELSE NULL END)
+        ON CONFLICT(context) DO UPDATE SET state = excluded.state, utc_day = excluded.utc_day,
+        attempted_at = CASE WHEN excluded.state = 'pending' THEN excluded.attempted_at ELSE source_runs.attempted_at END,
+        succeeded_at = CASE WHEN excluded.state = 'ready' THEN excluded.succeeded_at ELSE source_runs.succeeded_at END
+        WHERE excluded.utc_day >= source_runs.utc_day
+        """, values: [context, state.rawValue, day, String(date.timeIntervalSince1970), state.rawValue, String(date.timeIntervalSince1970)])
     }
-    func recorded(context: String) throws -> SourceState? {
-        let statement = try prepare("SELECT state FROM source_runs WHERE context = ?")
+    func recorded(context: String) throws -> SourceRun? {
+        let statement = try prepare("SELECT state, attempted_at, succeeded_at FROM source_runs WHERE context = ?")
         defer { sqlite3_finalize(statement) }; try bind(context, at: 1, to: statement)
         switch sqlite3_step(statement) {
         case SQLITE_DONE: return nil
-        case SQLITE_ROW: return SourceState(rawValue: String(cString: sqlite3_column_text(statement, 0)))
+        case SQLITE_ROW:
+            guard let state = SourceState(rawValue: String(cString: sqlite3_column_text(statement, 0))) else { throw failure() }
+            func date(_ index: Int32) -> Date? { sqlite3_column_type(statement, index) == SQLITE_NULL ? nil : Date(timeIntervalSince1970: sqlite3_column_double(statement, index)) }
+            return SourceRun(state: state, attemptedAt: date(1), succeededAt: date(2))
         default: throw failure()
         }
     }
+    func purgeRecorded(context: String, before date: Date) throws {
+        let time = String(date.timeIntervalSince1970)
+        try run("UPDATE source_runs SET attempted_at = CASE WHEN attempted_at <= CAST(? AS REAL) THEN NULL ELSE attempted_at END, succeeded_at = CASE WHEN succeeded_at <= CAST(? AS REAL) THEN NULL ELSE succeeded_at END WHERE context = ?", values: [time, time, context])
+        try run("DELETE FROM source_runs WHERE context = ? AND attempted_at IS NULL AND succeeded_at IS NULL", values: [context])
+    }
+    /// The key is database-scoped pseudonymous lookup, not anonymization. An
+    /// operator with this private database also possesses the lookup secret.
+    func lookupKey(_ canonical: String) throws -> String {
+        guard var parts = try? JSONDecoder().decode([String].self, from: Data(canonical.utf8)), parts.count == 5 else { throw failure() }
+        if parts[0] == "search" { parts[4] = keyedDigest(Self.digest(canonical)) }
+        return String(decoding: try JSONEncoder().encode(parts), as: UTF8.self)
+    }
+    private func keyedDigest(_ digest: String) -> String {
+        HMAC<SHA256>.authenticationCode(for: Data(("thrifty-cache-lookup-v1:" + digest).utf8), using: lookupSecret).map { String(format: "%02x", $0) }.joined()
+    }
+    func clampedDate(_ proposed: Date) throws -> Date {
+        try execute("BEGIN IMMEDIATE")
+        do {
+            let statement = try prepare("SELECT value FROM cache_metadata WHERE name = 'last_seen'")
+            let status = sqlite3_step(statement)
+            guard status == SQLITE_ROW else { sqlite3_finalize(statement); throw failure() }
+            let previous = Double(String(cString: sqlite3_column_text(statement, 0)))
+            sqlite3_finalize(statement)
+            guard let previous, previous.isFinite, (0..<253_402_300_800).contains(previous) else { throw failure() }
+            let sampled = proposed.timeIntervalSince1970
+            guard sampled.isFinite, (0..<253_402_300_800).contains(sampled) else { throw failure() }
+            let time = max(previous, sampled)
+            try run("INSERT INTO cache_metadata VALUES ('last_seen', ?) ON CONFLICT(name) DO UPDATE SET value = excluded.value", values: [String(time)])
+            try execute("COMMIT"); return Date(timeIntervalSince1970: time)
+        } catch { try? execute("ROLLBACK"); throw error }
+    }
+    func pruneClaims(at date: Date) throws {
+        // Retain 62 days: beyond every daily/monthly allowance. The persisted
+        // maximum clock means deleting expired buckets cannot reopen old days.
+        let cutoff = date.addingTimeInterval(-62 * 86_400)
+        let day = try SharedPriceCache.utcDay(cutoff)
+        try execute("BEGIN IMMEDIATE")
+        do {
+            try run("DELETE FROM attempt_claims WHERE rowid IN (SELECT rowid FROM attempt_claims WHERE utc_day < ? LIMIT 5000)", values: [day])
+            try run("DELETE FROM attempt_budgets WHERE rowid IN (SELECT rowid FROM attempt_budgets WHERE (bucket = 'day' AND period < ?) OR (bucket = 'month' AND period < ?) LIMIT 5000)", values: [day, String(day.prefix(7))])
+            try execute("COMMIT")
+        } catch { try? execute("ROLLBACK"); throw error }
+    }
+    func checkpoint() throws { try execute("PRAGMA wal_checkpoint(TRUNCATE)") }
     func clearRecorded(context: String) throws { try run("DELETE FROM source_runs WHERE context = ?", values: [context]) }
     func recoverPending() throws { try execute("UPDATE source_runs SET state = 'failed' WHERE state = 'pending'") }
     func delete(key: String) throws { try run("DELETE FROM cache_entries WHERE cache_key = ?", values: [key]) }
