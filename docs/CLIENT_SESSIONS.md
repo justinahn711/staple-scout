@@ -219,8 +219,12 @@ on subsequent operations. Tombstones remain until the retired credential's
 original expiry (at most 30 days), so pruning cannot revive it. The 50-client,
 100-rotations/day and 30-day bounds cap retained refresh history; after expiry an
 old token is unknown/invalid rather than a replay signal. Client, invitation and
-session rows, including revoked clients, remain capped and retained. Full identity
-deletion, search-term privacy, backup retention and regulatory policy remain #46.
+session rows, including revoked clients, remain capped. Exclusive offline
+[maintenance and client deletion](DATA_RETENTION.md) remove expired/revoked
+credentials and selected client session metadata while retaining nonreusable
+lifetime slots and still-live quota records. Keyed search minimization, the actual
+field inventory and backup/log limitations are documented there. Public privacy
+disclosures and host backup/log verification remain activation work.
 Filesystem permissions protect credential artifacts; hashing does not encrypt
 identity metadata or make backups public-safe.
 

@@ -1,13 +1,17 @@
 import Foundation
+import ServiceOwnership
 
 /// Invitation verification is real in every build. Only the injected clock and
 /// isolated database differ in tests; there is no simulator/development bypass.
 public actor ClientSessionStore {
+    private let ownership: ServiceOwnership?
     private let database: SessionSQLite
     private let policy: SessionPolicy
     private let now: @Sendable () -> Date
 
-    public init(databasePath: String, policy: SessionPolicy? = nil, now: @escaping @Sendable () -> Date = { Date() }) throws {
+    public init(databasePath: String, policy: SessionPolicy? = nil, ownership: ServiceOwnership? = nil, now: @escaping @Sendable () -> Date = { Date() }) throws {
+        try ownership?.claimDatabase(databasePath)
+        self.ownership = ownership
         self.policy = try policy ?? SessionPolicy()
         self.database = try SessionSQLite(path: databasePath)
         self.now = now
@@ -15,10 +19,9 @@ public actor ClientSessionStore {
 
     /// Operator-only API, reachable from the local admin executable, never HTTP.
     public func issueInvitation() throws -> IssuedInvitation {
-        let time = try timestamp()
         let invitation = try SessionCrypto.token(prefix: "inv1_")
         let clientID = try SessionCrypto.token(prefix: "client1_", bytes: 16)
-        return try database.transaction {
+        return try clockedTransaction { time in
             try prune(at: time)
             guard try database.scalar("SELECT COUNT(*) FROM auth_clients") < policy.maximumClients else { throw SessionError.clientLimitReached }
             try database.run("INSERT INTO auth_clients (client_id, created_at) VALUES (?, ?)", [clientID, String(time)])
@@ -29,8 +32,7 @@ public actor ClientSessionStore {
     }
 
     public func enroll(invitation: String) throws -> ClientSessionTokens {
-        let time = try timestamp()
-        return try database.transaction {
+        return try clockedTransaction { time in
             try prune(at: time)
             try reserveEnrollment(at: time)
             guard SessionCrypto.isToken(invitation, prefix: "inv1_") else { throw SessionError.invitationInvalid }
@@ -51,18 +53,16 @@ public actor ClientSessionStore {
 
     /// Count malformed enrollment bodies too, without persisting their contents.
     public func rejectEnrollmentAttempt() throws {
-        let time = try timestamp()
-        try database.transaction { try prune(at: time); try reserveEnrollment(at: time) }
+        try clockedTransaction { time in try prune(at: time); try reserveEnrollment(at: time) }
     }
 
     public func rotate(refreshToken: String) throws -> ClientSessionTokens {
-        let time = try timestamp()
-        return try database.transaction {
+        return try clockedTransaction { time in
             try prune(at: time)
             try reserve(scope: "hour:refresh", period: hour(time), limit: policy.refreshHourlyAttempts)
             guard SessionCrypto.isToken(refreshToken, prefix: "ref1_") else { throw SessionError.invalidCredential }
             let hash = SessionCrypto.hash(refreshToken)
-            if let spent = try database.rows("SELECT session_id FROM auth_refresh_history WHERE refresh_hash = ?", [hash]).first {
+            if let spent = try database.rows("SELECT session_id FROM auth_refresh_history WHERE refresh_hash = ? AND expires_at > ?", [hash, String(time)]).first {
                 try database.run("UPDATE auth_sessions SET revoked_at = COALESCE(revoked_at, ?) WHERE session_id = ?", [String(time), try required(spent, "session_id")])
                 throw SessionError.refreshReplay
             }
@@ -80,15 +80,13 @@ public actor ClientSessionStore {
     }
 
     public func rejectRefreshAttempt() throws {
-        let time = try timestamp()
-        try database.transaction { try prune(at: time); try reserve(scope: "hour:refresh", period: hour(time), limit: policy.refreshHourlyAttempts) }
+        try clockedTransaction { time in try prune(at: time); try reserve(scope: "hour:refresh", period: hour(time), limit: policy.refreshHourlyAttempts) }
     }
 
     /// Quotas follow server identity across credential rotation and cache hits.
     /// The credential itself never becomes a quota key or a cache key.
     public func authenticate(accessToken: String) throws -> ClientPrincipal {
-        let time = try timestamp()
-        return try database.transaction {
+        return try clockedTransaction { time in
             try prune(at: time)
             guard SessionCrypto.isToken(accessToken, prefix: "acc1_") else {
                 try reserveInvalidAuth(at: time); throw SessionError.invalidCredential
@@ -109,20 +107,43 @@ public actor ClientSessionStore {
     }
 
     public func rejectAuthenticationAttempt() throws {
-        let time = try timestamp()
-        try database.transaction { try prune(at: time); try reserveInvalidAuth(at: time) }
+        try clockedTransaction { time in try prune(at: time); try reserveInvalidAuth(at: time) }
     }
 
     public func revoke(clientID: String) throws {
         guard clientID.utf8.count == 40, clientID.hasPrefix("client1_"), clientID.dropFirst(8).utf8.allSatisfy({ (48...57).contains($0) || (97...102).contains($0) }) else { throw SessionError.invalidRequest }
-        let time = try timestamp()
-        try database.transaction {
+        try clockedTransaction { time in
             guard try database.scalar("SELECT COUNT(*) FROM auth_clients WHERE client_id = ?", [clientID]) == 1 else { throw SessionError.invalidRequest }
             try database.run("UPDATE auth_clients SET revoked_at = COALESCE(revoked_at, ?) WHERE client_id = ?", [String(time), clientID])
             try database.run("UPDATE auth_sessions SET revoked_at = COALESCE(revoked_at, ?) WHERE client_id = ?", [String(time), clientID])
         }
     }
 
+    /// Operator-only reduction, requiring the exclusive owner of all databases.
+    /// A stable deleted client tombstone remains: a slot can never be recycled.
+    public func purgeRetainedData(deleting clientID: String? = nil) throws {
+        guard let ownership else { throw SessionError.storageUnavailable }
+        try ownership.validate()
+        try clockedTransaction { time in
+            try prune(at: time)
+            if let clientID {
+                guard clientID.count == 40, clientID.hasPrefix("client1_"), clientID.dropFirst(8).utf8.allSatisfy({ (48...57).contains($0) || (97...102).contains($0) }),
+                      try database.scalar("SELECT COUNT(*) FROM auth_clients WHERE client_id = ?", [clientID]) == 1 else { throw SessionError.invalidRequest }
+                // Revocation and deletion are one transaction; crash cannot
+                // remove denial while leaving usable credentials behind.
+                try database.run("UPDATE auth_clients SET revoked_at = COALESCE(revoked_at, ?), deleted_at = COALESCE(deleted_at, ?), enrolled_at = NULL WHERE client_id = ?", [String(time), String(time), clientID])
+            }
+            try database.run("DELETE FROM auth_refresh_history WHERE session_id IN (SELECT s.session_id FROM auth_sessions s JOIN auth_clients c USING(client_id) WHERE c.deleted_at IS NOT NULL OR c.revoked_at IS NOT NULL OR s.revoked_at IS NOT NULL OR s.refresh_expires <= ?)", [String(time)])
+            try database.run("DELETE FROM auth_sessions WHERE client_id IN (SELECT client_id FROM auth_clients WHERE deleted_at IS NOT NULL OR revoked_at IS NOT NULL) OR revoked_at IS NOT NULL OR refresh_expires <= ?", [String(time)])
+            try database.run("DELETE FROM auth_invitations WHERE client_id IN (SELECT client_id FROM auth_clients WHERE deleted_at IS NOT NULL OR revoked_at IS NOT NULL) OR expires_at <= ?", [String(time)])
+        }
+        try database.checkpoint()
+        try ownership.validate()
+    }
+    private func clockedTransaction<T>(_ body: (Double) throws -> T) throws -> T {
+        try ownership?.validate()
+        return try database.transaction { try body(database.clampedTime(timestamp())) }
+    }
     private func makeTokens(clientID: String, at time: TimeInterval) throws -> ClientSessionTokens {
         ClientSessionTokens(clientID: clientID, accessToken: try SessionCrypto.token(prefix: "acc1_"),
                             accessExpiresAt: Date(timeIntervalSince1970: time + policy.accessLifetime),
@@ -142,8 +163,8 @@ public actor ClientSessionStore {
         try database.run("INSERT INTO auth_attempts (scope, period, attempts) VALUES (?, ?, 1) ON CONFLICT(scope, period) DO UPDATE SET attempts = attempts + 1", [scope, String(period)])
     }
     private func prune(at time: TimeInterval) throws {
-        try database.run("DELETE FROM auth_refresh_history WHERE expires_at <= ?", [String(time)])
-        try database.run("DELETE FROM auth_attempts WHERE (scope LIKE 'hour:%' AND period < ?) OR (scope LIKE 'day:%' AND period < ?)", [String(hour(time)), String(day(time))])
+        try database.run("DELETE FROM auth_refresh_history WHERE rowid IN (SELECT rowid FROM auth_refresh_history WHERE expires_at <= ? LIMIT 5000)", [String(time)])
+        try database.run("DELETE FROM auth_attempts WHERE rowid IN (SELECT rowid FROM auth_attempts WHERE (scope LIKE 'hour:%' AND period < ?) OR (scope LIKE 'day:%' AND period < ?) LIMIT 5000)", [String(hour(time)), String(day(time))])
     }
     private func hour(_ time: TimeInterval) -> Int { Int(time / 3_600) }
     private func day(_ time: TimeInterval) -> Int { Int(time / 86_400) }

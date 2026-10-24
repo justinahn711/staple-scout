@@ -41,7 +41,7 @@ final class BudgetSQLite {
                 throw ProviderBudgetError.invalidRequest
             }
             if path != ":memory:" { try execute("PRAGMA journal_mode = WAL") }
-            try execute("PRAGMA synchronous = FULL; PRAGMA foreign_keys = ON")
+            try execute("PRAGMA synchronous = FULL; PRAGMA foreign_keys = ON; PRAGMA secure_delete = ON")
             try execute("BEGIN IMMEDIATE")
             do {
                 try execute("""
@@ -98,6 +98,7 @@ final class BudgetSQLite {
         catch { try? execute("ROLLBACK"); throw error }
     }
 
+    func checkpoint() throws { try execute("PRAGMA wal_checkpoint(TRUNCATE)") }
     func execute(_ sql: String) throws {
         var error: UnsafeMutablePointer<CChar>?
         let status = sqlite3_exec(database, sql, nil, nil, &error)

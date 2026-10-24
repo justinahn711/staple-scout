@@ -61,20 +61,23 @@ accept exactly the public `fq=productId:…` member, without additional query fi
 
 ## Persistence and retention limits
 
-The private shared cache now has application ID `1414354243`, schema version 3,
+The private shared cache has application ID `1414354243`, schema version 4,
 and atomic bootstrap/migration. Only an empty database, this schema, or the known
-legacy version-1 cache schema is accepted. An unrelated database is rejected
+legacy version-1/version-3 cache schemas are accepted. An unrelated database is rejected
 before enabling WAL or changing its tables. A failed bootstrap/migration rolls
 back and can be reopened safely.
 
-Legacy daily attempt identities become SHA-256 tombstones inside the migration;
-their daily claims and aggregate budgets remain consumed. New failed/successful
-attempts also use digests, never raw terms or product IDs. These unsalted digests
-are dedupe identifiers, **not anonymization**; a guessed term can be tested against
-one. Full account/deletion policy remains #46. Daily/monthly aggregate attempt
-history is retained separately from source content.
+Legacy daily attempt identities become keyed HMAC tombstones inside the migration;
+their daily claims and aggregate budgets remain consumed. Search cache identities
+also use keyed lookups; complete search payloads contain validated public candidate
+evidence without the request query or search message. The stable secret is stored
+in the same private database, so this is minimization, **not anonymization** or
+encryption. Missing or altered key metadata fails closed. Legacy cache payloads
+are dropped during migration. See [retention and deletion](DATA_RETENTION.md) for
+the field inventory, retained quota/lifetime tombstones, bounded maintenance and
+backup/physical-erasure limits.
 
-Evidence payloads and raw price/search keys are removed when unapproved, when
+Evidence payloads and price/keyed-search lookup rows are removed when unapproved, when
 their policy fingerprint changes, or when original retrieval/insertion retention
 expires. Maintenance runs at startup and on cache requests, status requests and
 explicit worker runs. This is lazy logical deletion, not secure erasure from WAL,
@@ -176,6 +179,7 @@ in the executable. Each entry has:
 | `cacheTTLSeconds`, `displayTTLSeconds`, `maximumObservationAgeSeconds`, `retentionSeconds` | Conservative policy limits, zero for all runtime unapproved entries. |
 | `state` | `disabled`, `pending`, `ready`, `partial`, `failed`, or `stale`. |
 | optional `evidence` | Original `observedAt`, `retrievedAt`, optional `validFrom`/`validUntil`, Unix milliseconds; no product/client/search identity. |
+| optional `lastAttemptedAt`, `lastSucceededAt` | Operational attempt-start and accepted-completion dates, Unix milliseconds. Cache hits do not advance them; each expires independently. Neither is a price observation date. |
 | optional `pendingMeaning` | Present only for pending; no implication that a polling client starts work. |
 
 States describe the context's latest bounded operation and usable retained
@@ -185,7 +189,9 @@ permission grant, a retry interval or a reason to poll. Complete price **or sear
 evidence can make the context ready; an empty complete page can also be ready
 without evidence dates. Partial pages remain partial; upstream failures remain
 failed. Previously accepted evidence that becomes unusable/retention-purged is
-stale, with dates omitted once content is deleted. An old day/approval's late
+stale while retained history establishes that state, with dates omitted as their
+retention expires. After all retained history is gone, pending can mean no retained
+accepted result. An old day/approval's late
 completion cannot overwrite today's/new approval's state. This aggregate state
 does not claim every product is covered, in stock or comparable.
 

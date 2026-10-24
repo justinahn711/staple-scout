@@ -36,7 +36,7 @@ enum Entry {
             try FileManager.default.createDirectory(at: URL(fileURLWithPath: database).deletingLastPathComponent(), withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         }
         let ownership = try ServiceOwnership(databasePaths: [authPath, path, providerPath])
-        let sessions = try ClientSessionStore(databasePath: authPath)
+        let sessions = try ClientSessionStore(databasePath: authPath, ownership: ownership)
         let cache = try SharedPriceCache(databasePath: path, dailyLimit: daily, monthlyLimit: monthly, ownership: ownership)
         let ledger = try ProviderBudgetLedger(databasePath: providerPath, ownership: ownership)
         let service = MarketService(cache: cache, sessions: sessions, providerBudgets: ProviderBudgetController(ledger: ledger))
